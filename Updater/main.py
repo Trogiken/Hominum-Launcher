@@ -19,6 +19,10 @@ else:
     APPLICATION_PATH = pathlib.Path(__file__).parent
 
 
+class InvalidModsPath(Exception):
+    pass
+
+
 class CustomTk(tkinter.Tk):
     def report_callback_exception(self, exc, val, tb):
         error_file = APPLICATION_PATH / "error.txt"
@@ -119,30 +123,39 @@ def get_path_tk() -> str:
 def sync_mods(mods_path: str, ) -> None:
     """Syncs mods with the server"""
     print("\n**** Syncing Mods ****")
-    print("Removing Invalid Mods...")
-    server_mods = get_filenames()
-    invalid_mod_count = 0
-    for file in os.listdir(mods_path):
-        if file not in server_mods:
-            os.remove(os.path.join(mods_path, file))
-            print(f"Removed '{file}'")
-            invalid_mod_count += 1
-    print(f"Removed {invalid_mod_count} invalid mod(s)")
+    try:
+        print("Removing Invalid Mods...")
+        server_mods = get_filenames()
+        invalid_mod_count = 0
+        for file in os.listdir(mods_path):
+            if file not in server_mods:
+                os.remove(os.path.join(mods_path, file))
+                print(f"Removed '{file}'")
+                invalid_mod_count += 1
+        print(f"Removed {invalid_mod_count} invalid mod(s)")
 
-    print("\nDownloading new mods...")
-    total_downloaded = src.download_files(get_file_downloads(), mods_path)
-    print(f"Finished downloading {total_downloaded} mod(s)")
+        print("\nDownloading new mods...")
+        total_downloaded = src.download_files(get_file_downloads(), mods_path)
+        print(f"Finished downloading {total_downloaded} mod(s)")
 
-    success = True
-    for file in os.listdir(mods_path):
-        if file not in server_mods:
-            print(f"Warning: '{file}' is not on the server")
-            success = False
-    
-    if success:
+        print("Validating mod directory...")
+        invalid = False
+        for file in os.listdir(mods_path):
+            if file not in server_mods:
+                print(f"Warning: '{file}' is not on the server")
+                invalid = True
+        if invalid:
+            raise InvalidModsPath()
+        else:
+            print("Directory is valid")
+
         print("**** Finished Syncing Mods ****")
-    else:
-        print("**** Failed To Sync Mods ****")
+    except Exception as e:
+        print("Failed To Sync Mods")
+        if isinstance(e, InvalidModsPath):
+            print("Invalid mods detected after sync")
+        else:
+            raise e
 
 
 def main():
