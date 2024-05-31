@@ -2,12 +2,12 @@ import requests
 import os
 
 
-API_TOKEN = ""
+API_TOKEN = "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"
 
 
 def get_request(url: str, timeout=5, headers={'Authorization': f'token {API_TOKEN}'}, **kwargs) -> requests.models.Response:
     """Returns a response object from a GET request"""
-    resp = requests.get(url, timeout=timeout, **kwargs)
+    resp = requests.get(url, timeout=timeout, headers=headers, **kwargs)
     resp.raise_for_status()
     return resp
 
