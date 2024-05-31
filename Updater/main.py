@@ -124,7 +124,7 @@ def sync_mods(mods_path: str, ) -> None:
     """Syncs mods with the server"""
     print("\n**** Syncing Mods ****")
     try:
-        print("Removing Invalid Mods...")
+        print("\nRemoving Invalid Mods...")
         server_mods = get_filenames()
         invalid_mod_count = 0
         for file in os.listdir(mods_path):
@@ -138,7 +138,7 @@ def sync_mods(mods_path: str, ) -> None:
         total_downloaded = src.download_files(get_file_downloads(), mods_path)
         print(f"Finished downloading {total_downloaded} mod(s)")
 
-        print("Validating mod directory...")
+        print("\nValidating mod directory...")
         invalid = False
         for file in os.listdir(mods_path):
             if file not in server_mods:
@@ -149,11 +149,11 @@ def sync_mods(mods_path: str, ) -> None:
         else:
             print("Directory is valid")
 
-        print("**** Finished Syncing Mods ****")
+        print("\n**** Finished Syncing Mods ****")
     except Exception as e:
-        print("Failed To Sync Mods")
+        print("\n**** Syncing Mods Failed ****")
         if isinstance(e, InvalidModsPath):
-            print("Invalid mods detected after sync")
+            print("Error: Invalid mods detected after sync")
         else:
             raise e
 
