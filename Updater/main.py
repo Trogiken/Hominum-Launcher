@@ -7,6 +7,8 @@ import tkinter
 import tkinter.filedialog
 from time import sleep
 
+# TODO: Added manually added paths to custom program folder for storage
+
 PROGRAM_NAME = "Hominum Modpack Updater"
 VERSION = "1.4"
 PATH_URL = r"https://raw.githubusercontent.com/Eclik1/Hominum-Updates/main/path.txt"
