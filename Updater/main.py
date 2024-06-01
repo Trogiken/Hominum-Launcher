@@ -8,7 +8,7 @@ import tkinter.filedialog
 from time import sleep
 
 PROGRAM_NAME = "Hominum Modpack Updater"
-VERSION = "1.3"
+VERSION = "1.4"
 PATH_URL = r"https://raw.githubusercontent.com/Eclik1/Hominum-Updates/main/path.txt"
 GITHUB_CONTENTS_BASE = r"https://api.github.com/repos/Eclik1/Hominum-Updates/contents"
 
@@ -79,8 +79,15 @@ def is_valid_mod_path(path: str) -> bool:
 
 def get_mods_path() -> str:
     """Returns the path to the mods folder"""
-    user_profile = os.getenv("USERPROFILE")
-    base_path = os.path.join(user_profile, "curseforge", "minecraft", "Instances")
+    if os.name == "nt":
+        user_profile = os.getenv("USERPROFILE")
+        base_path = os.path.join(user_profile, "curseforge", "minecraft", "Instances")
+    elif os.name == "posix":
+        user_profile = os.getenv("HOME")
+        base_path = os.path.join(user_profile, "Games", "CurseForge", "Minecraft", "Instances")
+    else:
+        return ""
+
     server_pack_names = [
         "Serverstienpack",
         "Serverstienpack1",
@@ -94,6 +101,38 @@ def get_mods_path() -> str:
         "serverstienpack1.1(fixed)",
         "serverstienpack-1.1",
         "serverstienpack-1.1(fixed)",
+        "Serverstien",
+        "Serverstien1",
+        "Serverstien1.1",
+        "Serverstien1.1(fixed)",
+        "Serverstien-1.1",
+        "Serverstien-1.1(fixed)",
+        "serverstien",
+        "serverstien1",
+        "serverstien1.1",
+        "serverstien1.1(fixed)",
+        "serverstien-1.1",
+        "serverstien-1.1(fixed)",
+        "Serverstienpack 1",
+        "Serverstienpack 1.1",
+        "Serverstienpack 1.1(fixed)",
+        "Serverstienpack - 1.1",
+        "Serverstienpack - 1.1(fixed)",
+        "serverstienpack 1",
+        "serverstienpack 1.1",
+        "serverstienpack 1.1(fixed)",
+        "serverstienpack - 1.1",
+        "serverstienpack - 1.1(fixed)",
+        "Serverstien 1",
+        "Serverstien 1.1",
+        "Serverstien 1.1(fixed)",
+        "Serverstien - 1.1",
+        "Serverstien - 1.1(fixed)",
+        "serverstien 1",
+        "serverstien 1.1",
+        "serverstien 1.1(fixed)",
+        "serverstien - 1.1",
+        "serverstien - 1.1(fixed)",
     ]
 
     paths_to_try = [os.path.join(base_path, pack_name, "mods") for pack_name in server_pack_names]
@@ -177,7 +216,7 @@ def main():
     mods_path = get_mods_path()
     PADDING = 20 # padding for the label
     MAX_LEN = 100 # max length of the path to display
-    mods_path_label = tkinter.Label(root, font=("Arial", 12), wraplength=WINDOW_WIDTH - PADDING, justify="left")
+    mods_path_label = tkinter.Label(root, text="", font=("Arial", 12), wraplength=WINDOW_WIDTH - PADDING, justify="left")
     mods_path_label.pack(pady=5)
     if not mods_path:
         print("Mods folder not found, open it manually\nSee modpack-installation channel for info")
