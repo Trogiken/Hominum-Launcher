@@ -1,18 +1,21 @@
 import source as src
 import pathlib
 import traceback
+import pickle
 import sys
 import os
 import tkinter
 import tkinter.filedialog
 from time import sleep
 
-# TODO: Added manually added paths to custom program folder for storage
+# TODO: Move funcs around to different modules
 
 PROGRAM_NAME = "Hominum Modpack Updater"
-VERSION = "1.4"
+VERSION = "1.5"
 PATH_URL = r"https://raw.githubusercontent.com/Eclik1/Hominum-Updates/main/path.txt"
 GITHUB_CONTENTS_BASE = r"https://api.github.com/repos/Eclik1/Hominum-Updates/contents"
+USER_APP_PATH = os.path.join(os.getenv("APPDATA"), "Hominum-Updater")
+SAVED_PATH = os.path.join(USER_APP_PATH, "mods_path.pkl")
 
 # create the application path depending on if the script is an executable or not
 if getattr(sys, 'frozen', False):
@@ -66,6 +69,25 @@ def get_file_downloads() -> list:
         download_urls.append(file["download_url"])
     
     return download_urls
+
+
+def save_path(path: str) -> None:
+    """Pickle the path to the file"""
+    if not os.path.exists(USER_APP_PATH):
+        os.makedirs(USER_APP_PATH)
+
+    with open(SAVED_PATH, "wb") as f:
+        pickle.dump(path, f)
+
+
+def get_saved_path() -> str:
+    """Return the saved path if it exists"""
+    try:
+        with open(SAVED_PATH, "rb") as f:
+            path = pickle.load(f)
+        return path
+    except FileNotFoundError:
+        return ""
 
 
 def is_valid_mod_path(path: str) -> bool:
@@ -138,6 +160,7 @@ def get_mods_path() -> str:
     ]
 
     paths_to_try = [os.path.join(base_path, pack_name, "mods") for pack_name in server_pack_names]
+    paths_to_try.append(get_saved_path())
 
     for mods_path in paths_to_try:
         if is_valid_mod_path(mods_path):
@@ -225,6 +248,7 @@ def main():
         mods_path_label.config(text="Unkown Mods Path")
         mods_path = get_path_tk()
         if mods_path:
+            save_path(mods_path)
             print(f"Updated mods path to {mods_path}")
         else:
             print("No valid mods path provided. Exiting...")

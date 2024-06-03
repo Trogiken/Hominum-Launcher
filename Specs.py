@@ -2,7 +2,7 @@ import pyinstaller_versionfile
 
 pyinstaller_versionfile.create_versionfile(
     output_file="versionfile.txt",
-    version="1.4",
+    version="1.5",
     company_name="Noah Blaszak",
     file_description="Syncronize local files with remote server",
     internal_name="Hominum Updater",
