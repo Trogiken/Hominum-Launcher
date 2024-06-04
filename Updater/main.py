@@ -1,40 +1,19 @@
 import source as src
 import pathlib
 import traceback
-import pickle
 import sys
 import os
 import tkinter
 import tkinter.filedialog
 from time import sleep
 
-# TODO: Move funcs around to different modules
-
 PROGRAM_NAME = "Hominum Modpack Updater"
 VERSION = "1.5"
-PATH_URL = r"https://raw.githubusercontent.com/Eclik1/Hominum-Updates/main/path.txt"
-GITHUB_CONTENTS_BASE = r"https://api.github.com/repos/Eclik1/Hominum-Updates/contents"
-USER_APP_PATH = os.path.join(os.getenv("APPDATA"), "Hominum-Updater")
-SAVED_PATH = os.path.join(USER_APP_PATH, "mods_path.pkl")
-
-# create the application path depending on if the script is an executable or not
-if getattr(sys, 'frozen', False):
-    APPLICATION_PATH = pathlib.Path(sys.executable).parent
-else:
-    APPLICATION_PATH = pathlib.Path(__file__).parent
-
-
-class InvalidModsPath(Exception):
-    pass
 
 
 class CustomTk(tkinter.Tk):
     def report_callback_exception(self, exc, val, tb):
-        error_file = APPLICATION_PATH / "error.txt"
-        with open(error_file, "w") as f:
-            f.write("".join(traceback.format_exception(exc, val, tb)))
-        print("Error occurred, check error.txt for more information")
-        print("For help send this file to Creme Fraiche on discord")
+        src.exceptions.write_error_file(exc, val, tb)
 
     def destroy(self):
         self.quit()
@@ -42,154 +21,13 @@ class CustomTk(tkinter.Tk):
         super().destroy()
 
 
-def get_url_dir() -> str:
-    """Returns url of the directory with mods"""
-    resp = src.get_request(PATH_URL)
-    path = resp.text.split("\n")[0].strip()
-    url = f"{GITHUB_CONTENTS_BASE}/{path}"
-
-    return url
-
-
-def get_filenames() -> list:
-    """Returns a list of mod names"""
-    resp = src.get_request(get_url_dir())
-    names = []
-    for file in resp.json():
-        names.append(file["name"])
-
-    return names
-
-
-def get_file_downloads() -> list:
-    """Returns a list of download urls"""
-    resp = src.get_request(get_url_dir())
-    download_urls = []
-    for file in resp.json():
-        download_urls.append(file["download_url"])
-    
-    return download_urls
-
-
-def save_path(path: str) -> None:
-    """Pickle the path to the file"""
-    if not os.path.exists(USER_APP_PATH):
-        os.makedirs(USER_APP_PATH)
-
-    with open(SAVED_PATH, "wb") as f:
-        pickle.dump(path, f)
-
-
-def get_saved_path() -> str:
-    """Return the saved path if it exists"""
-    try:
-        with open(SAVED_PATH, "rb") as f:
-            path = pickle.load(f)
-        return path
-    except FileNotFoundError:
-        return ""
-
-
-def is_valid_mod_path(path: str) -> bool:
-    """Returns True if the entered path exists and all files in the directory are jars"""
-    if not os.path.exists(path):
-        return False
-
-    if all(file.endswith('.jar') for file in os.listdir(path)):
-        return True
-    else:
-        return False
-
-
-def get_mods_path() -> str:
-    """Returns the path to the mods folder"""
-    if os.name == "nt":
-        user_profile = os.getenv("USERPROFILE")
-        base_path = os.path.join(user_profile, "curseforge", "minecraft", "Instances")
-    elif os.name == "posix":
-        user_profile = os.getenv("HOME")
-        base_path = os.path.join(user_profile, "Games", "CurseForge", "Minecraft", "Instances")
-    else:
-        return ""
-
-    server_pack_names = [
-        "Serverstienpack",
-        "Serverstienpack1",
-        "Serverstienpack1.1",
-        "Serverstienpack1.1(fixed)",
-        "Serverstienpack-1.1",
-        "Serverstienpack-1.1(fixed)",
-        "serverstienpack",
-        "serverstienpack1",
-        "serverstienpack1.1",
-        "serverstienpack1.1(fixed)",
-        "serverstienpack-1.1",
-        "serverstienpack-1.1(fixed)",
-        "Serverstien",
-        "Serverstien1",
-        "Serverstien1.1",
-        "Serverstien1.1(fixed)",
-        "Serverstien-1.1",
-        "Serverstien-1.1(fixed)",
-        "serverstien",
-        "serverstien1",
-        "serverstien1.1",
-        "serverstien1.1(fixed)",
-        "serverstien-1.1",
-        "serverstien-1.1(fixed)",
-        "Serverstienpack 1",
-        "Serverstienpack 1.1",
-        "Serverstienpack 1.1(fixed)",
-        "Serverstienpack - 1.1",
-        "Serverstienpack - 1.1(fixed)",
-        "serverstienpack 1",
-        "serverstienpack 1.1",
-        "serverstienpack 1.1(fixed)",
-        "serverstienpack - 1.1",
-        "serverstienpack - 1.1(fixed)",
-        "Serverstien 1",
-        "Serverstien 1.1",
-        "Serverstien 1.1(fixed)",
-        "Serverstien - 1.1",
-        "Serverstien - 1.1(fixed)",
-        "serverstien 1",
-        "serverstien 1.1",
-        "serverstien 1.1(fixed)",
-        "serverstien - 1.1",
-        "serverstien - 1.1(fixed)",
-    ]
-
-    paths_to_try = [os.path.join(base_path, pack_name, "mods") for pack_name in server_pack_names]
-    paths_to_try.append(get_saved_path())
-
-    for mods_path in paths_to_try:
-        if is_valid_mod_path(mods_path):
-            return mods_path
-
-    return ""
-
-
-def get_path_tk() -> str:
-    """Return path using tk file dialog"""
-    while True:
-        root = tkinter.Tk()
-        root.withdraw()
-        path = tkinter.filedialog.askdirectory(title="Select the mods folder")
-        if not path:
-            print("Operation cancelled.")
-            return ""
-        if is_valid_mod_path(path):
-            return path
-        else:
-            print("Invalid mod path, please select again.")
-
-
 def sync_mods(mods_path: str, ) -> None:
     """Syncs mods with the server"""
     print("\n**** Syncing Mods ****")
     try:
+        server_mods = src.download.get_filenames()
+
         print("\nRemoving Invalid Mods...")
-        server_mods = get_filenames()
         invalid_mod_count = 0
         for file in os.listdir(mods_path):
             if file not in server_mods:
@@ -199,7 +37,9 @@ def sync_mods(mods_path: str, ) -> None:
         print(f"Removed {invalid_mod_count} invalid mod(s)")
 
         print("\nDownloading new mods...")
-        total_downloaded = src.download_files(get_file_downloads(), mods_path)
+        total_downloaded = src.download.download_files(
+            src.download.get_file_downloads(), mods_path
+        )
         print(f"Finished downloading {total_downloaded} mod(s)")
 
         print("\nValidating mod directory...")
@@ -209,14 +49,14 @@ def sync_mods(mods_path: str, ) -> None:
                 print(f"Warning: '{file}' is not on the server")
                 invalid = True
         if invalid:
-            raise InvalidModsPath()
+            raise src.exceptions.InvalidModsPath()
         else:
             print("Directory is valid")
 
         print("\n**** Finished Syncing Mods ****")
     except Exception as e:
         print("\n**** Syncing Mods Failed ****")
-        if isinstance(e, InvalidModsPath):
+        if isinstance(e, src.exceptions.InvalidModsPath):
             print("Error: Invalid mods detected after sync")
         else:
             raise e
@@ -238,7 +78,7 @@ def main():
     ########################
 
     # Mods path label
-    mods_path = get_mods_path()
+    mods_path = src.path.get_mods_path()
     PADDING = 20 # padding for the label
     MAX_LEN = 100 # max length of the path to display
     mods_path_label = tkinter.Label(root, text="", font=("Arial", 12), wraplength=WINDOW_WIDTH - PADDING, justify="left")
@@ -246,9 +86,14 @@ def main():
     if not mods_path:
         print("Mods folder not found, open it manually\nSee modpack-installation channel for info")
         mods_path_label.config(text="Unkown Mods Path")
-        mods_path = get_path_tk()
+        mods_path = src.path.get_path_tk()
         if mods_path:
-            save_path(mods_path)
+            try:
+                src.path.save_path(mods_path)
+                print("Saved new mods path")
+            except Exception:
+                src.exceptions.write_error_file(*sys.exc_info())
+                print(f"Failed to save unknown mods path")
             print(f"Updated mods path to {mods_path}")
         else:
             print("No valid mods path provided. Exiting...")
