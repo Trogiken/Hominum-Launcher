@@ -98,13 +98,13 @@ def download_files(urls: list, mods_directory: str) -> int:
                 print(f"Downloaded '{file_name}'")
                 break
             except Exception as e:
-                print(f"Error downloading '{file_name}': {e}, trying again...")
+                print(f"WARNING: Failed to download '{file_name}': {e}, trying again...")
                 if os.path.exists(save_path):
                     os.remove(save_path)  # Remove incomplete file
                 max_retries -= 1
             finally:
                 if max_retries == 0:
-                    print(f"Warning: Download of '{file_name}' failed too many times, skipping it...")
+                    print(f"ERROR: Download of '{file_name}' failed too many times, skipping it...")
                     if os.path.exists(save_path):
                         os.remove(save_path)  # Remove incomplete file
                     break

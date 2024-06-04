@@ -84,7 +84,7 @@ def sync_mods(mods_path: str) -> None:
     except Exception as e:
         print("\n**** Syncing Mods Failed ****")
         if isinstance(e, src.exceptions.InvalidModsPath):
-            print("Error: Invalid mods detected after sync")
+            print("ERROR: Invalid mods detected after sync")
         else:
             raise e  # re-raise the exception if it's not an InvalidModsPath error
 
