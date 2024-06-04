@@ -46,13 +46,14 @@ def get_request(url: str, timeout=5, headers={'Authorization': f'token {API_TOKE
     return resp
 
 
-def download(url: str, save_path: str) -> str:
+def download(url: str, save_path: str, chunk_size=8192) -> str:
     """
     Downloads a stream of bytes from the given URL and saves it to the specified path.
 
     Parameters:
     - url (str): The URL to download the file from.
     - save_path (str): The path to save the downloaded file.
+    - chunk_size (int): The size of the chunks to download. Defaults to 8192.
 
     Returns:
     - str: The path where the file was saved.
@@ -60,14 +61,14 @@ def download(url: str, save_path: str) -> str:
     resp = get_request(url, stream=True)
 
     with open(save_path, "wb") as f:
-        for chunk in resp.iter_content(chunk_size=8192):
+        for chunk in resp.iter_content(chunk_size=chunk_size):
             if chunk:
                 f.write(chunk)
 
 
 def download_files(urls: list, mods_directory: list) -> int:
     """
-    Downloads files from the given URLs to the specified mods directory.
+    Downloads files from the given URLs to the specified mods_directory.
 
     Parameters:
     - urls (list): A list of URLs to download the files from.
@@ -78,8 +79,9 @@ def download_files(urls: list, mods_directory: list) -> int:
     """
     total_downloads = 0
     for url in urls:
-        file_name = url.split("/")[-1]
+        file_name = url.split("/")[-1]  # Get the file name from the URL
         save_path = os.path.join(mods_directory, file_name)
+        max_timeout_retries = 3
         while True:
             try:
                 if os.path.exists(save_path):
@@ -90,8 +92,16 @@ def download_files(urls: list, mods_directory: list) -> int:
                 total_downloads += 1
                 print(f"Downloaded '{file_name}'")
                 break
-            except requests.Timeout:
-                print(f"Download of '{file_name}' timed out, trying again...")
+            except Exception:  # FIXME: The requests.Timeout was being caught
+                if max_timeout_retries == 0:
+                    print(f"Warning: Download of '{file_name}' timed out too many times, skipping it...")
+                    break
+                else:
+                    # FIXME: This creates a file but doesn't fully downloaded it,
+                    # FIXME: this allows the loop to skip it even though it's not fully downloaded
+                    print(f"Download of '{file_name}' timed out, trying again...")
+                    max_timeout_retries -= 1
+                    continue
 
     return total_downloads
 

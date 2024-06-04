@@ -51,6 +51,7 @@ def sync_mods(mods_path: str) -> None:
     try:
         server_mods = src.download.get_filenames()
 
+        # Remove mods that are not on the server
         print("\nRemoving Invalid Mods...")
         invalid_mod_count = 0
         for file in os.listdir(mods_path):
@@ -60,12 +61,14 @@ def sync_mods(mods_path: str) -> None:
                 invalid_mod_count += 1
         print(f"Removed {invalid_mod_count} invalid mod(s)")
 
+        # Download mods from the server that arn't in the local mods folder
         print("\nDownloading new mods...")
         total_downloaded = src.download.download_files(
             src.download.get_file_downloads(), mods_path
         )
         print(f"Finished downloading {total_downloaded} mod(s)")
 
+        # Validate the mods directory after syncing
         print("\nValidating mod directory...")
         invalid = False
         for file in os.listdir(mods_path):
@@ -83,7 +86,7 @@ def sync_mods(mods_path: str) -> None:
         if isinstance(e, src.exceptions.InvalidModsPath):
             print("Error: Invalid mods detected after sync")
         else:
-            raise e
+            raise e  # re-raise the exception if it's not an InvalidModsPath error
 
 
 def main():
@@ -132,7 +135,7 @@ def main():
             sleep(3)
             return
     mods_path_text = mods_path
-    if len(mods_path_text) > MAX_LEN:
+    if len(mods_path_text) > MAX_LEN:  # shorten the path if it's too long
         mods_path_text = mods_path_text[:MAX_LEN] + "..."
     mods_path_label.config(text=mods_path_text)
     ########################
