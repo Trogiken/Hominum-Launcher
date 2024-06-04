@@ -25,14 +25,38 @@ GITHUB_CONTENTS_BASE = r"https://api.github.com/repos/Eclik1/Hominum-Updates/con
 
 
 def get_request(url: str, timeout=5, headers={'Authorization': f'token {API_TOKEN}'}, **kwargs) -> requests.models.Response:
-    """Returns a response object from a GET request"""
+    """
+    Sends a GET request to the specified URL and returns the response object.
+
+    Parameters:
+    - url (str): The URL to send the GET request to.
+    - timeout (int): The number of seconds to wait for the server to send data before giving up.
+    - headers (dict): The headers to include in the request.
+    - **kwargs: Additional keyword arguments to pass to the requests.get function.
+
+    Returns:
+    - requests.models.Response: The response object from the GET request.
+
+    Exceptions:
+    - requests.exceptions.Timeout: If the request times out.
+    - requests.exceptions.HTTPError: If an HTTP error occurs.
+    """
     resp = requests.get(url, timeout=timeout, headers=headers, **kwargs)
     resp.raise_for_status()
     return resp
 
 
 def download(url: str, save_path: str) -> str:
-    """Downloads stream of bytes to save_path, returns save_path"""
+    """
+    Downloads a stream of bytes from the given URL and saves it to the specified path.
+
+    Parameters:
+    - url (str): The URL to download the file from.
+    - save_path (str): The path to save the downloaded file.
+
+    Returns:
+    - str: The path where the file was saved.
+    """
     resp = get_request(url, stream=True)
 
     with open(save_path, "wb") as f:
@@ -42,7 +66,16 @@ def download(url: str, save_path: str) -> str:
 
 
 def download_files(urls: list, mods_directory: list) -> int:
-    """Downloads files from urls to mods_directory"""
+    """
+    Downloads files from the given URLs to the specified mods directory.
+
+    Parameters:
+    - urls (list): A list of URLs to download the files from.
+    - mods_directory (list): The directory to save the downloaded files to.
+
+    Returns:
+    - int: The total number of files downloaded.
+    """
     total_downloads = 0
     for url in urls:
         file_name = url.split("/")[-1]
@@ -64,7 +97,12 @@ def download_files(urls: list, mods_directory: list) -> int:
 
 
 def get_url_dir() -> str:
-    """Returns url of the directory with mods"""
+    """
+    Returns the URL of the directory with mods.
+
+    Returns:
+    - str: The URL of the directory with mods.
+    """
     resp = get_request(PATH_URL)
     path = resp.text.split("\n")[0].strip()
     url = f"{GITHUB_CONTENTS_BASE}/{path}"
@@ -73,7 +111,12 @@ def get_url_dir() -> str:
 
 
 def get_filenames() -> list:
-    """Returns a list of mod names"""
+    """
+    Retrieves a list of filenames from the server.
+
+    Returns:
+    - list: A list of mod names.
+    """
     resp = get_request(get_url_dir())
     names = []
     for file in resp.json():
@@ -83,7 +126,12 @@ def get_filenames() -> list:
 
 
 def get_file_downloads() -> list:
-    """Returns a list of download urls"""
+    """
+    Retrieves a list of download URLs from the server.
+
+    Returns:
+    - list: A list of download URLs.
+    """
     resp = get_request(get_url_dir())
     download_urls = []
     for file in resp.json():

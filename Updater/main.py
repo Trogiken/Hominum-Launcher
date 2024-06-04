@@ -24,16 +24,29 @@ VERSION = "1.5"
 
 class CustomTk(tkinter.Tk):
     def report_callback_exception(self, exc, val, tb):
+        """Is called when an exception is raised in the GUI. Writes the error to a file."""
         src.exceptions.write_error_file(exc, val, tb)
 
     def destroy(self):
+        """Called when the window is destroyed. Closes the window and exits the program."""
         self.quit()
         self.update()
         super().destroy()
 
 
-def sync_mods(mods_path: str, ) -> None:
-    """Syncs mods with the server"""
+def sync_mods(mods_path: str) -> None:
+    """
+    Syncs mods with the server.
+
+    Parameters:
+    - mods_path (str): The path to the mods directory.
+
+    Exceptions:
+    - Exception: If any other error occurs.
+
+    Returns:
+    - None
+    """
     print("\n**** Syncing Mods ****")
     try:
         server_mods = src.download.get_filenames()
@@ -74,7 +87,15 @@ def sync_mods(mods_path: str, ) -> None:
 
 
 def main():
-    """GUI part of the program"""
+    """
+    GUI portion of the program.
+
+    This function creates a graphical user interface for the program.
+    It sets up the window, labels, buttons, and runs the main event loop.
+
+    Returns:
+    - None
+    """
     root = CustomTk()
     root.title(PROGRAM_NAME)
 

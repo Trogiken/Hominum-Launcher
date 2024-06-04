@@ -22,7 +22,7 @@ def write_error_file(exc, val, tb) -> None:
     - tb (traceback): The traceback object.
 
     Returns:
-    None
+    - None
     """
     error_file = APPLICATION_PATH / "error.txt"
     with open(error_file, "w") as f:

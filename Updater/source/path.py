@@ -34,7 +34,12 @@ else:
 
 
 def get_saved_paths() -> list:
-    """Return the saved paths if the file exists"""
+    """
+    Return the saved paths if the file exists.
+
+    Returns:
+    - list: A list of saved paths if the file exists, otherwise an empty list.
+    """
     try:
         with open(SAVED_PATH, "rb") as f:
             paths = pickle.load(f)
@@ -44,7 +49,15 @@ def get_saved_paths() -> list:
 
 
 def save_path(path: str) -> None:
-    """Pickle the path to the file"""
+    """
+    Save the path to the SAVED_PATH file.
+
+    Parmeters:
+    path (str): The path to be saved.
+
+    Returns:
+    - None
+    """
     if not os.path.exists(USER_APP_PATH):
         os.makedirs(USER_APP_PATH)
 
@@ -61,7 +74,15 @@ def save_path(path: str) -> None:
 
 
 def is_valid_mod_path(path: str) -> bool:
-    """Returns True if the entered path exists and all files in the directory are jars"""
+    """
+    Check if the path is valid to be used as the mods path.
+    
+    Parameters:
+    path (str): The path to check.
+        
+    Returns:
+    - bool: True if the path exists and all files in the directory are jars, False otherwise.
+    """
     if not os.path.exists(path):
         return False
 
@@ -72,7 +93,12 @@ def is_valid_mod_path(path: str) -> bool:
 
 
 def get_mods_path() -> str:
-    """Returns the path to the mods folder"""
+    """
+    Returns the path to the mods folder.
+
+    Returns:
+    - str: The path to the mods folder. If the path is not found, an empty string is returned.
+    """
     if os.name == "nt":
         user_profile = os.getenv("USERPROFILE")
         base_path = os.path.join(user_profile, "curseforge", "minecraft", "Instances")
