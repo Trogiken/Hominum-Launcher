@@ -1,6 +1,17 @@
+"""
+This module contains the main functionality for the Hominum Modpack Updater program.
+It provides a GUI interface for syncing mods with a server.
+
+Functions:
+- sync_mods(mods_path: str) -> None: Syncs mods with the server.
+- main() -> None: Runs the main GUI program.
+
+Constants:
+- PROGRAM_NAME: The name of the program.
+- VERSION: The version of the program.
+"""
+
 import source as src
-import pathlib
-import traceback
 import sys
 import os
 import tkinter

@@ -1,3 +1,22 @@
+"""
+This module provides functions related to file paths and directories.
+
+It includes functions to retrieve saved paths, save a new path, check if a path is valid,
+get the path to the mods folder, and get a path using the tk file dialog.
+
+Functions:
+- get_saved_paths(): Return the saved paths if the file exists.
+- save_path(path: str): Pickle the path to the file.
+- is_valid_mod_path(path: str): Returns True if the entered path exists and all files in the directory are jars.
+- get_mods_path(): Returns the path to the mods folder.
+- get_path_tk(): Return path using tk file dialog.
+
+Constants:
+- USER_APP_PATH: The path to the user application folder.
+- SAVED_PATH: The path to the saved paths file.
+- APPLICATION_PATH: The path to the application.
+"""
+
 import os
 import pathlib
 import sys

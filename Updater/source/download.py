@@ -1,3 +1,20 @@
+"""
+This module provides functions to download files from a specified URL and save them to a specified directory.
+
+Functions:
+- get_request(url: str, timeout=5, headers={'Authorization': f'token {API_TOKEN}'}, **kwargs) -> requests.models.Response: Returns a response object from a GET request.
+- download(url: str, save_path: str) -> str: Downloads stream of bytes to save_path, returns save_path.
+- download_files(urls: list, mods_directory: list) -> int: Downloads files from urls to mods_directory.
+- get_url_dir() -> str: Returns url of the directory with mods.
+- get_filenames() -> list: Returns a list of mod names.
+- get_file_downloads() -> list: Returns a list of download urls.
+
+Constants:
+- API_TOKEN: The GitHub API token.
+- PATH_URL: The URL of the path file.
+- GITHUB_CONTENTS_BASE: The base URL for GitHub contents.
+"""
+
 import requests
 import os
 
