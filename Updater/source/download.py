@@ -24,7 +24,7 @@ PATH_URL = r"https://raw.githubusercontent.com/Eclik1/Hominum-Updates/main/path.
 GITHUB_CONTENTS_BASE = r"https://api.github.com/repos/Eclik1/Hominum-Updates/contents"
 
 
-def get_request(url: str, timeout=5, headers={'Authorization': f'token {API_TOKEN}'}, **kwargs) -> requests.models.Response:
+def get_request(url: str, timeout=5, headers=None, **kwargs) -> requests.models.Response:
     """
     Sends a GET request to the specified URL and returns the response object.
 
@@ -41,6 +41,11 @@ def get_request(url: str, timeout=5, headers={'Authorization': f'token {API_TOKE
     - requests.exceptions.Timeout: If the request times out.
     - requests.exceptions.HTTPError: If an HTTP error occurs.
     """
+    if headers is None:
+        headers = {'Authorization': f'token {API_TOKEN}'}
+    else:
+        headers['Authorization'] = f'token {API_TOKEN}'
+
     resp = requests.get(url, timeout=timeout, headers=headers, **kwargs)
     resp.raise_for_status()
     return resp
@@ -66,13 +71,13 @@ def download(url: str, save_path: str, chunk_size=8192) -> str:
                 f.write(chunk)
 
 
-def download_files(urls: list, mods_directory: list) -> int:
+def download_files(urls: list, mods_directory: str) -> int:
     """
     Downloads files from the given URLs to the specified mods_directory.
 
     Parameters:
     - urls (list): A list of URLs to download the files from.
-    - mods_directory (list): The directory to save the downloaded files to.
+    - mods_directory (str): The directory to save the downloaded files to.
 
     Returns:
     - int: The total number of files downloaded.
@@ -81,7 +86,7 @@ def download_files(urls: list, mods_directory: list) -> int:
     for url in urls:
         file_name = url.split("/")[-1]  # Get the file name from the URL
         save_path = os.path.join(mods_directory, file_name)
-        max_timeout_retries = 3
+        max_retries = 3
         while True:
             try:
                 if os.path.exists(save_path):
@@ -92,16 +97,17 @@ def download_files(urls: list, mods_directory: list) -> int:
                 total_downloads += 1
                 print(f"Downloaded '{file_name}'")
                 break
-            except Exception:  # FIXME: The requests.Timeout was being caught
-                if max_timeout_retries == 0:
-                    print(f"Warning: Download of '{file_name}' timed out too many times, skipping it...")
+            except Exception as e:
+                print(f"Error downloading '{file_name}': {e}, trying again...")
+                if os.path.exists(save_path):
+                    os.remove(save_path)  # Remove incomplete file
+                max_retries -= 1
+            finally:
+                if max_retries == 0:
+                    print(f"Warning: Download of '{file_name}' failed too many times, skipping it...")
+                    if os.path.exists(save_path):
+                        os.remove(save_path)  # Remove incomplete file
                     break
-                else:
-                    # FIXME: This creates a file but doesn't fully downloaded it,
-                    # FIXME: this allows the loop to skip it even though it's not fully downloaded
-                    print(f"Download of '{file_name}' timed out, trying again...")
-                    max_timeout_retries -= 1
-                    continue
 
     return total_downloads
 
