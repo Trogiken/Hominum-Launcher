@@ -1,6 +1,17 @@
+"""
+This module contains the main functionality for the Hominum Modpack Updater program.
+It provides a GUI interface for syncing mods with a server.
+
+Functions:
+- sync_mods(mods_path: str) -> None: Syncs mods with the server.
+- main() -> None: Runs the main GUI program.
+
+Constants:
+- PROGRAM_NAME: The name of the program.
+- VERSION: The version of the program.
+"""
+
 import source as src
-import pathlib
-import traceback
 import sys
 import os
 import tkinter
@@ -13,20 +24,34 @@ VERSION = "1.5"
 
 class CustomTk(tkinter.Tk):
     def report_callback_exception(self, exc, val, tb):
+        """Is called when an exception is raised in the GUI. Writes the error to a file."""
         src.exceptions.write_error_file(exc, val, tb)
 
     def destroy(self):
+        """Called when the window is destroyed. Closes the window and exits the program."""
         self.quit()
         self.update()
         super().destroy()
 
 
-def sync_mods(mods_path: str, ) -> None:
-    """Syncs mods with the server"""
+def sync_mods(mods_path: str) -> None:
+    """
+    Syncs mods with the server.
+
+    Parameters:
+    - mods_path (str): The path to the mods directory.
+
+    Exceptions:
+    - Exception: If any other error occurs.
+
+    Returns:
+    - None
+    """
     print("\n**** Syncing Mods ****")
     try:
         server_mods = src.download.get_filenames()
 
+        # Remove mods that are not on the server
         print("\nRemoving Invalid Mods...")
         invalid_mod_count = 0
         for file in os.listdir(mods_path):
@@ -36,12 +61,14 @@ def sync_mods(mods_path: str, ) -> None:
                 invalid_mod_count += 1
         print(f"Removed {invalid_mod_count} invalid mod(s)")
 
+        # Download mods from the server that arn't in the local mods folder
         print("\nDownloading new mods...")
         total_downloaded = src.download.download_files(
             src.download.get_file_downloads(), mods_path
         )
         print(f"Finished downloading {total_downloaded} mod(s)")
 
+        # Validate the mods directory after syncing
         print("\nValidating mod directory...")
         invalid = False
         for file in os.listdir(mods_path):
@@ -57,13 +84,21 @@ def sync_mods(mods_path: str, ) -> None:
     except Exception as e:
         print("\n**** Syncing Mods Failed ****")
         if isinstance(e, src.exceptions.InvalidModsPath):
-            print("Error: Invalid mods detected after sync")
+            print("ERROR: Invalid mods detected after sync")
         else:
-            raise e
+            raise e  # re-raise the exception if it's not an InvalidModsPath error
 
 
 def main():
-    """GUI part of the program"""
+    """
+    GUI portion of the program.
+
+    This function creates a graphical user interface for the program.
+    It sets up the window, labels, buttons, and runs the main event loop.
+
+    Returns:
+    - None
+    """
     root = CustomTk()
     root.title(PROGRAM_NAME)
 
@@ -100,7 +135,7 @@ def main():
             sleep(3)
             return
     mods_path_text = mods_path
-    if len(mods_path_text) > MAX_LEN:
+    if len(mods_path_text) > MAX_LEN:  # shorten the path if it's too long
         mods_path_text = mods_path_text[:MAX_LEN] + "..."
     mods_path_label.config(text=mods_path_text)
     ########################
