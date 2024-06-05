@@ -23,14 +23,26 @@ import sys
 import pickle
 import tkinter
 import tkinter.filedialog
-
-USER_APP_PATH = os.path.join(os.getenv("APPDATA"), "Hominum-Updater")
-SAVED_PATH = os.path.join(USER_APP_PATH, "mod_paths.pkl")
+from source.exceptions import write_error_file
 
 if getattr(sys, 'frozen', False):
     APPLICATION_PATH = pathlib.Path(sys.executable).parent
 else:
     APPLICATION_PATH = pathlib.Path(__file__).parent
+
+if os.name == "nt":
+    USER_APP_PATH = os.path.join(os.getenv("APPDATA"), "Hominum-Updater")
+elif os.name == "posix":
+    USER_APP_PATH = os.path.join(os.getenv("HOME"), ".hominum-updater")
+else:
+    USER_APP_PATH = os.path.join(APPLICATION_PATH, "user_data")
+SAVED_PATH = os.path.join(USER_APP_PATH, "mod_paths.pkl")
+
+try:
+    if not os.path.exists(USER_APP_PATH):
+        os.makedirs(USER_APP_PATH)
+except Exception:
+    write_error_file(*sys.exc_info())
 
 
 def get_saved_paths() -> list:
@@ -58,9 +70,6 @@ def save_path(path: str) -> None:
     Returns:
     - None
     """
-    if not os.path.exists(USER_APP_PATH):
-        os.makedirs(USER_APP_PATH)
-
     paths = get_saved_paths()
 
     if path in paths:
