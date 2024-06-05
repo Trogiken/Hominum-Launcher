@@ -70,21 +70,26 @@ def sync_mods(mods_path: str) -> None:
 
         # Validate the mods directory after syncing
         print("\nValidating mod directory...")
+        local_mod_files = os.listdir(mods_path)
         invalid = False
-        for file in os.listdir(mods_path):
+        for file in local_mod_files:
             if file not in server_mods:
-                print(f"Warning: '{file}' is not on the server")
+                print(f"INVALID: '{file}'")
+                invalid = True
+        for file in server_mods:
+            if file not in local_mod_files:
+                print(f"MISSING: '{file}'")
                 invalid = True
         if invalid:
             raise src.exceptions.InvalidModsPath()
         else:
-            print("Directory is valid")
+            print("Directory Valid")
 
         print("\n**** Finished Syncing Mods ****")
     except Exception as e:
         print("\n**** Syncing Mods Failed ****")
         if isinstance(e, src.exceptions.InvalidModsPath):
-            print("ERROR: Invalid mods detected after sync")
+            print("ERROR: Missing/Invalid Mods")
         else:
             raise e  # re-raise the exception if it's not an InvalidModsPath error
 
