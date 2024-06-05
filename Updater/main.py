@@ -162,4 +162,7 @@ def main():
 
 
 if __name__ == '__main__':
+    title = f"{PROGRAM_NAME} v{VERSION}"
+    print(title)
+    print("-" * len(title))
     main()
