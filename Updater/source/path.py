@@ -23,7 +23,6 @@ import sys
 import pickle
 import tkinter
 import tkinter.filedialog
-from source.exceptions import write_error_file
 
 if getattr(sys, 'frozen', False):
     APPLICATION_PATH = pathlib.Path(sys.executable).parent
@@ -42,6 +41,7 @@ try:
     if not os.path.exists(USER_APP_PATH):
         os.makedirs(USER_APP_PATH)
 except Exception:
+    from source.exceptions import write_error_file  # prevent circular import
     write_error_file(*sys.exc_info())
 
 
