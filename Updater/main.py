@@ -19,7 +19,7 @@ import tkinter.filedialog
 from time import sleep
 
 PROGRAM_NAME = "Hominum Modpack Updater"
-VERSION = "1.5"
+VERSION = "2.5.0.0"
 
 
 class CustomTk(tkinter.Tk):

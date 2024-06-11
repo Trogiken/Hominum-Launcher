@@ -17,11 +17,10 @@ Constants:
 
 import requests
 import os
+import source.creds as creds
 
-
-API_TOKEN = "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"
-PATH_URL = r"https://raw.githubusercontent.com/Eclik1/Hominum-Updates/main/path.txt"
-GITHUB_CONTENTS_BASE = r"https://api.github.com/repos/Eclik1/Hominum-Updates/contents"
+GITHUB_CONTENTS_BASE = r"https://api.github.com/repos/Trogiken/Hominum-Updates/contents"
+PATH_URL = f"{GITHUB_CONTENTS_BASE}/path.txt"
 
 
 def get_request(url: str, timeout=5, headers=None, **kwargs) -> requests.models.Response:
@@ -42,9 +41,9 @@ def get_request(url: str, timeout=5, headers=None, **kwargs) -> requests.models.
     - requests.exceptions.HTTPError: If an HTTP error occurs.
     """
     if headers is None:
-        headers = {'Authorization': f'token {API_TOKEN}'}
+        headers = {'Authorization': f'token {creds.API_TOKEN}'}
     else:
-        headers['Authorization'] = f'token {API_TOKEN}'
+        headers['Authorization'] = f'token {creds.API_TOKEN}'
 
     resp = requests.get(url, timeout=timeout, headers=headers, **kwargs)
     resp.raise_for_status()
@@ -85,12 +84,16 @@ def download_files(urls: list, mods_directory: str) -> int:
     total_downloads = 0
     for url in urls:
         file_name = url.split("/")[-1]  # Get the file name from the URL
+        file_name = file_name.split("?")[0]  # Remove any query parameters from the file name
         save_path = os.path.join(mods_directory, file_name)
         max_retries = 3
         while True:
             try:
                 if os.path.exists(save_path):
                     print(f"'{file_name}' already exists, skipping it...")
+                    break
+                if not file_name.endswith(".jar"):
+                    print(f"WARNING: '{file_name}' is not a jar file, skipping it...")
                     break
                 print(f"Downloading '{file_name}'...")
                 download(url, save_path)
@@ -116,11 +119,24 @@ def get_url_dir() -> str:
     """
     Returns the URL of the directory with mods.
 
+    Exceptions:
+    - FileNotFoundError: If the path.txt file is not found on the server.
+
     Returns:
     - str: The URL of the directory with mods.
     """
-    resp = get_request(PATH_URL)
-    path = resp.text.split("\n")[0].strip()
+    base_resp = get_request(GITHUB_CONTENTS_BASE)
+    download_path_url = ""
+    for file in base_resp.json():
+        if file["name"] == "path.txt":
+            download_path_url = file["download_url"]
+            break
+    if not download_path_url:
+        raise FileNotFoundError("path.txt not found on the server")
+
+    path = get_request(download_path_url).text
+    path = path.strip()
+    
     url = f"{GITHUB_CONTENTS_BASE}/{path}"
 
     return url
