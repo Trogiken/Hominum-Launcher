@@ -27,7 +27,7 @@ import tkinter.filedialog
 if getattr(sys, 'frozen', False):
     APPLICATION_PATH = pathlib.Path(sys.executable).parent
 else:
-    APPLICATION_PATH = pathlib.Path(__file__).parent
+    APPLICATION_PATH = pathlib.Path(__file__).parents[1]
 
 if os.name == "nt":
     USER_APP_PATH = os.path.join(os.getenv("APPDATA"), "Hominum-Updater")

@@ -41,9 +41,9 @@ def get_request(url: str, timeout=5, headers=None, **kwargs) -> requests.models.
     - requests.exceptions.HTTPError: If an HTTP error occurs.
     """
     if headers is None:
-        headers = {'Authorization': f'token {creds.API_TOKEN}'}
+        headers = {'Authorization': f'token {creds.get_api_key()}'}
     else:
-        headers['Authorization'] = f'token {creds.API_TOKEN}'
+        headers['Authorization'] = f'token {creds.get_api_key()}'
 
     resp = requests.get(url, timeout=timeout, headers=headers, **kwargs)
     resp.raise_for_status()
