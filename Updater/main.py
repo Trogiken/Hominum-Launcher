@@ -106,7 +106,7 @@ def main():
     """
     root = CustomTk()
     root.title(PROGRAM_NAME)
-    icon = tkinter.PhotoImage(file=os.path.join(src.path.APPLICATION_PATH, "icon.ico"))
+    icon = tkinter.PhotoImage(file=os.path.join(src.path.APPLICATION_PATH, "icon.png"))
     root.iconphoto(False, icon)
 
     WINDOW_WIDTH = 400
