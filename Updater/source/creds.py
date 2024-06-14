@@ -10,6 +10,7 @@ Functions:
 
 Constants:
 - PASSWORD: The password used to generate the key.
+- SALT: The salt used to generate the key.
 - API_KEY: The GitHub API key. Not included in plain text.
 """
 
@@ -21,22 +22,19 @@ import base64
 import pickle
 import os
 
-PASSWORD = r"HominumServer123!"
-API_KEY = r""
+PASSWORD = r""
+SALT = r""
 
 
-def generate_key(password: str) -> bytes:
+def generate_key() -> bytes:
     """
     Generates a key from the given password.
-
-    Parameters:
-    - password (str): The password to generate the key from.
 
     Returns:
     - bytes: The generated key.
     """
-    password = password.encode()
-    salt = password[::-1]
+    password = PASSWORD.encode()
+    salt = SALT.encode()
     kdf = PBKDF2HMAC(
         algorithm=hashes.SHA256(),
         length=32,
@@ -46,22 +44,6 @@ def generate_key(password: str) -> bytes:
     )
     key = base64.urlsafe_b64encode(kdf.derive(password))
     return key
-
-
-def encrypt(data: str, key: bytes) -> bytes:
-    """
-    Encrypts the given data using the key.
-    
-    Parameters:
-    - data (str): The data to encrypt.
-    - key (bytes): The key to use for encryption.
-    
-    Returns:
-    - bytes: The encrypted data.
-    """
-    data = data.encode()
-    f = Fernet(key)
-    return f.encrypt(data)
 
 
 def decrypt(token: bytes, key: bytes) -> str:
@@ -80,19 +62,6 @@ def decrypt(token: bytes, key: bytes) -> str:
     return data.decode()
 
 
-def dump_file():
-    """
-    Dumps the encrypted API key to a file.
-
-    Returns:
-    - None
-    """
-    key = generate_key(PASSWORD)
-    encrypted_key = encrypt(API_KEY, key)
-    with open("creds.pkl", "wb") as f:
-        pickle.dump(encrypted_key.decode(), f)
-
-
 def get_api_key():
     """
     Returns the decrypted API key.
@@ -102,12 +71,7 @@ def get_api_key():
     """
     from source.path import APPLICATION_PATH
 
-    with open(os.path.join(APPLICATION_PATH, "creds.pkl"), "rb") as f:
-        encrypted_key = pickle.load(f)
-    key = generate_key(PASSWORD)
-    return decrypt(encrypted_key, key)
-
-
-if __name__ == "__main__":
-    # dump_file()
-    pass
+    with open(os.path.join(APPLICATION_PATH, "creds"), "rb") as f:
+        token = pickle.load(f)
+    key = generate_key()
+    return decrypt(token, key)
