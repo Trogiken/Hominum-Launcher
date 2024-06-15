@@ -3,15 +3,12 @@ This module provides functions to encrypt and decrypt the API key used to access
 
 Functions:
 - generate_key(password: str) -> bytes: Generates a key from the given password.
-- encrypt(data: str, key: bytes) -> bytes: Encrypts the given data using the key.
 - decrypt(token: bytes, key: bytes) -> str: Decrypts the given token using the key.
-- dump_file() -> None: Dumps the encrypted API key to a file.
 - get_api_key() -> str: Returns the decrypted API key.
 
 Constants:
 - PASSWORD: The password used to generate the key.
 - SALT: The salt used to generate the key.
-- API_KEY: The GitHub API key. Not included in plain text.
 """
 
 from cryptography.fernet import Fernet
@@ -43,6 +40,7 @@ def generate_key() -> bytes:
         backend=default_backend()
     )
     key = base64.urlsafe_b64encode(kdf.derive(password))
+
     return key
 
 
@@ -59,6 +57,7 @@ def decrypt(token: bytes, key: bytes) -> str:
     """
     f = Fernet(key)
     data = f.decrypt(token)
+
     return data.decode()
 
 
@@ -74,4 +73,6 @@ def get_api_key():
     with open(os.path.join(APPLICATION_PATH, "creds"), "rb") as f:
         token = pickle.load(f)
     key = generate_key()
-    return decrypt(token, key)
+    decrypted_token = decrypt(token, key)
+
+    return decrypted_token
