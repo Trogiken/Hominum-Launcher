@@ -5,7 +5,7 @@ on: ["push", "pull_request"]
 jobs:
   build:
     runs-on: ubuntu-latest
-    environment: pylint
+    environment: QualityAssurance
     strategy:
       matrix:
         python-version: ["3.8", "3.9", "3.10"]
