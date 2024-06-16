@@ -5,11 +5,11 @@ It includes functions to retrieve saved paths, save a new path, check if a path 
 get the path to the mods folder, and get a path using the tk file dialog.
 
 Functions:
-- get_saved_paths(): Return the saved paths if the file exists.
-- save_path(path: str): Pickle the path to the file.
-- is_valid_mod_path(path: str): Returns True if the entered path exists and all files in the directory are jars.
-- get_mods_path(): Returns the path to the mods folder.
-- get_path_tk(): Return path using tk file dialog.
+- get_saved_paths() -> list: Return the saved paths if the file exists.
+- save_path(path: str) -> None: Save the path to the SAVED_PATH file.
+- is_valid_mod_path(path: str) -> bool: Check if the path is valid to be used as the mods path.
+- get_mods_path() -> str: Returns the path to the mods folder.
+- get_path_tk() -> str: Return path using tk file dialog
 
 Constants:
 - USER_APP_PATH: The path to the user application folder.
@@ -35,14 +35,11 @@ elif os.name == "posix":
     USER_APP_PATH = os.path.join(os.getenv("HOME"), ".hominum-updater")
 else:
     USER_APP_PATH = os.path.join(APPLICATION_PATH, "user_data")
+
 SAVED_PATH = os.path.join(USER_APP_PATH, "mod_paths.pkl")
 
-try:
-    if not os.path.exists(USER_APP_PATH):
-        os.makedirs(USER_APP_PATH)
-except Exception:
-    from source.exceptions import write_error_file  # prevent circular import
-    write_error_file(*sys.exc_info())
+if not os.path.exists(USER_APP_PATH):
+    os.makedirs(USER_APP_PATH)
 
 
 def get_saved_paths() -> list:
@@ -97,8 +94,7 @@ def is_valid_mod_path(path: str) -> bool:
 
     if all(file.endswith('.jar') for file in os.listdir(path)):
         return True
-    else:
-        return False
+    return False
 
 
 def get_mods_path() -> str:
@@ -183,5 +179,4 @@ def get_path_tk() -> str:
             return ""
         if is_valid_mod_path(path):
             return path
-        else:
-            print("Invalid mod path, please select again.")
+        print("Invalid mod path, please select again.")
