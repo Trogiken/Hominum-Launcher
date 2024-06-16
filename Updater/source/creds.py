@@ -14,6 +14,7 @@ Constants:
 import base64
 import pickle
 import os
+from source.path import APPLICATION_PATH
 from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from cryptography.hazmat.primitives import hashes
@@ -68,8 +69,6 @@ def get_api_key():
     Returns:
     - str: The decrypted API key.
     """
-    from source.path import APPLICATION_PATH
-
     with open(os.path.join(APPLICATION_PATH, "creds"), "rb") as f:
         token = pickle.load(f)
     key = generate_key()

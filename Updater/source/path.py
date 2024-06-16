@@ -35,14 +35,11 @@ elif os.name == "posix":
     USER_APP_PATH = os.path.join(os.getenv("HOME"), ".hominum-updater")
 else:
     USER_APP_PATH = os.path.join(APPLICATION_PATH, "user_data")
+
 SAVED_PATH = os.path.join(USER_APP_PATH, "mod_paths.pkl")
 
-try:
-    if not os.path.exists(USER_APP_PATH):
-        os.makedirs(USER_APP_PATH)
-except Exception:
-    from source.exceptions import write_error_file  # prevent circular import
-    write_error_file(*sys.exc_info())
+if not os.path.exists(USER_APP_PATH):
+    os.makedirs(USER_APP_PATH)
 
 
 def get_saved_paths() -> list:
