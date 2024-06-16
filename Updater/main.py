@@ -1,5 +1,5 @@
 """
-This module contains the main functionality for the Hominum Modpack Updater program.
+This module contains the main functionality for the Hominum Client program.
 It provides a GUI interface for syncing mods with a server.
 
 Functions:
@@ -19,8 +19,8 @@ import tkinter.filedialog
 import source as src
 
 
-PROGRAM_NAME = "Hominum Modpack Updater"
-VERSION = "3.5.0.2"
+PROGRAM_NAME = "Hominum Client"
+VERSION = "3.5.0.3"
 
 
 class CustomTk(tkinter.Tk):
@@ -111,8 +111,8 @@ def main():
     root.title(PROGRAM_NAME)
 
     # Set the window icon
-    icon = tkinter.PhotoImage(file=os.path.join(src.path.APPLICATION_PATH, "icon.png"))
-    root.iconphoto(False, icon)
+    if getattr(sys, "frozen", False):
+        root.iconbitmap(sys.executable)
 
     # Set the window size
     window_width = 400

@@ -2,11 +2,11 @@ import pyinstaller_versionfile
 
 pyinstaller_versionfile.create_versionfile(
     output_file="versionfile.txt",
-    version="3.5.0.2",
+    version="3.5.0.3",
     company_name="Noah Blaszak",
-    file_description="Syncronize local files with remote server",
-    internal_name="Hominum Updater",
+    file_description="Hominum minecraft client",
+    internal_name="Hominum Client",
     legal_copyright="© Noah Blaszak. All rights reserved.",
-    original_filename="HominumUpdater.exe",
-    product_name="Hominum Updater"
+    original_filename="Hominum.exe",
+    product_name="Hominum"
 )
