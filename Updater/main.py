@@ -11,18 +11,20 @@ Constants:
 - VERSION: The version of the program.
 """
 
-import source as src
+from time import sleep
 import sys
 import os
 import tkinter
 import tkinter.filedialog
-from time import sleep
+import source as src
+
 
 PROGRAM_NAME = "Hominum Modpack Updater"
 VERSION = "3.5.0.2"
 
 
 class CustomTk(tkinter.Tk):
+    """Custom Tkinter class that writes errors to a file when they occur."""
     def report_callback_exception(self, exc, val, tb):
         """Is called when an exception is raised in the GUI. Writes the error to a file."""
         src.exceptions.write_error_file(exc, val, tb)
@@ -82,8 +84,7 @@ def sync_mods(mods_path: str) -> None:
                 invalid = True
         if invalid:
             raise src.exceptions.InvalidModsPath()
-        else:
-            print("Directory Valid")
+        print("Directory Valid")
 
         print("\n**** Finished Syncing Mods ****")
     except Exception as e:
@@ -105,25 +106,31 @@ def main():
     - None
     """
     root = CustomTk()
+
+    # Set the window title
     root.title(PROGRAM_NAME)
+
+    # Set the window icon
     icon = tkinter.PhotoImage(file=os.path.join(src.path.APPLICATION_PATH, "icon.png"))
     root.iconphoto(False, icon)
 
-    WINDOW_WIDTH = 400
-    WINDOW_HEIGHT = 150
-    root.geometry(f"{WINDOW_WIDTH}x{WINDOW_HEIGHT}")
+    # Set the window size
+    window_width = 400
+    window_height = 150
+    root.geometry(f"{window_width}x{window_height}")
     root.resizable(False, False)
 
     # Title label
-    title = tkinter.Label(root, text=PROGRAM_NAME, font=("Arial", 16))
-    title.pack(pady=5)
-    ########################
+    window_title = tkinter.Label(root, text=PROGRAM_NAME, font=("Arial", 16))
+    window_title.pack(pady=5)
 
     # Mods path label
     mods_path = src.path.get_mods_path()
-    PADDING = 20 # padding for the label
-    MAX_LEN = 100 # max length of the path to display
-    mods_path_label = tkinter.Label(root, text="", font=("Arial", 12), wraplength=WINDOW_WIDTH - PADDING, justify="left")
+    padding = 20 # padding for the label
+    max_len = 100 # max length of the path to display
+    mods_path_label = tkinter.Label(
+        root, text="", font=("Arial", 12), wraplength=window_width - padding, justify="left"
+    )
     mods_path_label.pack(pady=5)
     if not mods_path:
         print("Mods folder not found, open it manually\nSee modpack-installation channel for info")
@@ -135,17 +142,16 @@ def main():
                 print("Saved new mods path")
             except Exception:
                 src.exceptions.write_error_file(*sys.exc_info())
-                print(f"Failed to save unknown mods path")
+                print("Failed to save unknown mods path")
             print(f"Updated mods path to {mods_path}")
         else:
             print("No valid mods path provided. Exiting...")
             sleep(3)
             return
     mods_path_text = mods_path
-    if len(mods_path_text) > MAX_LEN:  # shorten the path if it's too long
-        mods_path_text = mods_path_text[:MAX_LEN] + "..."
+    if len(mods_path_text) > max_len:  # shorten the path if it's too long
+        mods_path_text = mods_path_text[:max_len] + "..."
     mods_path_label.config(text=mods_path_text)
-    ########################
 
     # create update button
     button = tkinter.Button(
@@ -157,12 +163,10 @@ def main():
         command=lambda: sync_mods(mods_path)
     )
     button.pack(pady=1)
-    ########################
 
     # create version label
     version_label = tkinter.Label(root, text=f"v{VERSION}", font=("Arial", 10))
     version_label.pack(side="bottom", anchor="se")
-    ########################
 
     # run the mainloop
     root.mainloop()
