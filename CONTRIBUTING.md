@@ -35,11 +35,12 @@ Please follow these steps for creating a pull request:
 3. Keep commits appropriate and on topic of what you're pushing.
 4. Make sure your code lints.
 5. Make sure your code passes CodeQL.
-6. Make sure your PR is merging into the correct branch
+6. Make sure your PR is merging into the correct branch.
+7. After the PR is merged, delete the branch to keep the repository clean.
 
-## Creating a Release
+## Compiling a Release
 
-Here are the steps to compile the project:
+Here are the steps to compiling a release:
 
 1. Make sure that you've checked out the `master` branch.
 2. Make sure that all PRs are merged, tests are passing, and versions are updated.
