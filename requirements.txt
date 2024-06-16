@@ -1,6 +1,5 @@
 requests
 pyinstaller_versionfile
-python-dotenv
 cryptography
 auto-py-to-exe
 pylint
