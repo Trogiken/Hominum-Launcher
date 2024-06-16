@@ -24,7 +24,7 @@ Replace `<feature-name>`, `<bugfix-name>`, `<hotfix-name>`, `<general-name>`, `<
 
 1. All tests **must** pass before merging into protected branches.
 2. Before merging, a review from someone other than the one pushing must pass.
-3. Only **hotfixes** are allowed to be directly merged into `master`.
+3. **Only hotfixes** are allowed to be directly merged into `master`.
 
 ## Pull Requests
 
@@ -35,6 +35,7 @@ Please follow these steps for creating a pull request:
 3. Keep commits appropriate and on topic of what you're pushing.
 4. Make sure your code lints.
 5. Make sure your code passes CodeQL.
+6. Make sure your PR is merging into the correct branch
 
 ## Creating a Release
 
