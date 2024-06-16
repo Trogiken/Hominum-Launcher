@@ -1,10 +1,14 @@
 """
-This module provides functions to download files from a specified URL and save them to a specified directory.
+This module provides functions to download files from a specified URL and
+save them to a specified directory.
 
 Functions:
-- get_request(url: str, timeout=5, headers={'Authorization': f'token {API_TOKEN}'}, **kwargs) -> requests.models.Response: Returns a response object from a GET request.
-- download(url: str, save_path: str) -> str: Downloads stream of bytes to save_path, returns save_path.
-- download_files(urls: list, mods_directory: list) -> int: Downloads files from urls to mods_directory.
+- get_request(url: str, timeout=5, headers={'Authorization': f'token {API_TOKEN}'}, **kwargs)
+    -> requests.models.Response: Returns a response object from a GET request.
+- download(url: str, save_path: str)
+    -> str: Downloads stream of bytes to save_path, returns save_path.
+- download_files(urls: list, mods_directory: list)
+    -> int: Downloads files from urls to mods_directory.
 - get_url_dir() -> str: Returns url of the directory with mods.
 - get_filenames() -> list: Returns a list of mod names.
 - get_file_downloads() -> list: Returns a list of download urls.
@@ -15,9 +19,9 @@ Constants:
 - GITHUB_CONTENTS_BASE: The base URL for GitHub contents.
 """
 
-import requests
 import os
-import source.creds as creds
+import requests
+from source import creds
 
 GITHUB_CONTENTS_BASE = r"https://api.github.com/repos/Trogiken/Hominum-Updates/contents"
 PATH_URL = f"{GITHUB_CONTENTS_BASE}/path.txt"
@@ -87,30 +91,31 @@ def download_files(urls: list, mods_directory: str) -> int:
         file_name = file_name.split("?")[0]  # Remove any query parameters from the file name
         save_path = os.path.join(mods_directory, file_name)
         max_retries = 3
-        while True:
+        retry = True
+        while retry:
             try:
                 if os.path.exists(save_path):
                     print(f"'{file_name}' already exists, skipping it...")
-                    break
-                if not file_name.endswith(".jar"):
+                    retry = False
+                elif not file_name.endswith(".jar"):
                     print(f"WARNING: '{file_name}' is not a jar file, skipping it...")
-                    break
-                print(f"Downloading '{file_name}'...")
-                download(url, save_path)
-                total_downloads += 1
-                print(f"Downloaded '{file_name}'")
-                break
+                    retry = False
+                else:
+                    print(f"Downloading '{file_name}'...")
+                    download(url, save_path)
+                    total_downloads += 1
+                    print(f"Downloaded '{file_name}'")
+                    retry = False
             except Exception as e:
                 print(f"WARNING: Failed to download '{file_name}': {str(e)}, trying again...")
                 if os.path.exists(save_path):
                     os.remove(save_path)  # Remove incomplete file
                 max_retries -= 1
-            finally:
                 if max_retries == 0:
                     print(f"ERROR: Download of '{file_name}' failed too many times, skipping it...")
                     if os.path.exists(save_path):
                         os.remove(save_path)  # Remove incomplete file
-                    break
+                    retry = False
 
     return total_downloads
 
@@ -136,7 +141,7 @@ def get_url_dir() -> str:
 
     path = get_request(download_path_url).text
     path = path.strip()
-    
+
     url = f"{GITHUB_CONTENTS_BASE}/{path}"
 
     return url
@@ -168,5 +173,5 @@ def get_file_downloads() -> list:
     download_urls = []
     for file in resp.json():
         download_urls.append(file["download_url"])
-    
+
     return download_urls
