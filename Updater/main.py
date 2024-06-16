@@ -20,7 +20,7 @@ import source as src
 
 
 PROGRAM_NAME = "Hominum Client"
-VERSION = "3.5.0.3"
+VERSION = "3.5.1.3"
 
 
 class CustomTk(tkinter.Tk):
