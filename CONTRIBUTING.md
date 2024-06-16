@@ -42,6 +42,8 @@ Please follow these steps for creating a pull request:
 
 Here are the steps to compiling a release:
 
+**Increment build version** 
+
 1. Make sure that you've checked out the `master` branch.
 2. Make sure that all PRs are merged, tests are passing, and versions are updated.
 3. Access and download the security program.
