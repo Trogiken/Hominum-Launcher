@@ -19,11 +19,11 @@
   },
   {
    "optionDest": "icon_file",
-   "value": "C:/Users/noah/Documents/VSCode/Hominum-Updater/Compile Info/icon.ico"
+   "value": "C:/Users/noah/Documents/VSCode/Hominum-Updater/Compile Info/grassfolder64.ico"
   },
   {
    "optionDest": "name",
-   "value": "HominumUpdater"
+   "value": "Hominum"
   },
   {
    "optionDest": "contents_directory",
@@ -67,11 +67,11 @@
   },
   {
    "optionDest": "datas",
-   "value": "C:/Users/noah/Documents/VSCode/Hominum-Updater/Updater/creds.pkl;."
+   "value": "C:/Users/noah/Documents/VSCode/Hominum-Updater/Compile Info/Include/creds;."
   },
   {
    "optionDest": "datas",
-   "value": "C:/Users/noah/Documents/VSCode/Hominum-Updater/Updater/icon.png;."
+   "value": "C:/Users/noah/Documents/VSCode/Hominum-Updater/Compile Info/Include/README.txt;."
   }
  ],
  "nonPyinstallerOptions": {
