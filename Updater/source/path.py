@@ -87,13 +87,11 @@ def is_valid_mod_path(path: str) -> bool:
     path (str): The path to check.
         
     Returns:
-    - bool: True if the path exists and all files in the directory are jars, False otherwise.
+    - bool: True if the path exists, False otherwise.
     """
     if not os.path.exists(path):
         return False
 
-    if all(file.endswith('.jar') for file in os.listdir(path)):
-        return True
     return False
 
 
