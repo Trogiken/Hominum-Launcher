@@ -92,7 +92,7 @@ def is_valid_mod_path(path: str) -> bool:
     if not os.path.exists(path):
         return False
 
-    return False
+    return True
 
 
 def get_mods_path() -> str:
