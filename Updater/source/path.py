@@ -30,16 +30,15 @@ else:
     APPLICATION_PATH = pathlib.Path(__file__).parents[1]
 
 if os.name == "nt":
-    USER_APP_PATH = os.path.join(os.getenv("APPDATA"), "Hominum-Updater")
+    USER_APP_PATH = os.path.join(os.getenv("APPDATA"), "Hominum")
 elif os.name == "posix":
-    USER_APP_PATH = os.path.join(os.getenv("HOME"), ".hominum-updater")
+    USER_APP_PATH = os.path.join(os.getenv("HOME"), ".hominum")
 else:
     USER_APP_PATH = os.path.join(APPLICATION_PATH, "user_data")
 
 SAVED_PATH = os.path.join(USER_APP_PATH, "mod_paths.pkl")
 
-if not os.path.exists(USER_APP_PATH):
-    os.makedirs(USER_APP_PATH)
+os.makedirs(USER_APP_PATH, exist_ok=True)
 
 
 def get_saved_paths() -> list:
