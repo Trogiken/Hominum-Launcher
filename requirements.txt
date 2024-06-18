@@ -4,3 +4,4 @@ cryptography
 auto-py-to-exe
 pylint
 portablemc[certifi]
+customtkinter
