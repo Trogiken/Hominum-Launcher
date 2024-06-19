@@ -4,3 +4,4 @@ from source import path
 from source import download
 from source import exceptions
 from source import creds
+from source import pmc

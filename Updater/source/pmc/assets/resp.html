@@ -1,0 +1,85 @@
+<html>
+
+<head>
+    <title>Hominum Authentication Forwarding</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+
+<body style="margin: 0; min-height: 100%; min-width: 300px; display: flex; flex-direction: column; font-family: 'Open Sans', sans-serif; background-color: #fffcf9; color: #353746;">
+    <div id="content" class="full" style="position: relative; flex: 1 1 0; padding: 1em 3em 3em 3em; font-size: 1.1em; width: 100%; margin: 0 auto; max-width: 100%; box-sizing: border-box; transition: font-size .2s, padding .2s;">
+        <h2 id="portablemc-authentication-forwarding" style="font-weight: bold; margin: 0.7em 0 0.4em 0; font-size: 1.5em;">Hominum Authentication Forwarding</h2>
+        <ol id="pmc-auth-logs" style="font-size: 1.0em; margin: 0 0 0.7em 0; overflow: auto; word-break: break-word;"></ol>
+
+        <script>
+            const logs = document.getElementById("pmc-auth-logs");
+
+            function log(messageOrChild) {
+                const item = document.createElement("li");
+                if (messageOrChild != null) {
+                    item.textContent = messageOrChild;
+                }
+                logs.appendChild(item);
+                return item;
+            }
+
+            function manual(query) {
+                log("No local launcher detected, if requested you can copy the following code:");
+
+                const code = document.createElement("code");
+                code.textContent = query;
+                log().appendChild(code);
+            }
+
+            function main() {
+                if (window.location.hash.startsWith("#")) {
+                    const query = window.location.hash.substring(1);
+                    const params = new URLSearchParams(query);
+
+                    if (params.has("error")) {
+                        log("Unexpected login error: " + params.get("error_description")[0] + "(" + params.get("error")[0] + ")");
+                        return;
+                    }
+
+                    // The state is set by the launcher and contains the address to its HTTP server.
+                    const state = params.get("state");
+                    if (state != null && state.startsWith("port:")) {
+                        const port = parseInt(state.substring(5));
+                        log("Forwarding request to your local launcher (port " + port + ")");
+                        fetch("http://localhost:" + port + "?" + query, { "method": "GET" })
+                            .then(res => {
+                                const msg = document.createElement("strong");
+                                msg.textContent = "You can close this window and go back to launcher";
+                                log().appendChild(msg);
+                            })
+                            .catch(exc => {
+                                console.debug(exc);
+                                manual(query);
+                            });
+                    } else {
+                        manual(query);
+                    }
+
+                } else {
+                    log("No query string found");
+                }
+            }
+
+            main();
+        </script>
+
+        <blockquote style="margin: 1em 1.5em 1em 0.5em; padding: 0 0 0 1em; border-left: 2px solid #919191; color: #373737; font-style: italic;">
+            <p style="font-size: 1.0em; margin: 0 0 0.7em 0; overflow: auto; word-break: break-word;">This proxy page do not send any token to any server except to the local launcher server
+                to complete the authentication. If you want a more technical explanation, the Microsoft
+                login API redirects here and set the query string as the URL "fragment", or "#", this
+                part is not sent to the server with HTTP. This page only contains a little script that
+                reads this fragment and just forward it to the local launcher, or print it on this page
+                if not possible.</p>
+            <p style="font-size: 1.0em; margin: 0 0 0.7em 0; overflow: auto; word-break: break-word;">If the local launcher is not detected despite it running and waiting for a confirmation,
+                you web-browser may be blocking the request (this has been observed with Brave).
+            </p>
+        </blockquote>
+    </div>
+</body>
+
+</html>

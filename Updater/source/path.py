@@ -29,12 +29,18 @@ if getattr(sys, 'frozen', False):
 else:
     APPLICATION_PATH = pathlib.Path(__file__).parents[1]
 
+MAIN_DIR = pathlib.Path(os.path.join(APPLICATION_PATH, "minecraft"))
+os.makedirs(MAIN_DIR, exist_ok=True)
+
+# TODO: Rename these to WORK_DIR
 if os.name == "nt":
     USER_APP_PATH = os.path.join(os.getenv("APPDATA"), "Hominum")
 elif os.name == "posix":
     USER_APP_PATH = os.path.join(os.getenv("HOME"), ".hominum")
 else:
-    USER_APP_PATH = os.path.join(APPLICATION_PATH, "user_data")
+    USER_APP_PATH = os.path.join(APPLICATION_PATH, "userdata")
+
+USER_APP_PATH = pathlib.Path(USER_APP_PATH)
 
 SAVED_PATH = os.path.join(USER_APP_PATH, "mod_paths.pkl")
 
