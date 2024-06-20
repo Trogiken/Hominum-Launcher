@@ -28,12 +28,14 @@ class LoginWindow(customtkinter.CTkToplevel):
         self.resizable(False, False)
         self.grid_columnconfigure(0, weight=1)  # configure grid system
 
+        # TODO: Center these two widgets in the window
         # email entry
         self.entry = customtkinter.CTkEntry(
             self, width=200, font=SETTINGS.font, placeholder_text="Microsoft Email Address"
         )
         self.entry.grid(row=0, column=0, pady=(20, 0))
         self.entry.bind("<Return>", lambda _: self.login())
+
         # button
         self.button = customtkinter.CTkButton(
             self, text="Login", command=self.login, font=SETTINGS.font
