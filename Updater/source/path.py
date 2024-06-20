@@ -27,12 +27,15 @@ import tkinter
 import tkinter.filedialog
 
 PROGRAM_NAME = "Hominum"
+PROGRAM_NAME_LONG = "Hominum Launcher"
 VERSION = "4.5.3.4"
 
 if getattr(sys, 'frozen', False):
     APPLICATION_DIR = pathlib.Path(sys.executable).parent
 else:
     APPLICATION_DIR = pathlib.Path(__file__).parents[1]
+
+ASSETS_DIR = pathlib.Path(os.path.join(APPLICATION_DIR, "assets"))
 
 if os.name == "nt":
     STORE_DIR = os.path.join(os.getenv("APPDATA"), "Hominum")
@@ -41,6 +44,7 @@ elif os.name == "posix":
 else:
     STORE_DIR = os.path.join(APPLICATION_DIR, "userdata")
 
+STORE_DIR = pathlib.Path(STORE_DIR)
 MAIN_DIR = pathlib.Path(os.path.join(STORE_DIR, "minecraft"))
 WORK_DIR = pathlib.Path(os.path.join(STORE_DIR, "mcdata"))
 
