@@ -73,6 +73,7 @@ class LeftFrame(customtkinter.CTkFrame):
 
     def open_settings(self):
         "TEST"
+        # TODO: Add scaling drop down and add the setting to SETTINGS
         print("settings")
 
 
