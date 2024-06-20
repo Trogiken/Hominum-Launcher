@@ -28,20 +28,17 @@ class LoginWindow(customtkinter.CTkToplevel):
         self.resizable(False, False)
         self.grid_columnconfigure(0, weight=1)  # configure grid system
 
-        # email label
-        self.label = customtkinter.CTkLabel(
-            self, text="Microsoft Email Address", font=SETTINGS.font_large
-        )
-        self.label.grid(row=0, column=0, pady=(20, 0))
         # email entry
-        self.entry = customtkinter.CTkEntry(self, width=200)
-        self.entry.grid(row=1, column=0, pady=(20, 0))
+        self.entry = customtkinter.CTkEntry(
+            self, width=200, font=SETTINGS.font, placeholder_text="Microsoft Email Address"
+        )
+        self.entry.grid(row=0, column=0, pady=(20, 0))
         self.entry.bind("<Return>", lambda _: self.login())
         # button
         self.button = customtkinter.CTkButton(
             self, text="Login", command=self.login, font=SETTINGS.font
         )
-        self.button.grid(row=2, column=0, pady=(20, 0))
+        self.button.grid(row=1, column=0, pady=(20, 0))
 
     def login(self):
         """
