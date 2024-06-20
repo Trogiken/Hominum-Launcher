@@ -19,13 +19,12 @@ import threading
 from queue import Queue
 import urllib.parse
 import webbrowser
-from pathlib import Path
 from typing import cast
 from uuid import uuid4
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from portablemc.auth import MicrosoftAuthSession, AuthDatabase
 from portablemc.standard import Context
-from source.path import PROGRAM_NAME, VERSION
+from source.path import PROGRAM_NAME, VERSION, APPLICATION_DIR
 
 LAUNCHER_NAME, LAUNCHER_VERSION = PROGRAM_NAME, VERSION
 AUTH_DATABASE_FILE_NAME = "portablemc_auth.json"
@@ -33,6 +32,10 @@ CLIENT_ID = "2b4ca0d5-a2f0-42bf-aed1-eeafa1139f26"
 APP_ID = "2b4ca0d5-a2f0-42bf-aed1-eeafa1139f26"
 CODE_REDIRECT_URI = "http://localhost:7969/code"  # URI of your choice
 NONCE = uuid4().hex  # random string
+
+
+# FIXME: When compiled to windowed only, the program doesn't send responses
+# TODO: Run servers in separate threads
 
 
 class AuthenticationHandler:
@@ -160,7 +163,8 @@ class AuthenticationHandler:
             Sends a response with the content-type header set to text/html.
             """
             # read html file
-            file_path = Path(__file__).parent / "assets" / "resp.html"
+            file_path = APPLICATION_DIR / "assets" / "resp.html"
+            print(file_path)
             with open(file_path, "r", encoding="utf-8") as f:
                 html = f.read()
 
