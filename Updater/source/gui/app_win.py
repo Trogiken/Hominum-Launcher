@@ -66,9 +66,9 @@ class LeftFrame(customtkinter.CTkFrame):
         Returns:
         - None
         """
-        SETTINGS.appearance = theme
-        utils.save_settings(SETTINGS)
         new_theme = theme.casefold()
+        SETTINGS.appearance = new_theme
+        utils.save_settings(SETTINGS)
         customtkinter.set_appearance_mode(new_theme)
 
     def open_settings(self):
