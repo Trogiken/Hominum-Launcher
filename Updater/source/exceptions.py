@@ -9,7 +9,7 @@ Exceptions:
 """
 
 import traceback
-from source.path import APPLICATION_PATH
+from source.path import APPLICATION_DIR
 
 
 def write_error_file(exc, val, tb) -> None:
@@ -24,7 +24,7 @@ def write_error_file(exc, val, tb) -> None:
     Returns:
     - None
     """
-    error_file = APPLICATION_PATH / "error.txt"
+    error_file = APPLICATION_DIR / "error.txt"
     with open(error_file, "w", encoding='utf-8') as f:
         f.write("".join(traceback.format_exception(exc, val, tb)))
     print("Error occurred, check error.txt for more information")

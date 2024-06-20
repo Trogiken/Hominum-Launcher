@@ -12,9 +12,9 @@ Functions:
 - get_path_tk() -> str: Return path using tk file dialog
 
 Constants:
-- USER_APP_PATH: The path to the user application folder.
+- WORK_DIR: The path to the user application folder.
 - SAVED_PATH: The path to the saved paths file.
-- APPLICATION_PATH: The path to the application.
+- APPLICATION_DIRH: The path to the application directory.
 """
 
 import os
@@ -25,26 +25,25 @@ import tkinter
 import tkinter.filedialog
 
 if getattr(sys, 'frozen', False):
-    APPLICATION_PATH = pathlib.Path(sys.executable).parent
+    APPLICATION_DIR = pathlib.Path(sys.executable).parent
 else:
-    APPLICATION_PATH = pathlib.Path(__file__).parents[1]
+    APPLICATION_DIR = pathlib.Path(__file__).parents[1]
 
-MAIN_DIR = pathlib.Path(os.path.join(APPLICATION_PATH, "minecraft"))
-os.makedirs(MAIN_DIR, exist_ok=True)
-
-# TODO: Rename these to WORK_DIR
 if os.name == "nt":
-    USER_APP_PATH = os.path.join(os.getenv("APPDATA"), "Hominum")
+    STORE_DIR = os.path.join(os.getenv("APPDATA"), "Hominum")
 elif os.name == "posix":
-    USER_APP_PATH = os.path.join(os.getenv("HOME"), ".hominum")
+    STORE_DIR = os.path.join(os.getenv("HOME"), ".hominum")
 else:
-    USER_APP_PATH = os.path.join(APPLICATION_PATH, "userdata")
+    STORE_DIR = os.path.join(APPLICATION_DIR, "userdata")
 
-USER_APP_PATH = pathlib.Path(USER_APP_PATH)
+MAIN_DIR = pathlib.Path(os.path.join(STORE_DIR, "minecraft"))
+WORK_DIR = pathlib.Path(os.path.join(STORE_DIR, "mcdata"))
 
-SAVED_PATH = os.path.join(USER_APP_PATH, "mod_paths.pkl")
+os.makedirs(STORE_DIR, exist_ok=True)
+os.makedirs(MAIN_DIR, exist_ok=True)
+os.makedirs(WORK_DIR, exist_ok=True)
 
-os.makedirs(USER_APP_PATH, exist_ok=True)
+SAVED_PATH = os.path.join(WORK_DIR, "mod_paths.pkl")
 
 
 def get_saved_paths() -> list:
