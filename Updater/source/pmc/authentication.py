@@ -57,7 +57,7 @@ class AuthenticationHandler:
         Returns:
         - str: The authentication URL.
         """
-        return "https://login.live.com/oauth20_authorize.srf?{}".format(urllib.parse.urlencode({
+        ref = urllib.parse.urlencode({
             "client_id": APP_ID,
             "redirect_uri": CODE_REDIRECT_URI,
             "response_type": "code id_token",
@@ -67,7 +67,8 @@ class AuthenticationHandler:
             "state": "port:8690",
             "prompt": "login",
             "response_mode": "fragment"
-        }))
+        })
+        return f"https://login.live.com/oauth20_authorize.srf?{ref}"
 
     # TODO: Private this
     def run_auth_server(self) -> str:
