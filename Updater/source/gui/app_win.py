@@ -59,7 +59,7 @@ class RightFrame(customtkinter.CTkFrame):
 class CenterFrame(customtkinter.CTkFrame):
     def __init__(self, master):
         super().__init__(master)
-        # TODO: Add tabs, one for whitelisting, one for syncing mods
+        # TODO: Add tabs, one for whitelisting, one for syncing mods. Add a frame to each tab for the content
 
 
 class App(customtkinter.CTk):
