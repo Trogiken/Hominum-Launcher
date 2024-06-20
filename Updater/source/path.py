@@ -17,12 +17,17 @@ Constants:
 - APPLICATION_DIRH: The path to the application directory.
 """
 
+# TODO: Rename this module to constants
+
 import os
 import pathlib
 import sys
 import pickle
 import tkinter
 import tkinter.filedialog
+
+PROGRAM_NAME = "Hominum"
+VERSION = "4.5.3.4"
 
 if getattr(sys, 'frozen', False):
     APPLICATION_DIR = pathlib.Path(sys.executable).parent
