@@ -14,7 +14,8 @@ Constants:
 import customtkinter
 from source.pmc.main import MCManager
 from source import path
-
+from source import exceptions
+from source import gui
 
 PROGRAM_NAME = "Hominum Client"
 VERSION = "4.5.3.4"
@@ -22,23 +23,33 @@ VERSION = "4.5.3.4"
 MAIN_DIR = path.MAIN_DIR
 WORK_DIR = path.USER_APP_PATH
 
+SETTINGS = gui.get_settings()
 
-class MyFrame(customtkinter.CTkFrame):
+
+class LoginFrame(customtkinter.CTkFrame):
     def __init__(self, master, **kwargs):
         super().__init__(master, **kwargs)
-        self.label = customtkinter.CTkLabel(self, text="Enter your email address to login:")
-        self.label.grid(row=0, column=0, padx=20, pady=20)
+        self.grid_columnconfigure(0, weight=1)  # configure grid system
+
+        self.label = customtkinter.CTkLabel(self, text="Enter your microsoft email address", font=(SETTINGS.font_type, SETTINGS.font_size_large))
+        self.label.grid(row=0, column=0, pady=(20, 0))
         # email entry
-        self.entry = customtkinter.CTkEntry(self)
-        self.entry.grid(row=0, column=1, padx=20, pady=20)
+        self.entry = customtkinter.CTkEntry(self, width=200)
+        self.entry.grid(row=1, column=0, pady=(20, 0))
         # button
-        self.button = customtkinter.CTkButton(self, text="Login", command=self.login)
-        self.button.grid(row=1, column=0, padx=20, pady=20)
+        self.button = customtkinter.CTkButton(self, text="Login", command=self.login, font=SETTINGS.font)
+        self.button.grid(row=2, column=0, pady=(20, 0))
 
     def login(self):
         self.label.configure(text="Logging in...")
         pmc = MCManager(email=self.entry.get(), context=(MAIN_DIR, WORK_DIR))
-        print(pmc.authenticate())
+        try:
+            auth_session = pmc.authenticate()
+
+            if auth_session is None:
+                raise exceptions.AuthenticationFailed()
+        except Exception:
+            self.label.configure(text="Login failed. Please try again.")
 
 
 class App(customtkinter.CTk):
@@ -49,7 +60,7 @@ class App(customtkinter.CTk):
         self.grid_rowconfigure(0, weight=1)  # configure grid system
         self.grid_columnconfigure(0, weight=1)
 
-        self.my_frame = MyFrame(master=self)
+        self.my_frame = LoginFrame(master=self)
         self.my_frame.grid(row=0, column=0, padx=20, pady=20, sticky="nsew")
 
 

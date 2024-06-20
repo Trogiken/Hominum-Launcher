@@ -125,5 +125,8 @@ class AuthenticationHandler:
         # Get the result from the queue
         code = q.get()
 
+        if code is None:
+            return None
+
         # TODO: Make sure that then this succeeds, it stores the session in the correct auth database
         return MicrosoftAuthSession.authenticate(self.auth_database.get_client_id(), APP_ID, code, CODE_REDIRECT_URI)

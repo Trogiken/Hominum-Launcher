@@ -35,3 +35,9 @@ class InvalidModsPath(Exception):
     """
     Raised when the mods path is invalid.
     """
+
+
+class AuthenticationFailed(Exception):
+    """
+    Raised when the microsoft authentication fails.
+    """
