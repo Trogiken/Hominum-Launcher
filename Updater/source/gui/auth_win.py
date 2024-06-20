@@ -1,3 +1,10 @@
+"""
+This module contains the AuthWindow class.
+
+Classes:
+- AuthWindow: Toplevel window for authenticating the user with the Minecraft account.
+"""
+
 import threading
 import customtkinter
 from source.gui import utils
@@ -9,6 +16,13 @@ SETTINGS = utils.get_settings()
 
 
 class AuthWindow(customtkinter.CTkToplevel):
+    """
+    Toplevel window for authenticating the user with a Minecraft account.
+
+    Methods:
+    - __init__: Initializes the AuthWindow instance.
+    - auth: Runs the authentication process.
+    """
     def __init__(self, master, email, **kwargs):
         super().__init__(master, **kwargs)
         self.title("Authentication")
@@ -18,7 +32,9 @@ class AuthWindow(customtkinter.CTkToplevel):
         self.resizable(False, False)
         self.columnconfigure(0, weight=1)  # configure grid system
 
-        self.label = customtkinter.CTkLabel(self, text=f"Logging into {self.email}", font=SETTINGS.font_large)
+        self.label = customtkinter.CTkLabel(
+            self, text=f"Logging into {self.email}", font=SETTINGS.font_large
+        )
         self.label.grid(row=0, column=0, pady=(20, 0))
 
         self.progress = customtkinter.CTkProgressBar(self, mode="indeterminate")
@@ -35,6 +51,7 @@ class AuthWindow(customtkinter.CTkToplevel):
         self.destroy()
 
     def auth(self):
+        """Runs the authentication process. WORKING PROGRESS"""
         pmc = MCManager(email=self.email, context=(path.MAIN_DIR, path.WORK_DIR))
         try:
             auth_session = pmc.authenticate()

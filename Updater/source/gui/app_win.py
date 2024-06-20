@@ -1,3 +1,10 @@
+"""
+Main window of the application.
+
+classes:
+- App: The main window of the application.
+"""
+
 import customtkinter
 from source.path import PROGRAM_NAME
 from source.gui.login_win import LoginWindow
@@ -7,6 +14,7 @@ SETTINGS = utils.get_settings()
 
 
 class App(customtkinter.CTk):
+    """The main window of the application."""
     def __init__(self):
         super().__init__()
         self.title(PROGRAM_NAME)

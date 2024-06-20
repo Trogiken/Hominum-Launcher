@@ -1,14 +1,5 @@
 """
-This module contains the main functionality for the Hominum Client program.
-It provides a GUI interface for syncing mods with a server.
-
-Functions:
-- sync_mods(mods_path: str) -> None: Syncs mods with the server.
-- main() -> None: Runs the main GUI program.
-
-Constants:
-- PROGRAM_NAME: The name of the program.
-- VERSION: The version of the program.
+This module provides the main entry point for the application.
 """
 
 from source.gui.app_win import App
