@@ -35,6 +35,9 @@ NONCE = uuid4().hex  # random string
 
 
 # FIXME: When compiled to windowed only, the program doesn't send responses
+# FIXME: The above: There are two threads always waiting to finish network I/O,
+# FIXME: Even if the program is closed
+
 # TODO: Run servers in separate threads
 
 
