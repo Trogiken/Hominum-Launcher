@@ -32,6 +32,17 @@ class LeftFrame(customtkinter.CTkFrame):
         )
         self.version_label.grid(row=1, column=0, padx=24, pady=0, sticky="sw")
 
+        # Theme Drop Down
+        self.theme_menu_var = customtkinter.StringVar(value=SETTINGS.appearance.title())
+        self.theme_menu = customtkinter.CTkOptionMenu(
+            self,
+            values=["System", "Dark", "Light"],
+            font=SETTINGS.font_normal,
+            command=self.theme_menu_callback,
+            variable=self.theme_menu_var
+        )
+        self.theme_menu.grid(row=2, column=0, padx=20, pady=(0, 20), sticky="s")
+
         # Settings Button
         self.settings_button_photo = customtkinter.CTkImage(
             utils.get_image("settings.png").resize(SETTINGS.image_normal)
@@ -43,7 +54,22 @@ class LeftFrame(customtkinter.CTkFrame):
             font=SETTINGS.font_normal,
             command=self.open_settings
         )
-        self.settings_button.grid(row=2, column=0, padx=20, pady=20, sticky="s")
+        self.settings_button.grid(row=3, column=0, padx=20, pady=(0, 20), sticky="s")
+
+    def theme_menu_callback(self, theme: str):
+        """
+        Changes and saves the current program appearance
+        
+        Parmeters:
+        - theme (str): Theme to set.
+
+        Returns:
+        - None
+        """
+        SETTINGS.appearance = theme
+        utils.save_settings(SETTINGS)
+        new_theme = theme.casefold()
+        customtkinter.set_appearance_mode(new_theme)
 
     def open_settings(self):
         "TEST"
@@ -73,6 +99,9 @@ class App(customtkinter.CTk):
         self.grid_columnconfigure(0, weight=0)
         self.grid_columnconfigure(1, weight=1)
         self.grid_columnconfigure(2, weight=0)
+
+        # Load settings
+        customtkinter.set_appearance_mode(SETTINGS.appearance)
 
         # TODO: if not logged in show login window and wait for login
         self.login_window = LoginWindow(master=self)
