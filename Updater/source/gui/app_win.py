@@ -53,11 +53,13 @@ class LeftFrame(customtkinter.CTkFrame):
 class RightFrame(customtkinter.CTkFrame):
     def __init__(self, master):
         super().__init__(master)
+        # TODO: Display User account info and logout button
 
 
 class CenterFrame(customtkinter.CTkFrame):
     def __init__(self, master):
         super().__init__(master)
+        # TODO: Add tabs, one for whitelisting, one for syncing mods
 
 
 class App(customtkinter.CTk):
