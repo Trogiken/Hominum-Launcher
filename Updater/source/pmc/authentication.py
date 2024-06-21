@@ -205,6 +205,10 @@ class AuthenticationHandler:
         # Get the result from the queue
         code = q.get()
 
+        httpd.shutdown()
+        web_server.join()
+        auth_server.join()
+
         if code is None:
             return None
 
