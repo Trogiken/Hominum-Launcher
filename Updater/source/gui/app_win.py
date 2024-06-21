@@ -8,6 +8,7 @@ classes:
 import customtkinter
 from source import path
 from source.gui.login_win import LoginWindow
+from source.gui.app_settings_win import SettingsWindow
 from source.gui import utils
 
 SETTINGS = utils.get_settings()
@@ -72,9 +73,10 @@ class LeftFrame(customtkinter.CTkFrame):
         customtkinter.set_appearance_mode(new_theme)
 
     def open_settings(self):
-        "TEST"
-        # TODO: Add scaling drop down and add the setting to SETTINGS
-        print("settings")
+        """Opens the settings window."""
+        settings_window = SettingsWindow(master=self.master)
+        settings_window.transient(self)
+        self.wait_window(settings_window)
 
 
 class RightFrame(customtkinter.CTkFrame):
@@ -110,7 +112,6 @@ class App(customtkinter.CTk):
         self.wait_window(self.login_window)
 
         # TODO: if logged in show main window, else show error message and repeat login
-        self.focus_force()
         self.settings_frame = LeftFrame(self)
         self.settings_frame.grid(row=0, column=0, padx=(10, 0), pady=10, sticky="nsw")
 
