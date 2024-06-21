@@ -141,8 +141,6 @@ class AuthenticationHandler:
 
             id_token = qs["id_token"][0]
             code = qs["code"][0]
-            print("ID Token:", id_token)
-            print("Code:", code)
 
             if not MicrosoftAuthSession.check_token_id(id_token, self.email, NONCE):
                 return None
@@ -167,7 +165,6 @@ class AuthenticationHandler:
             """
             # read html file
             file_path = APPLICATION_DIR / "assets" / "resp.html"
-            print(file_path)
             with open(file_path, "r", encoding="utf-8") as f:
                 html = f.read()
 
@@ -186,7 +183,6 @@ class AuthenticationHandler:
         """
         url = self.gen_auth_url()
         webbrowser.open(url)
-        print("Opened browser to", url)
 
         # Create a Queue object
         q = Queue()
