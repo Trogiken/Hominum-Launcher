@@ -5,9 +5,9 @@ Classes:
 """
 
 import customtkinter
-from source.gui import utils
+from source import utils
 
-SETTINGS = utils.get_settings().GUISettings
+SETTINGS = utils.get_settings()
 
 
 class PopupWindow(customtkinter.CTkToplevel):
@@ -32,12 +32,12 @@ class PopupWindow(customtkinter.CTkToplevel):
         self.protocol("WM_DELETE_WINDOW", self.destroy)  # Handle the close event
 
         self.label = customtkinter.CTkLabel(
-            self, text=message, font=SETTINGS.font_large
+            self, text=message, font=SETTINGS.gui.font_large
         )
         self.label.grid(row=0, column=0, pady=(20, 0))
 
         self.button = customtkinter.CTkButton(
-            self, text="OK", command=self.destroy, font=SETTINGS.font_normal
+            self, text="OK", command=self.destroy, font=SETTINGS.gui.font_normal
         )
         self.button.grid(row=1, column=0, pady=(20, 0))
 

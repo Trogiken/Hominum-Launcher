@@ -7,13 +7,14 @@ classes:
 
 import customtkinter
 from source.pmc import MCManager
+from source.pmc.authentication import AuthenticationHandler
 from source import path
 from source.gui.login_win import LoginWindow
 from source.gui.app_settings_win import SettingsWindow
 from source.gui.app_install_win import VersionInstallWindow
-from source.gui import utils
+from source import utils
 
-SETTINGS = utils.get_settings().GUISettings
+SETTINGS = utils.get_settings()
 
 
 class LeftFrame(customtkinter.CTkFrame):
@@ -25,22 +26,22 @@ class LeftFrame(customtkinter.CTkFrame):
 
         # Title
         self.title_label = customtkinter.CTkLabel(
-            self, text=path.PROGRAM_NAME_LONG, font=SETTINGS.font_large
+            self, text=path.PROGRAM_NAME_LONG, font=SETTINGS.gui.font_large
         )
         self.title_label.grid(row=0, column=0, padx=20, pady=(20, 0), sticky="n")
 
         # Version
         self.version_label = customtkinter.CTkLabel(
-            self, text=f"v{path.VERSION}", font=SETTINGS.font_small
+            self, text=f"v{path.VERSION}", font=SETTINGS.gui.font_small
         )
         self.version_label.grid(row=1, column=0, padx=24, pady=0, sticky="sw")
 
         # Theme Drop Down
-        self.theme_menu_var = customtkinter.StringVar(value=SETTINGS.appearance.title())
+        self.theme_menu_var = customtkinter.StringVar(value=SETTINGS.gui.appearance.title())
         self.theme_menu = customtkinter.CTkOptionMenu(
             self,
             values=["System", "Dark", "Light"],
-            font=SETTINGS.font_normal,
+            font=SETTINGS.gui.font_normal,
             command=self.theme_menu_callback,
             variable=self.theme_menu_var
         )
@@ -48,13 +49,13 @@ class LeftFrame(customtkinter.CTkFrame):
 
         # Settings Button
         self.settings_button_photo = customtkinter.CTkImage(
-            utils.get_image("settings.png").resize(SETTINGS.image_normal)
+            utils.get_image("settings.png").resize(SETTINGS.gui.image_normal)
         )
         self.settings_button = customtkinter.CTkButton(
             self,
             image=self.settings_button_photo,
             text="Settings",
-            font=SETTINGS.font_normal,
+            font=SETTINGS.gui.font_normal,
             command=self.open_settings
         )
         self.settings_button.grid(row=3, column=0, padx=20, pady=(0, 20), sticky="s")
@@ -70,7 +71,7 @@ class LeftFrame(customtkinter.CTkFrame):
         - None
         """
         new_theme = theme.casefold()
-        SETTINGS.appearance = new_theme
+        SETTINGS.gui.appearance = new_theme
         utils.save_settings(SETTINGS)
         customtkinter.set_appearance_mode(new_theme)
 
@@ -94,26 +95,27 @@ class CenterFrame(customtkinter.CTkFrame):
         self.grid_rowconfigure(0, weight=1)
         # TODO: Add tabs, one for whitelisting, one for syncing mods. Add a frame to each tab for the content
         self.play_button_photo = customtkinter.CTkImage(
-            utils.get_image("play.png").resize(SETTINGS.image_large)
+            utils.get_image("play.png").resize(SETTINGS.gui.image_large)
         )
         self.play_button = customtkinter.CTkButton(
             self,
             image=self.play_button_photo,
             text="Play",
-            font=SETTINGS.font_large,
+            font=SETTINGS.gui.font_large,
             command=self.run_game
         )
         self.play_button.grid(row=0, column=0, padx=20, pady=20, sticky="nsew")
 
     def run_game(self):
         """Start Minecraft"""
-        pmc = MCManager(context=(path.MAIN_DIR, path.WORK_DIR))
-        version = pmc.provision_version()
-        if MCManager.auth_session is None:
-            print("No auth session")
+        pmc = MCManager(context=path.CONTEXT)
+        auth_handler = AuthenticationHandler(email=SETTINGS.user.email, context=path.CONTEXT)
+        version = pmc.provision_version("1.20.6")
+        if auth_handler.refresh_session() is None:
+            print("No Auth")
             return
-        version.auth_session = MCManager.auth_session
-        VersionInstallWindow(master=self.master, fabric_version=version)  # FIXME: Full install is buggy
+        version.auth_session = auth_handler.refresh_session()
+        VersionInstallWindow(master=self.master, version=version)  # FIXME: Full install is buggy
         # TODO: Make sure the GUI doesn't freeze even if a game is running, also disable play button
         MCManager.environment.run()
 
@@ -131,7 +133,7 @@ class App(customtkinter.CTk):
         self.grid_columnconfigure(2, weight=0)
 
         # Load settings
-        customtkinter.set_appearance_mode(SETTINGS.appearance)
+        customtkinter.set_appearance_mode(SETTINGS.gui.appearance)
 
         # TODO: if not logged in show login window and wait for login
         self.login_window = LoginWindow(master=self)

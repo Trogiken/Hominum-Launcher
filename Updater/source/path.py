@@ -25,6 +25,7 @@ import sys
 import pickle
 import tkinter
 import tkinter.filedialog
+from portablemc.standard import Context
 
 PROGRAM_NAME = "Hominum"
 PROGRAM_NAME_LONG = "Hominum Launcher"
@@ -47,6 +48,7 @@ else:
 STORE_DIR = pathlib.Path(STORE_DIR)
 MAIN_DIR = pathlib.Path(os.path.join(STORE_DIR, "minecraft"))
 WORK_DIR = pathlib.Path(os.path.join(STORE_DIR, "mcdata"))
+CONTEXT = Context(MAIN_DIR, WORK_DIR)
 
 os.makedirs(STORE_DIR, exist_ok=True)
 os.makedirs(MAIN_DIR, exist_ok=True)

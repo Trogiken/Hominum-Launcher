@@ -6,10 +6,10 @@ Classes:
 """
 
 import customtkinter
-from source.gui import utils
+from source import utils
 from source.gui.popup_win import PopupWindow
 
-SETTINGS = utils.get_settings().GUISettings
+SETTINGS = utils.get_settings()
 
 
 class GUISettingsFrame(customtkinter.CTkFrame):
@@ -20,7 +20,7 @@ class GUISettingsFrame(customtkinter.CTkFrame):
 
         # Frame Title
         self.title_label = customtkinter.CTkLabel(
-            self, text="GUI Settings", font=SETTINGS.font_large
+            self, text="GUI Settings", font=SETTINGS.gui.font_large
         )
         self.title_label.grid(row=0, column=0, padx=20, pady=20, sticky="n")
 
@@ -28,7 +28,7 @@ class GUISettingsFrame(customtkinter.CTkFrame):
         self.reset_gui_settings_button = customtkinter.CTkButton(
             self,
             text="Reset GUI",
-            font=SETTINGS.font_normal,
+            font=SETTINGS.gui.font_normal,
             command=self.reset_gui_settings
         )
         self.reset_gui_settings_button.grid(row=1, column=0, padx=20, pady=(0, 20), sticky="s")

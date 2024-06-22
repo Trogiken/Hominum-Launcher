@@ -2,10 +2,10 @@ import threading
 import customtkinter
 from portablemc.fabric import FabricVersion
 from portablemc.standard import Watcher, DownloadCompleteEvent, DownloadProgressEvent, DownloadStartEvent
-from source.gui import utils
+from source import utils
 from source.pmc import MCManager
 
-SETTINGS = utils.get_settings().GUISettings
+SETTINGS = utils.get_settings()
 
 
 class InstallWatcher(Watcher):
@@ -25,10 +25,10 @@ class InstallWatcher(Watcher):
 
 
 class VersionInstallWindow(customtkinter.CTkToplevel):
-    def __init__(self, master, fabric_version: FabricVersion, **kwargs):
+    def __init__(self, master, version: FabricVersion, **kwargs):
         super().__init__(master, **kwargs)
         self.title("Fabric Installation")
-        self.fabric_version = fabric_version
+        self.version = version
         self.geometry("500x150")
         self.resizable(False, False)
         self.columnconfigure(0, weight=1)  # configure grid system
@@ -42,7 +42,7 @@ class VersionInstallWindow(customtkinter.CTkToplevel):
 
         # Item Download Label
         self.download_item_label = customtkinter.CTkLabel(
-            self, text="Download Starting", font=SETTINGS.font_normal
+            self, text="Download Starting", font=SETTINGS.gui.font_normal
         )
         self.download_item_label.grid(row=0, column=0, padx=20, pady=20, sticky="ew")
 
@@ -62,7 +62,7 @@ class VersionInstallWindow(customtkinter.CTkToplevel):
 
     def install(self):
         install_watcher = InstallWatcher(self)
-        MCManager.environment = self.fabric_version.install(watcher=install_watcher)
+        MCManager.environment = self.version.install(watcher=install_watcher)
 
     def update_item(self, text):
         self.download_item_label.configure(text=text)

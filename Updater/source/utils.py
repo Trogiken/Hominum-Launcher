@@ -5,9 +5,10 @@ Functions:
 - get_settings() -> GUISettings: Get the settings from the settings file.
 - save_settings(settings: GUISettings) -> pathlib.Path: Save the settings to the settings file.
 - reset_settings() -> GUISettings: Reset the settings to the default values.
+- get_image(image_name: str) -> Image: Get the image from the assets directory.
 
 Classes:
-- GUISettings: Stores the settings for the GUI.
+- Settings: Stores the settings for the program.
 
 Constants:
 - SETTINGS_FILENAME: The name of the settings file.
@@ -17,7 +18,7 @@ Constants:
 import os
 import pickle
 import pathlib
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from PIL import Image
 from source import path
 
@@ -48,7 +49,7 @@ class Settings:
     class UserSettings:
         """Stores the settings for the user."""
         email: str = ""
-        jvm_args: list = [
+        jvm_args: list = field(default_factory=lambda: [
             "-Xmx2G",
             "-XX:+UnlockExperimentalVMOptions",
             "-XX:+UseG1GC",
@@ -56,7 +57,11 @@ class Settings:
             "-XX:G1ReservePercent=20",
             "-XX:MaxGCPauseMillis=50",
             "-XX:G1HeapRegionSize=32M"
-        ]
+        ])
+        # TODO: Add whitelist mods here also
+
+    gui: GUISettings = GUISettings()
+    user: UserSettings = UserSettings()
 
 
 def reset_settings() -> Settings:

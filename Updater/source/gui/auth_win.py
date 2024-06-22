@@ -7,12 +7,12 @@ Classes:
 
 import threading
 import customtkinter
-from source.gui import utils
-from source.pmc import MCManager
+from source import utils
+from source.pmc import AuthenticationHandler
 from source import path
 from source import exceptions
 
-SETTINGS = utils.get_settings().GUISettings
+SETTINGS = utils.get_settings()
 
 
 class AuthWindow(customtkinter.CTkToplevel):
@@ -38,7 +38,7 @@ class AuthWindow(customtkinter.CTkToplevel):
         self.protocol("WM_DELETE_WINDOW", self.destroy)  # Handle the close event
 
         self.label = customtkinter.CTkLabel(
-            self, text=f"Logging into {self.email}", font=SETTINGS.font_large
+            self, text=f"Logging into {self.email}", font=SETTINGS.gui.font_large
         )
         self.label.grid(row=0, column=0, pady=(20, 0))
 
@@ -57,12 +57,15 @@ class AuthWindow(customtkinter.CTkToplevel):
 
     def auth(self):
         """Runs the authentication process. WORKING PROGRESS"""
-        pmc = MCManager(context=(path.MAIN_DIR, path.WORK_DIR))
+        auth_handler = AuthenticationHandler(email=self.email, context=path.CONTEXT)
         try:
-            pmc.authenticate(self.email)
+            session = auth_handler.authenticate()
 
-            if MCManager.auth_session is None:
+            if session is None:
                 raise exceptions.AuthenticationFailed("No auth session")
+
+            SETTINGS.user.email = self.email
+            utils.save_settings(SETTINGS)
         except Exception:
             # TODO: Handle this
             print("Login failed")
