@@ -36,12 +36,11 @@ class GUISettingsFrame(customtkinter.CTkFrame):
     def reset_gui_settings(self):
         """Reset the GUI settings to the default values."""
         utils.reset_settings()
-        popup = PopupWindow(
+        PopupWindow(
             master=self.master,
             title="Settings Reset",
             message="The GUI settings have been reset to default."
         )
-        self.wait_window(popup)
 
 
 class SettingsWindow(customtkinter.CTkToplevel):
