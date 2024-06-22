@@ -20,14 +20,14 @@ class GUISettingsFrame(customtkinter.CTkFrame):
 
         # Frame Title
         self.title_label = customtkinter.CTkLabel(
-            self, text="GUI Settings", font=SETTINGS.gui.font_large
+            self, text="General", font=SETTINGS.gui.font_large
         )
         self.title_label.grid(row=0, column=0, padx=20, pady=20, sticky="n")
 
         # Reset GUI Settings Button
         self.reset_gui_settings_button = customtkinter.CTkButton(
             self,
-            text="Reset GUI",
+            text="Reset Settings",
             font=SETTINGS.gui.font_normal,
             command=self.reset_gui_settings
         )

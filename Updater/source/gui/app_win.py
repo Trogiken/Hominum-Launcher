@@ -21,6 +21,7 @@ class LeftFrame(customtkinter.CTkFrame):
     """This frame contains a settings icon and functions."""
     def __init__(self, master):
         super().__init__(master)
+        self.settings_window = None
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(2, weight=1)
 
@@ -77,9 +78,16 @@ class LeftFrame(customtkinter.CTkFrame):
 
     def open_settings(self):
         """Opens the settings window."""
-        settings_window = SettingsWindow(master=self.master)
-        settings_window.transient(self)
-        self.wait_window(settings_window)
+        # check if settings window already exists
+        if self.settings_window is not None and self.settings_window.winfo_exists():
+            # If the settings window exists and is open, bring it to the front
+            self.settings_window.lift()
+        else:
+            # Otherwise, create a new settings window
+            self.settings_window = SettingsWindow(master=self.master)
+            self.settings_window.transient(self)
+            self.wait_window(self.settings_window)
+            self.settings_window = None  # Reset the attribute when the window is closed
 
 
 class RightFrame(customtkinter.CTkFrame):
