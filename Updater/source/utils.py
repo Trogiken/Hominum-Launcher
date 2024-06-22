@@ -26,11 +26,12 @@ from source import path
 SETTINGS_FILENAME = "settings.pkl"
 SETTINGS_PATH = pathlib.Path(os.path.join(path.STORE_DIR, SETTINGS_FILENAME))
 
-@dataclass
+# TODO: Turn this into a normal class and put the module functions in it
 class Settings:
     """Stores the settings for the program."""
+
     @dataclass
-    class GUISettings:
+    class _GUISettings:
         """Stores the settings for the GUI."""
         font_type: str = "Helvetica"
         font_size_small: int = 12
@@ -46,7 +47,7 @@ class Settings:
         image_large: tuple = (24, 24)
 
     @dataclass
-    class UserSettings:
+    class _UserSettings:
         """Stores the settings for the user."""
         email: str = ""
         jvm_args: list = field(default_factory=lambda: [
@@ -59,51 +60,63 @@ class Settings:
             "-XX:G1HeapRegionSize=32M"
         ])
         # TODO: Add whitelist mods here also
+    
+    @property
+    def gui(self) -> _GUISettings:
+        pass
 
-    gui: GUISettings = field(default_factory=GUISettings)
-    user: UserSettings = field(default_factory=UserSettings)
+    @property
+    def user(self) -> _UserSettings:
+        pass
+
+    @gui.setter
+    def gui(self, value: _GUISettings) -> None:
+        pass
+
+    @user.setter
+    def user(self, value: _UserSettings) -> None:
+        pass
+
+    def reset_settings(self) -> self:
+        """
+        Reset the settings to the default values.
+
+        Returns:
+        - GUISettings: The default settings.
+        """
+        settings = Settings()
+        save_settings(settings)
+        return settings
 
 
-def reset_settings() -> Settings:
-    """
-    Reset the settings to the default values.
+    def load_settings() -> self:
+        """
+        Get the settings from the settings file.
 
-    Returns:
-    - GUISettings: The default settings.
-    """
-    settings = Settings()
-    save_settings(settings)
-    return settings
+        Returns:
+        - GUISettings: The settings.
+        """
+        if not os.path.exists(SETTINGS_PATH):
+            with open(SETTINGS_PATH, "wb") as f:
+                pickle.dump(Settings(), f)
+            return Settings()
+
+        with open(SETTINGS_PATH, "rb") as f:
+            return pickle.load(f)
 
 
-def get_settings() -> Settings:
-    """
-    Get the settings from the settings file.
-
-    Returns:
-    - GUISettings: The settings.
-    """
-    if not os.path.exists(SETTINGS_PATH):
+    def save_settings(self) -> pathlib.Path:
+        """
+        Save the settings to the settings file.
+        
+        Parameters:
+        - settings (GUISettings): The settings to save.
+        
+        Returns:
+        - Path: The path to the settings file."""
         with open(SETTINGS_PATH, "wb") as f:
-            pickle.dump(Settings(), f)
-        return Settings()
-
-    with open(SETTINGS_PATH, "rb") as f:
-        return pickle.load(f)
-
-
-def save_settings(settings: Settings) -> pathlib.Path:
-    """
-    Save the settings to the settings file.
-    
-    Parameters:
-    - settings (GUISettings): The settings to save.
-    
-    Returns:
-    - Path: The path to the settings file."""
-    with open(SETTINGS_PATH, "wb") as f:
-        pickle.dump(settings, f)
-    return SETTINGS_PATH
+            pickle.dump(settings, f)
+        return SETTINGS_PATH
 
 
 def get_image(image_name: str) -> Image.Image:
