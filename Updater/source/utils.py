@@ -60,8 +60,8 @@ class Settings:
         ])
         # TODO: Add whitelist mods here also
 
-    gui: GUISettings = GUISettings()
-    user: UserSettings = UserSettings()
+    gui: GUISettings = field(default_factory=GUISettings)
+    user: UserSettings = field(default_factory=UserSettings)
 
 
 def reset_settings() -> Settings:
