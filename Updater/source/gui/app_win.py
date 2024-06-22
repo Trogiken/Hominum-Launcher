@@ -114,7 +114,7 @@ class CenterFrame(customtkinter.CTkFrame):
             return
         version.auth_session = MCManager.auth_session
         VersionInstallWindow(master=self.master, fabric_version=version)  # FIXME: Full install is buggy
-        # TODO: Make sure the GUI doesn't freeze even if a game is running
+        # TODO: Make sure the GUI doesn't freeze even if a game is running, also disable play button
         MCManager.environment.run()
 
 
