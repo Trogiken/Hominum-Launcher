@@ -42,9 +42,6 @@ class LoginWindow(customtkinter.CTkToplevel):
         )
         self.button.grid(row=1, column=0, pady=(20, 0))
 
-        # focus on the entry widget
-        self.after(100, lambda: self.entry.focus_set())
-
     def login(self):
         """
         Handles the login process.
@@ -53,6 +50,5 @@ class LoginWindow(customtkinter.CTkToplevel):
         to initiate the authentication process. Destroys the current login window.
         """
         self.button.configure(state="disabled")
-        # create top level window
         self.auth_window = AuthWindow(master=self.master, email=self.entry.get())
         self.destroy()

@@ -57,12 +57,12 @@ class AuthWindow(customtkinter.CTkToplevel):
 
     def auth(self):
         """Runs the authentication process. WORKING PROGRESS"""
-        pmc = MCManager(email=self.email, context=(path.MAIN_DIR, path.WORK_DIR))
+        pmc = MCManager(context=(path.MAIN_DIR, path.WORK_DIR))
         try:
-            auth_session = pmc.authenticate()
-            print(auth_session)
+            pmc.authenticate(self.email)
 
-            if auth_session is None:
-                raise exceptions.AuthenticationFailed("Auth session is None")
+            if MCManager.auth_session is None:
+                raise exceptions.AuthenticationFailed("No auth session")
         except Exception:
+            # TODO: Handle this
             print("Login failed")

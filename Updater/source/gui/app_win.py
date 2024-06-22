@@ -6,9 +6,11 @@ classes:
 """
 
 import customtkinter
+from source.pmc import MCManager
 from source import path
 from source.gui.login_win import LoginWindow
 from source.gui.app_settings_win import SettingsWindow
+from source.gui.app_install_win import VersionInstallWindow
 from source.gui import utils
 
 SETTINGS = utils.get_settings()
@@ -88,7 +90,32 @@ class RightFrame(customtkinter.CTkFrame):
 class CenterFrame(customtkinter.CTkFrame):
     def __init__(self, master):
         super().__init__(master)
+        self.grid_columnconfigure(0, weight=1)
+        self.grid_rowconfigure(0, weight=1)
         # TODO: Add tabs, one for whitelisting, one for syncing mods. Add a frame to each tab for the content
+        self.play_button_photo = customtkinter.CTkImage(
+            utils.get_image("play.png").resize(SETTINGS.image_large)
+        )
+        self.play_button = customtkinter.CTkButton(
+            self,
+            image=self.play_button_photo,
+            text="Play",
+            font=SETTINGS.font_large,
+            command=self.run_game
+        )
+        self.play_button.grid(row=0, column=0, padx=20, pady=20, sticky="nsew")
+
+    def run_game(self):
+        """Start Minecraft"""
+        pmc = MCManager(context=(path.MAIN_DIR, path.WORK_DIR))
+        version = pmc.provision_version()
+        if MCManager.auth_session is None:
+            print("No auth session")
+            return
+        version.auth_session = MCManager.auth_session
+        VersionInstallWindow(master=self.master, fabric_version=version)  # FIXME: Full install is buggy
+        # TODO: Make sure the GUI doesn't freeze even if a game is running
+        MCManager.environment.run()
 
 
 class App(customtkinter.CTk):

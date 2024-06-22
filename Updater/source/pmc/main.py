@@ -1,6 +1,6 @@
 """This module handles PortableMC"""
 
-from portablemc.standard import Context, Version
+from portablemc.standard import Context, Environment
 from portablemc.fabric import FabricVersion
 from portablemc.auth import MicrosoftAuthSession
 from source.pmc.authentication import AuthenticationHandler
@@ -8,12 +8,14 @@ from source.pmc.authentication import AuthenticationHandler
 
 class MCManager:
     """MCManager is a class that handles PortableMC."""
-    def __init__(self, email: str, context: tuple[str, str]):
-        self.email = email
-        self.context = Context(*context)
-        self.auth_handler = AuthenticationHandler(self.email, self.context)
+    # TODO: Better way of doing this
+    auth_session: MicrosoftAuthSession = None
+    environment: Environment = None
 
-    def provision_version(self) -> Version:
+    def __init__(self, context: tuple[str, str]):
+        self.context = Context(*context)
+
+    def provision_version(self) -> FabricVersion:
         """
         Provisions a version for PortableMC.
 
@@ -21,15 +23,18 @@ class MCManager:
         - context (Context): The context for PortableMC.
 
         Returns:
-        - Version: The version for PortableMC.
+        - FabricVersion: The version for PortableMC.
         """
         return FabricVersion.with_fabric("1.20.6", context=self.context)
 
-    def authenticate(self) -> MicrosoftAuthSession:
+    def authenticate(self, email: str) -> MicrosoftAuthSession:
         """
         Authenticates the user.
 
         Returns:
         - MicrosoftAuthSession: The Microsoft authentication session.
         """
-        return self.auth_handler.microsoft_authenticate()
+        auth_handler = AuthenticationHandler(email, self.context)
+        auth_session = auth_handler.microsoft_authenticate()
+        MCManager.auth_session = auth_session
+        return auth_session

@@ -10,10 +10,10 @@ from source.gui.app_win import App
 
 
 if __name__ == "__main__":
-    original_stdout = sys.stdout
-    original_stderr = sys.stderr
-    sys.stdout = open(os.devnull, 'w', encoding='utf-8')
-    sys.stderr = open(os.devnull, 'w', encoding='utf-8')
+    # original_stdout = sys.stdout
+    # original_stderr = sys.stderr
+    # sys.stdout = open(os.devnull, 'w', encoding='utf-8')
+    # sys.stderr = open(os.devnull, 'w', encoding='utf-8')
 
     try:
         app = App()
@@ -21,5 +21,5 @@ if __name__ == "__main__":
     finally:
         sys.stdout.close()
         sys.stderr.close()
-        sys.stdout = original_stdout
-        sys.stderr = original_stderr
+        # sys.stdout = original_stdout
+        # sys.stderr = original_stderr
