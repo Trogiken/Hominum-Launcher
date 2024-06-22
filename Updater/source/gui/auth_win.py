@@ -26,11 +26,16 @@ class AuthWindow(customtkinter.CTkToplevel):
     def __init__(self, master, email, **kwargs):
         super().__init__(master, **kwargs)
         self.title("Authentication")
-        self.focus_set()
         self.email = email
         self.geometry("400x100")
         self.resizable(False, False)
         self.columnconfigure(0, weight=1)  # configure grid system
+
+        # Make the window modal
+        self.transient(master)  # Set to be a transient window of the master window
+        self.grab_set()  # Direct all events to this window
+
+        self.protocol("WM_DELETE_WINDOW", self.destroy)  # Handle the close event
 
         self.label = customtkinter.CTkLabel(
             self, text=f"Logging into {self.email}", font=SETTINGS.font_large
