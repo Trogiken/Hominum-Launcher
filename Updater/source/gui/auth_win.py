@@ -12,7 +12,7 @@ from source.pmc import MCManager
 from source import path
 from source import exceptions
 
-SETTINGS = utils.get_settings()
+SETTINGS = utils.get_settings().GUISettings
 
 
 class AuthWindow(customtkinter.CTkToplevel):

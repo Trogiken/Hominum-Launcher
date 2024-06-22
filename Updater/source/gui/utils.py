@@ -22,40 +22,56 @@ from PIL import Image
 from source import path
 
 
-SETTINGS_FILENAME = "gui-settings.pkl"
+SETTINGS_FILENAME = "settings.pkl"
 SETTINGS_PATH = pathlib.Path(os.path.join(path.STORE_DIR, SETTINGS_FILENAME))
 
-
 @dataclass
-class GUISettings:
-    """Stores the settings for the GUI."""
-    font_type: str = "Helvetica"
-    font_size_small: int = 12
-    font_size_normal: int = 14
-    font_size_large: int = 16
-    font: tuple = (font_type, font_size_normal)
-    font_small: tuple = (font_type, font_size_small)
-    font_normal: tuple = (font_type, font_size_normal)
-    font_large: tuple = (font_type, font_size_large)
-    appearance: str = "system"
-    image_small: tuple = (14, 14)
-    image_normal: tuple = (18, 18)
-    image_large: tuple = (24, 24)
+class Settings:
+    """Stores the settings for the program."""
+    @dataclass
+    class GUISettings:
+        """Stores the settings for the GUI."""
+        font_type: str = "Helvetica"
+        font_size_small: int = 12
+        font_size_normal: int = 14
+        font_size_large: int = 16
+        font: tuple = (font_type, font_size_normal)
+        font_small: tuple = (font_type, font_size_small)
+        font_normal: tuple = (font_type, font_size_normal)
+        font_large: tuple = (font_type, font_size_large)
+        appearance: str = "system"
+        image_small: tuple = (14, 14)
+        image_normal: tuple = (18, 18)
+        image_large: tuple = (24, 24)
+
+    @dataclass
+    class UserSettings:
+        """Stores the settings for the user."""
+        email: str = ""
+        jvm_args: list = [
+            "-Xmx2G",
+            "-XX:+UnlockExperimentalVMOptions",
+            "-XX:+UseG1GC",
+            "-XX:G1NewSizePercent=20",
+            "-XX:G1ReservePercent=20",
+            "-XX:MaxGCPauseMillis=50",
+            "-XX:G1HeapRegionSize=32M"
+        ]
 
 
-def reset_settings() -> GUISettings:
+def reset_settings() -> Settings:
     """
     Reset the settings to the default values.
 
     Returns:
     - GUISettings: The default settings.
     """
-    settings = GUISettings()
+    settings = Settings()
     save_settings(settings)
     return settings
 
 
-def get_settings() -> GUISettings:
+def get_settings() -> Settings:
     """
     Get the settings from the settings file.
 
@@ -64,14 +80,14 @@ def get_settings() -> GUISettings:
     """
     if not os.path.exists(SETTINGS_PATH):
         with open(SETTINGS_PATH, "wb") as f:
-            pickle.dump(GUISettings(), f)
-        return GUISettings()
+            pickle.dump(Settings(), f)
+        return Settings()
 
     with open(SETTINGS_PATH, "rb") as f:
         return pickle.load(f)
 
 
-def save_settings(settings: GUISettings) -> pathlib.Path:
+def save_settings(settings: Settings) -> pathlib.Path:
     """
     Save the settings to the settings file.
     

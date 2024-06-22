@@ -35,6 +35,6 @@ class MCManager:
         - MicrosoftAuthSession: The Microsoft authentication session.
         """
         auth_handler = AuthenticationHandler(email, self.context)
-        auth_session = auth_handler.microsoft_authenticate()
+        auth_session = auth_handler.authenticate()
         MCManager.auth_session = auth_session
         return auth_session

@@ -9,7 +9,7 @@ import customtkinter
 from source.gui.auth_win import AuthWindow
 from source.gui import utils
 
-SETTINGS = utils.get_settings()
+SETTINGS = utils.get_settings().GUISettings
 
 
 class LoginWindow(customtkinter.CTkToplevel):

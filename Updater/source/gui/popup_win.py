@@ -7,7 +7,7 @@ Classes:
 import customtkinter
 from source.gui import utils
 
-SETTINGS = utils.get_settings()
+SETTINGS = utils.get_settings().GUISettings
 
 
 class PopupWindow(customtkinter.CTkToplevel):

@@ -22,7 +22,8 @@ import webbrowser
 from typing import cast
 from uuid import uuid4
 from http.server import HTTPServer, BaseHTTPRequestHandler
-from portablemc.auth import MicrosoftAuthSession, AuthDatabase
+from portablemc.http import HttpError
+from portablemc.auth import MicrosoftAuthSession, AuthDatabase, AuthError
 from portablemc.standard import Context
 from source.path import PROGRAM_NAME, VERSION, APPLICATION_DIR
 
@@ -49,7 +50,8 @@ class AuthenticationHandler:
     - __init__: Initializes the AuthenticationHandler instance.
     - gen_auth_url: Generate the authentication URL.
     - run_auth_server: Run the authentication server.
-    - microsoft_authenticate: Authenticate the user with Microsoft's services.
+    - refresh_session: Refresh the authentication session.
+    - authenticate: Authenticate the user with Microsoft's services.
     """
     def __init__(self, email: str, context: Context):
         self.email = email
@@ -174,13 +176,38 @@ class AuthenticationHandler:
             self.end_headers()
             self.wfile.write(html.encode("utf-8"))
 
-    def microsoft_authenticate(self) -> MicrosoftAuthSession:
+    def refresh_session(self) -> MicrosoftAuthSession:
+        """
+        Refresh the authentication session.
+
+        Returns:
+        - MicrosoftAuthSession: The Microsoft authentication session.
+        - None: If the session is invalid or non-existent.
+        """
+        self.auth_database.load()
+        session = self.auth_database.get(self.email, MicrosoftAuthSession)
+        if session is None:
+            return None
+        try:
+            if not session.validate():
+                session.refresh()
+                self.auth_database.save()
+            return session
+        except (AuthError, HttpError):
+            return None
+
+    def authenticate(self) -> MicrosoftAuthSession:
         """
         Authenticate the user with Microsoft's services.
         
         Returns:
         - MicrosoftAuthSession: The Microsoft authentication session.
+        - None: If the session could not be authenticated.
         """
+        session = self.refresh_session()
+        if session is not None:
+            return session
+
         url = self.gen_auth_url()
         webbrowser.open(url)
 
@@ -212,7 +239,15 @@ class AuthenticationHandler:
         if code is None:
             return None
 
-        # TODO: Make sure it stores the session in the correct auth database
-        return MicrosoftAuthSession.authenticate(
+        # TODO: Add error handling here
+        session = MicrosoftAuthSession.authenticate(
             self.auth_database.get_client_id(), APP_ID, code, CODE_REDIRECT_URI
         )
+
+        if session is None:
+            return None
+
+        self.auth_database.put(self.email, session)
+        self.auth_database.save()
+
+        return session

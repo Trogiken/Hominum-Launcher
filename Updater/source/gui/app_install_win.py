@@ -5,7 +5,7 @@ from portablemc.standard import Watcher, DownloadCompleteEvent, DownloadProgress
 from source.gui import utils
 from source.pmc import MCManager
 
-SETTINGS = utils.get_settings()
+SETTINGS = utils.get_settings().GUISettings
 
 
 class InstallWatcher(Watcher):

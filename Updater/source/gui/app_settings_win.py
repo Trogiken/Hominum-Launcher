@@ -9,7 +9,7 @@ import customtkinter
 from source.gui import utils
 from source.gui.popup_win import PopupWindow
 
-SETTINGS = utils.get_settings()
+SETTINGS = utils.get_settings().GUISettings
 
 
 class GUISettingsFrame(customtkinter.CTkFrame):

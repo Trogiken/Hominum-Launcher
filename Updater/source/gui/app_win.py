@@ -13,7 +13,7 @@ from source.gui.app_settings_win import SettingsWindow
 from source.gui.app_install_win import VersionInstallWindow
 from source.gui import utils
 
-SETTINGS = utils.get_settings()
+SETTINGS = utils.get_settings().GUISettings
 
 
 class LeftFrame(customtkinter.CTkFrame):
