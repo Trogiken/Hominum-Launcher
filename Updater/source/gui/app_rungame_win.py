@@ -65,6 +65,7 @@ class InstallFrame(customtkinter.CTkFrame):
 
     def install(self):
         install_watcher = InstallWatcher(self)
+        # TODO: Handle errors such that the game wont start if the installation fails
         # Attempt to install 3 times
         for _ in range(3):
             try:
@@ -125,6 +126,7 @@ class RunFrame(customtkinter.CTkFrame):
     
     def run(self):
         env = self.pmc.provision_environment(self.version)
+        env.jvm_args.extend(SETTINGS.get_game("jvm_args"))
         env.run()
 
 
@@ -140,6 +142,7 @@ class RunGameWindow(customtkinter.CTkToplevel):
             print("No Auth")
             return
         self.version.auth_session = session
+        self.version.set_quick_play_multiplayer("hominum.mcserver.us")
 
         self.geometry("500x150")
         self.resizable(False, False)
