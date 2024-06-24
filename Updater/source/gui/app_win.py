@@ -6,7 +6,6 @@ classes:
 """
 
 import customtkinter
-from source.pmc import MCManager
 from source.pmc.authentication import AuthenticationHandler
 from source import path
 from source.gui.login_win import LoginWindow
@@ -138,13 +137,14 @@ class App(customtkinter.CTk):
 
         # Load settings
         customtkinter.set_appearance_mode(SETTINGS.get_gui("appearance"))
+        
+        auth_handler = AuthenticationHandler(email=SETTINGS.get_user("email"), context=path.CONTEXT)
+        session = auth_handler.refresh_session()
+        if session is None:
+            self.login_window = LoginWindow(master=self)
+            self.login_window.transient(self)
+            self.wait_window(self.login_window)
 
-        # TODO: if not logged in show login window and wait for login
-        self.login_window = LoginWindow(master=self)
-        self.login_window.transient(self)
-        self.wait_window(self.login_window)
-
-        # TODO: if logged in show main window, else show error message and repeat login
         self.settings_frame = LeftFrame(self)
         self.settings_frame.grid(row=0, column=0, padx=(10, 0), pady=10, sticky="nsw")
 

@@ -43,6 +43,14 @@ class GUISettingsFrame(customtkinter.CTkFrame):
         )
 
 
+class UserSettingsFrame(customtkinter.CTkFrame):
+    pass
+
+
+class GameSettingsFrame(customtkinter.CTkFrame):
+    pass
+
+
 class SettingsWindow(customtkinter.CTkToplevel):
     """
     Represents the setting window of the application.
