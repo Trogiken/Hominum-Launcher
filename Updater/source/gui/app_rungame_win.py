@@ -138,6 +138,7 @@ class RunGameWindow(customtkinter.CTkToplevel):
         self.auth_handler = AuthenticationHandler(email=SETTINGS.get_user("email"), context=path.CONTEXT)
         self.version = self.pmc.provision_version("1.20.6")
         session = self.auth_handler.refresh_session()
+        # TODO: Handle no auth
         if session is None:
             print("No Auth")
             return

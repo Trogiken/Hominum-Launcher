@@ -55,6 +55,7 @@ class AuthenticationHandler:
     """
     def __init__(self, email: str, context: Context):
         self.email = email
+        # TODO: Just hardcode the path.CONTEXT constant here instead of parameter
         self.context = context
         self.auth_database = AuthDatabase(self.context.work_dir / AUTH_DATABASE_FILE_NAME)
 
@@ -195,6 +196,14 @@ class AuthenticationHandler:
             return session
         except (AuthError, HttpError):
             return None
+
+    def remove_session(self):
+        """
+        Remove the authentication session.
+        """
+        self.auth_database.load()
+        self.auth_database.remove(self.email, MicrosoftAuthSession)
+        self.auth_database.save()
 
     def authenticate(self) -> MicrosoftAuthSession:
         """

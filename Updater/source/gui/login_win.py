@@ -29,6 +29,8 @@ class LoginWindow(customtkinter.CTkToplevel):
         self.grid_columnconfigure(0, weight=1)  # configure grid system
 
         # TODO: Center these two widgets in the window
+        # FIXME: If the incorrect email is entered, no matter what the login session will be broken,
+        # FIXME: - even if windows corrects it as we store what they entered as the email in settings
         # email entry
         self.entry = customtkinter.CTkEntry(
             self, width=200, font=SETTINGS.get_gui("font_normal"), placeholder_text="Microsoft Email Address"

@@ -43,7 +43,6 @@ class GUISettings:
 class UserSettings:
     """Stores the settings for the user."""
     email: str = ""
-    cache_session: bool = True
     # TODO: Add whitelist mods here also
 
 
@@ -70,6 +69,9 @@ class Settings:
     - load: Reads the settings from a file.
     - save: Writes the settings to a file.
     - reset: Reset the settings to the default values.
+    - reset_gui: Reset the GUI settings to the default values.
+    - reset_user: Reset the user settings to the default values.
+    - reset_game: Reset the game settings to the default values.
     - get_gui: Retrieves a specific GUI setting.
     - get_user: Retrieves a specific user setting.
     - get_game: Retrieves a specific game setting.
@@ -120,6 +122,27 @@ class Settings:
         """
         self._gui = GUISettings()
         self._user = UserSettings()
+        self._game = GameSettings()
+        self.save()
+
+    def reset_gui(self):
+        """
+        Reset the GUI settings to the default values.
+        """
+        self._gui = GUISettings()
+        self.save()
+
+    def reset_user(self):
+        """
+        Reset the user settings to the default values.
+        """
+        self._user = UserSettings()
+        self.save()
+
+    def reset_game(self):
+        """
+        Reset the game settings to the default values.
+        """
         self._game = GameSettings()
         self.save()
 
