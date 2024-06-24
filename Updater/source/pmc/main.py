@@ -1,6 +1,5 @@
 """This module handles PortableMC"""
 
-from pathlib import Path
 from portablemc.standard import Context, Environment
 from portablemc.fabric import FabricVersion
 

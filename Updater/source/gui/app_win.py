@@ -38,7 +38,7 @@ class LeftFrame(customtkinter.CTkFrame):
         self.version_label.grid(row=1, column=0, padx=24, pady=0, sticky="sw")
 
         # Theme Drop Down
-        self.theme_menu_var = customtkinter.StringVar(value=SETTINGS.get_gui("appearance.title()"))
+        self.theme_menu_var = customtkinter.StringVar(value=SETTINGS.get_gui("appearance").title())
         self.theme_menu = customtkinter.CTkOptionMenu(
             self,
             values=["System", "Dark", "Light"],
