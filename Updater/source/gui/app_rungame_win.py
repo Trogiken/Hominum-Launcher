@@ -78,6 +78,7 @@ class InstallFrame(customtkinter.CTkFrame):
         self.download_item_label.configure(text=text)
 
     def reset_progress(self):
+        self.progress_bar.stop()
         self.progress_bar.configure(mode="determinate")
         self.progress_bar.set(0)
 
