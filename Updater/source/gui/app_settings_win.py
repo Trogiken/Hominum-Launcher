@@ -7,9 +7,9 @@ Classes:
 
 import customtkinter
 from source import path
-from source.utils import Settings, GUISettings, UserSettings, GameSettings
+from source.utils import Settings
 from source.gui.popup_win import PopupWindow
-from source.pmc.authentication import AuthenticationHandler
+from source.mc.authentication import AuthenticationHandler
 
 SETTINGS = Settings()
 

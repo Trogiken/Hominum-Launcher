@@ -8,7 +8,7 @@ Classes:
 import threading
 import customtkinter
 from source.utils import Settings
-from source.pmc import AuthenticationHandler
+from source.mc import AuthenticationHandler
 from source import path
 from source import exceptions
 

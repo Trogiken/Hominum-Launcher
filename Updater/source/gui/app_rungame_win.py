@@ -5,8 +5,8 @@ Watcher, DownloadCompleteEvent, DownloadProgressEvent, DownloadStartEvent
 from portablemc.fabric import FabricVersion
 from source import path
 from source.utils import Settings
-from source.pmc.authentication import AuthenticationHandler
-from source.pmc import MCManager
+from source.mc.authentication import AuthenticationHandler
+from source.mc import MCManager
 
 SETTINGS = Settings()
 
@@ -136,14 +136,14 @@ class RunGameWindow(customtkinter.CTkToplevel):
         self.title("Run Game")
         self.pmc = MCManager(context=path.CONTEXT)
         self.auth_handler = AuthenticationHandler(email=SETTINGS.get_user("email"), context=path.CONTEXT)
-        self.version = self.pmc.provision_version("1.20.6")
+        self.version = self.pmc.provision_version("1.20.6")  # TODO: Make this dynamic from remote
         session = self.auth_handler.refresh_session()
         # TODO: Handle no auth
         if session is None:
             print("No Auth")
             return
         self.version.auth_session = session
-        self.version.set_quick_play_multiplayer("hominum.mcserver.us")
+        self.version.set_quick_play_multiplayer("hominum.mcserver.us")  # TODO: Make this dynamic from remote
 
         self.geometry("500x150")
         self.resizable(False, False)

@@ -6,7 +6,7 @@ classes:
 """
 
 import customtkinter
-from source.pmc.authentication import AuthenticationHandler
+from source.mc.authentication import AuthenticationHandler
 from source import path
 from source.gui.login_win import LoginWindow
 from source.gui.app_settings_win import SettingsWindow

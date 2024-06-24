@@ -1,6 +1,7 @@
 """This module contains the sync functionality for the Hominum Client program."""
 import os
-import source as src
+from Updater.source.mc import remote
+from source import exceptions
 
 
 def sync_mods(mods_path: str) -> None:
@@ -18,7 +19,7 @@ def sync_mods(mods_path: str) -> None:
     """
     print("\n**** Syncing Mods ****")
     try:
-        server_mods = src.download.get_filenames()
+        server_mods = remote.get_filenames()
 
         # Remove mods that are not on the server
         print("\nRemoving Invalid Mods...")
@@ -32,8 +33,8 @@ def sync_mods(mods_path: str) -> None:
 
         # Download mods from the server that arn't in the local mods folder
         print("\nDownloading new mods...")
-        total_downloaded = src.download.download_files(
-            src.download.get_file_downloads(), mods_path
+        total_downloaded = remote.download_files(
+            remote.get_file_downloads(), mods_path
         )
         print(f"Finished downloading {total_downloaded} mod(s)")
 
@@ -50,13 +51,13 @@ def sync_mods(mods_path: str) -> None:
                 print(f"MISSING: '{file}'")
                 invalid = True
         if invalid:
-            raise src.exceptions.InvalidModsPath()
+            raise exceptions.InvalidModsPath()
         print("Directory Valid")
 
         print("\n**** Finished Syncing Mods ****")
     except Exception as e:
         print("\n**** Syncing Mods Failed ****")
-        if isinstance(e, src.exceptions.InvalidModsPath):
+        if isinstance(e, exceptions.InvalidModsPath):
             print("ERROR: Missing/Invalid Mods")
         else:
             raise e  # re-raise the exception if it's not an InvalidModsPath error
