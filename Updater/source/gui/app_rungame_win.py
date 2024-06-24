@@ -69,7 +69,7 @@ class InstallFrame(customtkinter.CTkFrame):
         # Attempt to install 3 times
         for _ in range(3):
             try:
-                self.version.install(watcher=install_watcher)
+                self.pmc.provision_environment(self.version, watcher=install_watcher)
                 self.on_install_complete()
                 break
             except Exception as e:
