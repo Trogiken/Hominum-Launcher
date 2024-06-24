@@ -68,6 +68,8 @@ class UserSettingsFrame(customtkinter.CTkFrame):
 
     def reset_user_settings(self):
         """Reset the User settings to the default values."""
+        auth_handler = AuthenticationHandler(SETTINGS.get_user("email"), path.CONTEXT)
+        auth_handler.remove_session()
         SETTINGS.reset_user()
         PopupWindow(
             master=self.master,
