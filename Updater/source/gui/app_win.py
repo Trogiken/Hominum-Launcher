@@ -11,7 +11,7 @@ from source.pmc.authentication import AuthenticationHandler
 from source import path
 from source.gui.login_win import LoginWindow
 from source.gui.app_settings_win import SettingsWindow
-from source.gui.app_install_win import VersionInstallWindow
+from source.gui.app_rungame_win import RunGameWindow
 from source.utils import Settings, get_image
 
 SETTINGS = Settings()
@@ -116,18 +116,12 @@ class CenterFrame(customtkinter.CTkFrame):
     def run_game(self):
         """Start Minecraft"""
         self.play_button.configure(state="disabled")
-        pmc = MCManager(context=path.CONTEXT)
-        auth_handler = AuthenticationHandler(email=SETTINGS.get_user("email"), context=path.CONTEXT)
-        version = pmc.provision_version("1.20.6")
-        if auth_handler.refresh_session() is None:
-            print("No Auth")
-            return
-        version.auth_session = auth_handler.refresh_session()
-        VersionInstallWindow(master=self.master, version=version)  # Install the majority of the game
 
-        # TODO: Make sure the GUI doesn't freeze even if a game is running, also disable play button
-        env = pmc.provision_environment(version)
-        env.run()
+        run_window = RunGameWindow(master=self.master)
+        run_window.transient(self)
+        self.wait_window(run_window)
+
+        self.play_button.configure(state="normal")
 
 
 class App(customtkinter.CTk):
