@@ -115,6 +115,7 @@ class CenterFrame(customtkinter.CTkFrame):
 
     def run_game(self):
         """Start Minecraft"""
+        self.play_button.configure(state="disabled")
         pmc = MCManager(context=path.CONTEXT)
         auth_handler = AuthenticationHandler(email=SETTINGS.get_user("email"), context=path.CONTEXT)
         version = pmc.provision_version("1.20.6")
@@ -122,9 +123,11 @@ class CenterFrame(customtkinter.CTkFrame):
             print("No Auth")
             return
         version.auth_session = auth_handler.refresh_session()
-        VersionInstallWindow(master=self.master, version=version)  # FIXME: Full install is buggy
+        VersionInstallWindow(master=self.master, version=version)  # Install the majority of the game
+
         # TODO: Make sure the GUI doesn't freeze even if a game is running, also disable play button
-        MCManager.environment.run()
+        env = pmc.provision_environment(version)
+        env.run()
 
 
 class App(customtkinter.CTk):

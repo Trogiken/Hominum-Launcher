@@ -38,12 +38,10 @@ else:
 
 ASSETS_DIR = pathlib.Path(os.path.join(APPLICATION_DIR, "assets"))
 
-if os.name == "nt":
-    STORE_DIR = os.path.join(os.getenv("APPDATA"), "Hominum")
-elif os.name == "posix":
+if os.name == "posix":
     STORE_DIR = os.path.join(os.getenv("HOME"), ".hominum")
 else:
-    STORE_DIR = os.path.join(APPLICATION_DIR, "userdata")
+    STORE_DIR = os.path.join(APPLICATION_DIR, "Store")
 
 STORE_DIR = pathlib.Path(STORE_DIR)
 MAIN_DIR = pathlib.Path(os.path.join(STORE_DIR, "minecraft"))

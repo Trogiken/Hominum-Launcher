@@ -6,8 +6,6 @@ from portablemc.fabric import FabricVersion
 
 class MCManager:
     """MCManager is a class that handles PortableMC."""
-    environment: Environment = None
-
     def __init__(self, context: Context):
         self.context = context
 
@@ -19,3 +17,12 @@ class MCManager:
         - FabricVersion: The version for PortableMC.
         """
         return FabricVersion.with_fabric(version, context=self.context)
+
+    def provision_environment(self, version: FabricVersion) -> Environment:
+        """
+        Provisions an environment for PortableMC.
+
+        Returns:
+        - Environment: The environment for PortableMC.
+        """
+        return version.install()

@@ -62,7 +62,7 @@ class VersionInstallWindow(customtkinter.CTkToplevel):
 
     def install(self):
         install_watcher = InstallWatcher(self)
-        MCManager.environment = self.version.install(watcher=install_watcher)
+        self.version.install(watcher=install_watcher)
 
     def update_item(self, text):
         self.download_item_label.configure(text=text)
