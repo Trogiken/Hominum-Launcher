@@ -12,9 +12,9 @@ from source import path
 from source.gui.login_win import LoginWindow
 from source.gui.app_settings_win import SettingsWindow
 from source.gui.app_install_win import VersionInstallWindow
-from source import utils
+from source.utils import Settings, get_image
 
-SETTINGS = utils.get_settings()
+SETTINGS = Settings()
 
 
 class LeftFrame(customtkinter.CTkFrame):
@@ -27,22 +27,22 @@ class LeftFrame(customtkinter.CTkFrame):
 
         # Title
         self.title_label = customtkinter.CTkLabel(
-            self, text=path.PROGRAM_NAME_LONG, font=SETTINGS.gui.font_large
+            self, text=path.PROGRAM_NAME_LONG, font=SETTINGS.get_gui("font_large")
         )
         self.title_label.grid(row=0, column=0, padx=20, pady=(20, 0), sticky="n")
 
         # Version
         self.version_label = customtkinter.CTkLabel(
-            self, text=f"v{path.VERSION}", font=SETTINGS.gui.font_small
+            self, text=f"v{path.VERSION}", font=SETTINGS.get_gui("font_small")
         )
         self.version_label.grid(row=1, column=0, padx=24, pady=0, sticky="sw")
 
         # Theme Drop Down
-        self.theme_menu_var = customtkinter.StringVar(value=SETTINGS.gui.appearance.title())
+        self.theme_menu_var = customtkinter.StringVar(value=SETTINGS.get_gui("appearance.title()"))
         self.theme_menu = customtkinter.CTkOptionMenu(
             self,
             values=["System", "Dark", "Light"],
-            font=SETTINGS.gui.font_normal,
+            font=SETTINGS.get_gui("font_normal"),
             command=self.theme_menu_callback,
             variable=self.theme_menu_var
         )
@@ -50,13 +50,13 @@ class LeftFrame(customtkinter.CTkFrame):
 
         # Settings Button
         self.settings_button_photo = customtkinter.CTkImage(
-            utils.get_image("settings.png").resize(SETTINGS.gui.image_normal)
+            get_image("settings.png").resize(SETTINGS.get_gui("image_normal"))
         )
         self.settings_button = customtkinter.CTkButton(
             self,
             image=self.settings_button_photo,
             text="Settings",
-            font=SETTINGS.gui.font_normal,
+            font=SETTINGS.get_gui("font_normal"),
             command=self.open_settings
         )
         self.settings_button.grid(row=3, column=0, padx=20, pady=(0, 20), sticky="s")
@@ -72,8 +72,7 @@ class LeftFrame(customtkinter.CTkFrame):
         - None
         """
         new_theme = theme.casefold()
-        SETTINGS.gui.appearance = new_theme
-        utils.save_settings(SETTINGS)
+        SETTINGS.set_gui(appearance=new_theme)
         customtkinter.set_appearance_mode(new_theme)
 
     def open_settings(self):
@@ -103,13 +102,13 @@ class CenterFrame(customtkinter.CTkFrame):
         self.grid_rowconfigure(0, weight=1)
         # TODO: Add tabs, one for whitelisting, one for syncing mods. Add a frame to each tab for the content
         self.play_button_photo = customtkinter.CTkImage(
-            utils.get_image("play.png").resize(SETTINGS.gui.image_large)
+            get_image("play.png").resize(SETTINGS.get_gui("image_large"))
         )
         self.play_button = customtkinter.CTkButton(
             self,
             image=self.play_button_photo,
             text="Play",
-            font=SETTINGS.gui.font_large,
+            font=SETTINGS.get_gui("font_large"),
             command=self.run_game
         )
         self.play_button.grid(row=0, column=0, padx=20, pady=20, sticky="nsew")
@@ -117,7 +116,7 @@ class CenterFrame(customtkinter.CTkFrame):
     def run_game(self):
         """Start Minecraft"""
         pmc = MCManager(context=path.CONTEXT)
-        auth_handler = AuthenticationHandler(email=SETTINGS.user.email, context=path.CONTEXT)
+        auth_handler = AuthenticationHandler(email=SETTINGS.get_user("email"), context=path.CONTEXT)
         version = pmc.provision_version("1.20.6")
         if auth_handler.refresh_session() is None:
             print("No Auth")
@@ -141,7 +140,7 @@ class App(customtkinter.CTk):
         self.grid_columnconfigure(2, weight=0)
 
         # Load settings
-        customtkinter.set_appearance_mode(SETTINGS.gui.appearance)
+        customtkinter.set_appearance_mode(SETTINGS.get_gui("appearance"))
 
         # TODO: if not logged in show login window and wait for login
         self.login_window = LoginWindow(master=self)
