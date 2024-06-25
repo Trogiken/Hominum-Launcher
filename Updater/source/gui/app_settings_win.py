@@ -107,7 +107,7 @@ class GameSettingsFrame(customtkinter.CTkFrame):
     def open_jvm_args_dialog_event(self):
         """Open the JVM Arguments dialog."""
         dialog = customtkinter.CTkInputDialog(
-            text=f"{SETTINGS.get_game("jvm_args")}\n\nSeparate Args With Spaces",
+            text=f"{SETTINGS.get_game('jvm_args')}\n\nSeparate Args With Spaces",
             title="JVM Arguments"
         )
         user_input = dialog.get_input()
