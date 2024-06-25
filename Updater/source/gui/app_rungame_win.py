@@ -80,34 +80,36 @@ class InstallFrame(customtkinter.CTkFrame):
         for _ in range(3):
             try:
                 self.mc.provision_environment(self.version, watcher=install_watcher)
-                self.on_install_complete()  # TODO: Move this to the end of the function
                 break
             except Exception as e:
                 print(f"Error: {e}")
-        # DONT FORGET TO CREATE THE DIRECTORIES
+
+        # FIXME: No files are being downloaded
         # Sync Mods
         self.update_title("Syncing Mods")
         self.update_progress(0)
         for count, total, filename in self.mc.sync_dir("mods"):
             self.update_item(filename)
             self.update_progress(count / total)
-        # Sync Resource Packs
-        self.update_title("Syncing Resource Packs")
-        self.update_progress(0)
-        for count, total, filename in self.mc.sync_dir("resourcepacks"):
-            self.update_item(filename)
-            self.update_progress(count / total)
-        # Sync Shader Packs
-        self.update_title("Syncing Shader Packs")
-        self.update_progress(0)
-        for count, total, filename in self.mc.sync_dir("shaderpacks"):
-            self.update_item(filename)
-            self.update_progress(count / total)
-        # Sync options.txt if first start
+
         if SETTINGS.get_user("first_start"):
+            # Sync Configurations
             self.update_title("Syncing Configurations")
-            self.mc.sync_file("options.txt")
+            self.update_progress(0)
+            self.mc.sync_file("options")
             for count, total, filename in self.mc.sync_dir("config"):
+                self.update_item(filename)
+                self.update_progress(count / total)
+            # Sync Resource Packs
+            self.update_title("Syncing Resource Packs")
+            self.update_progress(0)
+            for count, total, filename in self.mc.sync_dir("resourcepacks"):
+                self.update_item(filename)
+                self.update_progress(count / total)
+            # Sync Shader Packs
+            self.update_title("Syncing Shader Packs")
+            self.update_progress(0)
+            for count, total, filename in self.mc.sync_dir("shaderpacks"):
                 self.update_item(filename)
                 self.update_progress(count / total)
 

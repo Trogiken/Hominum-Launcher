@@ -95,26 +95,25 @@ def download_files(urls: list, mods_directory: str) -> Generator[tuple, None, No
         filename = url.split("/")[-1]  # Get the file name from the URL
         filename = filename.split("?")[0]  # Remove any query parameters from the file name
         save_path = os.path.join(mods_directory, filename)
-        max_retries = 3
-        retry = True
-        while retry:
+        retries_left = 3
+
+        while retries_left > 0:
             try:
                 if os.path.exists(save_path):
-                    retry = False
-                else:
-                    download(url, save_path)
-                    count += 1
-                    retry = False
+                    break
+
+                download(url, save_path)
+                count += 1
                 yield (count, total, filename)
+                break
             except Exception:
                 if os.path.exists(save_path):
                     os.remove(save_path)  # Remove incomplete file
-                max_retries -= 1
-                if max_retries == 0:
-                    # TODO: Add error handling for failed file
-                    if os.path.exists(save_path):
-                        os.remove(save_path)  # Remove incomplete file
-                    retry = False
+                retries_left -= 1
+                if retries_left == 0:
+                    # Optionally, handle the error further or raise an exception
+                    yield (count, total, filename)
+                    break
 
 
 def get_file_download(file_path: str) -> str:

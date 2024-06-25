@@ -53,7 +53,7 @@ class MCManager:
         - Exception: If any other error occurs.
 
         Returns:
-        - None
+        - Generator[tuple, None, None]: A generator that yields the progress of the sync.
         """
         if remote_dir not in self.remote_config["urls"]:
             raise ValueError(f"Invalid remote directory: {remote_dir}")
