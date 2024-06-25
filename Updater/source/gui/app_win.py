@@ -12,7 +12,7 @@ from source.gui.login_win import LoginWindow
 from source.gui.app_settings_win import SettingsWindow
 from source.gui.app_rungame_win import RunGameWindow
 from source.utils import Settings, get_image
-
+import pygetwindow as gw
 SETTINGS = Settings()
 
 
@@ -111,16 +111,19 @@ class CenterFrame(customtkinter.CTkFrame):
             command=self.run_game
         )
         self.play_button.grid(row=0, column=0, padx=20, pady=20, sticky="nsew")
-
+    
     def run_game(self):
         """Start Minecraft"""
         self.play_button.configure(state="disabled")
-
+        window = gw.getWindowsWithTitle("Hominum")[0]
+        gw.Win32Window.minimize(window)
         run_window = RunGameWindow(master=self.master)
         run_window.transient(self)
         self.wait_window(run_window)
-
         self.play_button.configure(state="normal")
+        gw.Win32Window.maximize(window)
+        gw.Win32Window.resizeTo(window, 1000, 400)
+        gw.Win32Window.moveTo(0 , 0)
 
 
 class App(customtkinter.CTk):
@@ -153,3 +156,4 @@ class App(customtkinter.CTk):
 
         self.center_frame = CenterFrame(self)
         self.center_frame.grid(row=0, column=1, padx=10, pady=10, sticky="nsew")
+
