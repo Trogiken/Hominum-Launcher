@@ -28,23 +28,29 @@ class InstallWatcher(Watcher):
 
 
 class InstallFrame(customtkinter.CTkFrame):
-    def __init__(self, master, pmc: MCManager, version: FabricVersion, on_install_complete=None):
+    def __init__(self, master, mc: MCManager, version: FabricVersion, on_install_complete=None):
         super().__init__(master)
         self.grid_columnconfigure(0, weight=1)
 
-        self.pmc = pmc
+        self.mc = mc
         self.version = version
         self.on_install_complete = on_install_complete
 
+        # Title label
+        self.title_label = customtkinter.CTkLabel(
+            self, text="Gettings Things Ready", font=SETTINGS.get_gui("font_large")
+        )
+        self.title_label.grid(row=0, column=0, padx=(20, 0), pady=20)
+    
         # Item Download Label
         self.download_item_label = customtkinter.CTkLabel(
-            self, text="Download Starting", font=SETTINGS.get_gui("font_normal")
+            self, text="", font=SETTINGS.get_gui("font_normal")
         )
-        self.download_item_label.grid(row=0, column=0, padx=20, pady=20)
+        self.download_item_label.grid(row=1, column=0, padx=10, pady=20)
 
         # Progress bar
         self.progress_bar = customtkinter.CTkProgressBar(self, mode="indeterminate")
-        self.progress_bar.grid(row=1, column=0, columnspan=2, padx=20, pady=(0, 20), sticky="ew")
+        self.progress_bar.grid(row=2, column=0, columnspan=2, padx=20, pady=(0, 20), sticky="ew")
         self.progress_bar.start()
 
         self.start_installation()
@@ -64,16 +70,21 @@ class InstallFrame(customtkinter.CTkFrame):
                 self.on_install_complete()
 
     def install(self):
-        install_watcher = InstallWatcher(self)
         # TODO: Handle errors such that the game wont start if the installation fails
-        # Attempt to install 3 times
+        # Install the game
+        install_watcher = InstallWatcher(self)
         for _ in range(3):
             try:
-                self.pmc.provision_environment(self.version, watcher=install_watcher)
-                self.on_install_complete()
+                self.mc.provision_environment(self.version, watcher=install_watcher)
+                self.on_install_complete()  # TODO: Move this to the end of the function
                 break
             except Exception as e:
                 print(f"Error: {e}")
+        # Sync Mods
+        # Sync Resource Packs
+        # Sync Shader Packs
+        # Sync options.txt if first start
+        # sync Config if first start
 
     def update_item(self, text):
         self.download_item_label.configure(text=text)
@@ -88,11 +99,11 @@ class InstallFrame(customtkinter.CTkFrame):
 
 
 class RunFrame(customtkinter.CTkFrame):
-    def __init__(self, master, pmc: MCManager, version: FabricVersion, on_run_complete=None):
+    def __init__(self, master, mc: MCManager, version: FabricVersion, on_run_complete=None):
         super().__init__(master)
         self.grid_columnconfigure(0, weight=1)
 
-        self.pmc = pmc
+        self.mc = mc
         self.version = version
         self.on_run_complete = on_run_complete
 
@@ -125,7 +136,7 @@ class RunFrame(customtkinter.CTkFrame):
                 self.on_run_complete()
     
     def run(self):
-        env = self.pmc.provision_environment(self.version)
+        env = self.mc.provision_environment(self.version)
         env.jvm_args.extend(SETTINGS.get_game("jvm_args"))
         env.run()
 
@@ -134,16 +145,16 @@ class RunGameWindow(customtkinter.CTkToplevel):
     def __init__(self, master, **kwargs):
         super().__init__(master, **kwargs)
         self.title("Run Game")
-        self.pmc = MCManager(context=path.CONTEXT)
+        self.mc = MCManager(context=path.CONTEXT)
         self.auth_handler = AuthenticationHandler(email=SETTINGS.get_user("email"), context=path.CONTEXT)
-        self.version = self.pmc.provision_version("1.20.6")  # TODO: Make this dynamic from remote
+        self.version = self.mc.provision_version(self.mc.fabric_version, self.mc.loader_version)
         session = self.auth_handler.refresh_session()
         # TODO: Handle no auth
         if session is None:
             print("No Auth")
             return
         self.version.auth_session = session
-        self.version.set_quick_play_multiplayer("hominum.mcserver.us")  # TODO: Make this dynamic from remote
+        self.version.set_quick_play_multiplayer(self.mc.server_ip)
 
         self.geometry("500x150")
         self.resizable(False, False)
@@ -158,13 +169,13 @@ class RunGameWindow(customtkinter.CTkToplevel):
 
         # create install frame
         self.install_frame = InstallFrame(
-            self, self.pmc, self.version, on_install_complete=self.on_install_complete
+            self, self.mc, self.version, on_install_complete=self.on_install_complete
         )
         self.install_frame.grid(row=0, column=0, sticky="nsew")
 
     def on_install_complete(self):
         self.install_frame.destroy()
-        run_frame = RunFrame(self, self.pmc, self.version, on_run_complete=self.on_run_complete)
+        run_frame = RunFrame(self, self.mc, self.version, on_run_complete=self.on_run_complete)
         run_frame.grid(row=0, column=0, sticky="nsew")
 
     def on_run_complete(self):

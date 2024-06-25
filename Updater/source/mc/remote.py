@@ -21,10 +21,11 @@ Constants:
 
 import os
 import requests
+import yaml
 from source import creds
 
 GITHUB_CONTENTS_BASE = r"https://api.github.com/repos/Trogiken/Hominum-Updates/contents"
-PATH_URL = f"{GITHUB_CONTENTS_BASE}/path.txt"
+CONFIG_NAME = "config.yaml"
 
 
 def get_request(url: str, timeout=5, headers=None, **kwargs) -> requests.models.Response:
@@ -95,24 +96,18 @@ def download_files(urls: list, mods_directory: str) -> int:
         while retry:
             try:
                 if os.path.exists(save_path):
-                    print(f"'{file_name}' already exists, skipping it...")
-                    retry = False
-                elif not file_name.endswith(".jar"):
-                    print(f"WARNING: '{file_name}' is not a jar file, skipping it...")
                     retry = False
                 else:
-                    print(f"Downloading '{file_name}'...")
                     download(url, save_path)
                     total_downloads += 1
                     print(f"Downloaded '{file_name}'")
                     retry = False
-            except Exception as e:
-                print(f"WARNING: Failed to download '{file_name}': {str(e)}, trying again...")
+            except Exception:
                 if os.path.exists(save_path):
                     os.remove(save_path)  # Remove incomplete file
                 max_retries -= 1
                 if max_retries == 0:
-                    print(f"ERROR: Download of '{file_name}' failed too many times, skipping it...")
+                    # TODO: Add error handling for failed file
                     if os.path.exists(save_path):
                         os.remove(save_path)  # Remove incomplete file
                     retry = False
@@ -120,41 +115,49 @@ def download_files(urls: list, mods_directory: str) -> int:
     return total_downloads
 
 
-def get_url_dir() -> str:
+def get_file_download(file_path: str) -> str:
     """
-    Returns the URL of the directory with mods.
+    Retrieves the download URL for the specified file from the server.
 
-    Exceptions:
-    - FileNotFoundError: If the path.txt file is not found on the server.
+    Parameters:
+    - file_path (str): The path to the file on the server.
 
     Returns:
-    - str: The URL of the directory with mods.
+    - str: The download URL for the file.
     """
-    base_resp = get_request(GITHUB_CONTENTS_BASE)
+    path, name = os.path.split(file_path)
     download_path_url = ""
-    for file in base_resp.json():
-        if file["name"] == "path.txt":
+    resp = get_request(GITHUB_CONTENTS_BASE + f"/{path}")
+    for file in resp.json():
+        if file["name"] == name:
             download_path_url = file["download_url"]
             break
     if not download_path_url:
-        raise FileNotFoundError("path.txt not found on the server")
+        raise FileNotFoundError(f"{name} not found on the server")
 
-    path = get_request(download_path_url).text
-    path = path.strip()
+    return download_path_url
 
-    url = f"{GITHUB_CONTENTS_BASE}/{path}"
+def get_config() -> dict:
+    """
+    Retrieves the config file from the server.
 
-    return url
+    Returns:
+    - dict: The contents of the config file.
+    """
+    config = get_request(get_file_download(CONFIG_NAME)).text
+    config = yaml.safe_load(config)
+
+    return config
 
 
-def get_filenames() -> list:
+def get_filenames(directory: str) -> list:
     """
     Retrieves a list of filenames from the server.
 
     Returns:
     - list: A list of mod names.
     """
-    resp = get_request(get_url_dir())
+    resp = get_request(GITHUB_CONTENTS_BASE + f"/{directory}")
     names = []
     for file in resp.json():
         names.append(file["name"])
@@ -162,14 +165,14 @@ def get_filenames() -> list:
     return names
 
 
-def get_file_downloads() -> list:
+def get_file_downloads(directory: str) -> list:
     """
     Retrieves a list of download URLs from the server.
 
     Returns:
     - list: A list of download URLs.
     """
-    resp = get_request(get_url_dir())
+    resp = get_request(GITHUB_CONTENTS_BASE + f"/{directory}")
     download_urls = []
     for file in resp.json():
         download_urls.append(file["download_url"])

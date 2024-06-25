@@ -43,7 +43,7 @@ class GUISettings:
 class UserSettings:
     """Stores the settings for the user."""
     email: str = ""
-    # TODO: Add whitelist mods here also
+    first_start: bool = True
 
 
 @dataclass
