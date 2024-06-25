@@ -22,6 +22,7 @@ Constants:
 import os
 import requests
 import yaml
+from typing import Generator
 from source import creds
 
 GITHUB_CONTENTS_BASE = r"https://api.github.com/repos/Trogiken/Hominum-Updates/contents"
@@ -75,7 +76,7 @@ def download(url: str, save_path: str, chunk_size=8192) -> str:
                 f.write(chunk)
 
 
-def download_files(urls: list, mods_directory: str) -> int:
+def download_files(urls: list, mods_directory: str) -> Generator[tuple, None, None]:
     """
     Downloads files from the given URLs to the specified mods_directory.
 
@@ -84,13 +85,16 @@ def download_files(urls: list, mods_directory: str) -> int:
     - mods_directory (str): The directory to save the downloaded files to.
 
     Returns:
-    - int: The total number of files downloaded.
+    - Generator[tuple, None, None]:
+        A generator that yields a tuple containing the count of downloaded files,
+        the total number of files to download, and the name of the file.
     """
-    total_downloads = 0
+    count = 0
+    total = len(urls)
     for url in urls:
-        file_name = url.split("/")[-1]  # Get the file name from the URL
-        file_name = file_name.split("?")[0]  # Remove any query parameters from the file name
-        save_path = os.path.join(mods_directory, file_name)
+        filename = url.split("/")[-1]  # Get the file name from the URL
+        filename = filename.split("?")[0]  # Remove any query parameters from the file name
+        save_path = os.path.join(mods_directory, filename)
         max_retries = 3
         retry = True
         while retry:
@@ -99,9 +103,9 @@ def download_files(urls: list, mods_directory: str) -> int:
                     retry = False
                 else:
                     download(url, save_path)
-                    total_downloads += 1
-                    print(f"Downloaded '{file_name}'")
+                    count += 1
                     retry = False
+                yield (count, total, filename)
             except Exception:
                 if os.path.exists(save_path):
                     os.remove(save_path)  # Remove incomplete file
@@ -111,8 +115,6 @@ def download_files(urls: list, mods_directory: str) -> int:
                     if os.path.exists(save_path):
                         os.remove(save_path)  # Remove incomplete file
                     retry = False
-
-    return total_downloads
 
 
 def get_file_download(file_path: str) -> str:
@@ -154,6 +156,9 @@ def get_filenames(directory: str) -> list:
     """
     Retrieves a list of filenames from the server.
 
+    Parameters:
+    - directory (str): The directory to retrieve the filenames from.
+
     Returns:
     - list: A list of mod names.
     """
@@ -168,6 +173,9 @@ def get_filenames(directory: str) -> list:
 def get_file_downloads(directory: str) -> list:
     """
     Retrieves a list of download URLs from the server.
+
+    Parameters:
+    - directory (str): The directory to retrieve the download URLs from.
 
     Returns:
     - list: A list of download URLs.

@@ -18,10 +18,11 @@ class InstallWatcher(Watcher):
 
     def handle(self, event) -> None:
         if isinstance(event, DownloadStartEvent):
+            self.app.update_title("Downloading Fabric MC")
             self.app.reset_progress()
             self.total = event.entries_count
         elif isinstance(event, DownloadProgressEvent):
-            self.app.update_item(str(event.entry))
+            self.app.update_item(event.entry)
             self.app.update_progress(event.count / self.total)
         elif isinstance(event, DownloadCompleteEvent):
             self.app.update_item("Download Complete")
@@ -31,6 +32,9 @@ class InstallFrame(customtkinter.CTkFrame):
     def __init__(self, master, mc: MCManager, version: FabricVersion, on_install_complete=None):
         super().__init__(master)
         self.grid_columnconfigure(0, weight=1)
+        self.grid_rowconfigure(0, weight=1)
+        self.grid_rowconfigure(1, weight=1)
+        self.grid_rowconfigure(2, weight=1)
 
         self.mc = mc
         self.version = version
@@ -38,13 +42,13 @@ class InstallFrame(customtkinter.CTkFrame):
 
         # Title label
         self.title_label = customtkinter.CTkLabel(
-            self, text="Gettings Things Ready", font=SETTINGS.get_gui("font_large")
+            self, text="Please Wait", font=SETTINGS.get_gui("font_large")
         )
         self.title_label.grid(row=0, column=0, padx=(20, 0), pady=20)
-    
+
         # Item Download Label
         self.download_item_label = customtkinter.CTkLabel(
-            self, text="", font=SETTINGS.get_gui("font_normal")
+            self, text="Getting things ready", font=SETTINGS.get_gui("font_normal")
         )
         self.download_item_label.grid(row=1, column=0, padx=10, pady=20)
 
@@ -80,11 +84,37 @@ class InstallFrame(customtkinter.CTkFrame):
                 break
             except Exception as e:
                 print(f"Error: {e}")
+        # DONT FORGET TO CREATE THE DIRECTORIES
         # Sync Mods
+        self.update_title("Syncing Mods")
+        self.update_progress(0)
+        for count, total, filename in self.mc.sync_dir("mods"):
+            self.update_item(filename)
+            self.update_progress(count / total)
         # Sync Resource Packs
+        self.update_title("Syncing Resource Packs")
+        self.update_progress(0)
+        for count, total, filename in self.mc.sync_dir("resourcepacks"):
+            self.update_item(filename)
+            self.update_progress(count / total)
         # Sync Shader Packs
+        self.update_title("Syncing Shader Packs")
+        self.update_progress(0)
+        for count, total, filename in self.mc.sync_dir("shaderpacks"):
+            self.update_item(filename)
+            self.update_progress(count / total)
         # Sync options.txt if first start
-        # sync Config if first start
+        if SETTINGS.get_user("first_start"):
+            self.update_title("Syncing Configurations")
+            self.mc.sync_file("options.txt")
+            for count, total, filename in self.mc.sync_dir("config"):
+                self.update_item(filename)
+                self.update_progress(count / total)
+
+        SETTINGS.set_user(first_start=False)
+
+    def update_title(self, text):
+        self.title_label.configure(text=text)
 
     def update_item(self, text):
         self.download_item_label.configure(text=text)

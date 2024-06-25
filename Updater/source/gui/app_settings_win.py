@@ -95,6 +95,8 @@ class GameSettingsFrame(customtkinter.CTkFrame):
             self, text="JVM Arguments", font=SETTINGS.get_gui("font_normal"), command=self.open_jvm_args_dialog_event)
         self.jvm_args_button.grid(row=1, column=0, padx=20, pady=10)
 
+        # TODO: Add memory allocation slider
+
         # Reset Game Settings Button
         self.reset_game_settings_button = customtkinter.CTkButton(
             self,
