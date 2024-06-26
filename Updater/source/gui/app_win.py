@@ -161,7 +161,7 @@ class RightFrame(customtkinter.CTkFrame):
         self.play_button.configure(state="normal")
 
 
-class CenterFrame(customtkinter.CTkFrame):
+class CenterFrame(customtkinter.CTkScrollableFrame):
     def __init__(self, master):
         super().__init__(master)
         self.grid_columnconfigure(0, weight=1)
