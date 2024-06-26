@@ -112,6 +112,19 @@ class RightFrame(customtkinter.CTkFrame):
         )
         self.user_menu.grid(row=0, column=0, padx=20, pady=20, sticky="n")
 
+        self.play_button_photo = customtkinter.CTkImage(
+            get_image("play.png").resize(SETTINGS.get_gui("image_large"))
+        )
+        self.play_button = customtkinter.CTkButton(
+            self,
+            image=self.play_button_photo,
+            text="Play",
+            font=SETTINGS.get_gui("font_large"),
+            fg_color="green",
+            command=self.run_game
+        )
+        self.play_button.grid(row=0, column=0, padx=20, pady=20, sticky="s")
+
     def user_menu_callback(self, action: str):
         """
         Callback function for the user menu.
@@ -137,25 +150,6 @@ class RightFrame(customtkinter.CTkFrame):
                 self.user_menu_var.set(username)
                 self.user_menu.configure(values=["Logout"])
 
-
-class CenterFrame(customtkinter.CTkFrame):
-    def __init__(self, master):
-        super().__init__(master)
-        self.grid_columnconfigure(0, weight=1)
-        self.grid_rowconfigure(0, weight=1)
-        # TODO: Add tabs, one for whitelisting, one for syncing mods. Add a frame to each tab for the content
-        self.play_button_photo = customtkinter.CTkImage(
-            get_image("play.png").resize(SETTINGS.get_gui("image_large"))
-        )
-        self.play_button = customtkinter.CTkButton(
-            self,
-            image=self.play_button_photo,
-            text="Play",
-            font=SETTINGS.get_gui("font_large"),
-            command=self.run_game
-        )
-        self.play_button.grid(row=0, column=0, padx=20, pady=20, sticky="nsew")
-
     def run_game(self):
         """Start Minecraft"""
         self.play_button.configure(state="disabled")
@@ -170,6 +164,15 @@ class CenterFrame(customtkinter.CTkFrame):
         window.maximize()
         window.resizeTo(1000, 400)
 
+
+
+class CenterFrame(customtkinter.CTkFrame):
+    def __init__(self, master):
+        super().__init__(master)
+        self.grid_columnconfigure(0, weight=1)
+        self.grid_rowconfigure(0, weight=1)
+        # TODO: Add a scrollable frame for misc info about the server
+        pass
 
 class App(customtkinter.CTk):
     """The main window of the application."""
