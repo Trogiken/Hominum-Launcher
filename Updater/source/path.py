@@ -22,7 +22,7 @@ from portablemc.standard import Context
 
 PROGRAM_NAME = "Hominum"
 PROGRAM_NAME_LONG = "Hominum Launcher"
-VERSION = "4.5.3.4"
+VERSION = "4.6.3.4"
 
 if getattr(sys, 'frozen', False):
     APPLICATION_DIR = pathlib.Path(sys.executable).parent
