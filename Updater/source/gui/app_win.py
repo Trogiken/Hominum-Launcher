@@ -102,12 +102,18 @@ class RightFrame(customtkinter.CTkFrame):
         )
 
         # User Dropdown
-        # TODO: Say login if the user isnt logged in here
-        self.user_menu_var = customtkinter.StringVar(value=self.auth_handler.get_username())
+        # FIXME: At fresh install, the name isnt updated to the username
+        username = self.auth_handler.get_username()
+        if username:
+            self.user_menu_var = customtkinter.StringVar(value=username)
+            user_menu_values = ["Logout"]
+        else:
+            self.user_menu_var = customtkinter.StringVar(value="Logged Out")
+            user_menu_values = ["Login"]
         self.user_menu = customtkinter.CTkOptionMenu(
             self,
-            values=["Logout"],
             font=SETTINGS.get_gui("font_normal"),
+            values=user_menu_values,
             command=self.user_menu_callback,
             variable=self.user_menu_var
         )
@@ -185,13 +191,6 @@ class App(customtkinter.CTk):
         # Load settings
         customtkinter.set_appearance_mode(SETTINGS.get_gui("appearance"))
 
-        auth_handler = AuthenticationHandler(email=SETTINGS.get_user("email"), context=path.CONTEXT)
-        session = auth_handler.refresh_session()
-        if session is None:
-            self.login_window = LoginWindow(master=self)
-            self.login_window.transient(self)
-            self.wait_window(self.login_window)
-
         self.settings_frame = LeftFrame(self)
         self.settings_frame.grid(row=0, column=0, padx=(10, 0), pady=10, sticky="nsw")
 
@@ -200,4 +199,3 @@ class App(customtkinter.CTk):
 
         self.center_frame = CenterFrame(self)
         self.center_frame.grid(row=0, column=1, padx=10, pady=10, sticky="nsew")
-

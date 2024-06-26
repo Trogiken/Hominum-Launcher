@@ -6,11 +6,11 @@ import sys
 import os
 from source.gui.app_win import App
 
-IS_DEVELOPMENT = False  # This should be set to False before release
+IS_DEVELOPMENT = True  # This should be set to False before release
 
 
 if __name__ == "__main__":
-    if IS_DEVELOPMENT:
+    if not IS_DEVELOPMENT:
         original_stdout = sys.stdout
         original_stderr = sys.stderr
         with open(os.devnull, 'w', encoding='utf-8') as devnull:
@@ -23,6 +23,6 @@ if __name__ == "__main__":
     finally:
         sys.stdout.close()
         sys.stderr.close()
-        if IS_DEVELOPMENT:
+        if not IS_DEVELOPMENT:
             sys.stdout = original_stdout
             sys.stderr = original_stderr

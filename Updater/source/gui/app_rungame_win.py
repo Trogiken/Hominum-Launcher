@@ -9,9 +9,9 @@ Classes:
 - RunGameWindow: A class that is used to run the game.
 """
 
+import os
 import threading
 import customtkinter
-import pygetwindow
 from portablemc.standard import \
 Watcher, DownloadCompleteEvent, DownloadProgressEvent, DownloadStartEvent
 from portablemc.fabric import FabricVersion
@@ -19,6 +19,9 @@ from source import path
 from source.utils import Settings
 from source.mc.authentication import AuthenticationHandler
 from source.mc import MCManager
+
+if os.name != "posix":
+    import pygetwindow
 
 SETTINGS = Settings()
 
@@ -172,7 +175,7 @@ class RunFrame(customtkinter.CTkFrame):
             mc: MCManager,
             version: FabricVersion,
             on_run_complete=None,
-            main_window: pygetwindow.Win32Window=None
+            main_window=None
         ):
         super().__init__(master)
         self.grid_columnconfigure(0, weight=1)
@@ -219,7 +222,9 @@ class RunFrame(customtkinter.CTkFrame):
         """Provision the environment and run the game."""
         env = self.mc.provision_environment(self.version)
         env.jvm_args.extend(SETTINGS.get_game("jvm_args"))
-        self.after(1000, self.main_window.minimize())
+        if os.name != "posix":
+            if not self.main_window.isMinimized:
+                self.after(1000, self.main_window.minimize())
         env.run()
 
 # TODO: If this window is destroyed, the game should be stopped
@@ -229,7 +234,9 @@ class RunGameWindow(customtkinter.CTkToplevel):
         super().__init__(master, **kwargs)
         self.title("Run Game")  # Set self.this_window also when changed!
         # Used to minimize the window after the game starts
-        self.main_window: pygetwindow.Win32Window = pygetwindow.getWindowsWithTitle("Hominum")[0]
+        self.main_window = None
+        if os.name != "posix":
+            self.main_window: pygetwindow.Win32Window = pygetwindow.getWindowsWithTitle("Hominum")[0]
         self.mc = MCManager(context=path.CONTEXT)
         self.auth_handler = AuthenticationHandler(
             email=SETTINGS.get_user("email"), context=path.CONTEXT
@@ -269,7 +276,8 @@ class RunGameWindow(customtkinter.CTkToplevel):
 
     def on_run_complete(self):
         """Close this window."""
-        if self.main_window.isMinimized:
-            self.main_window.maximize()
-            self.main_window.resizeTo(1000, 400)  # FIXME: Don't hardcode this, place in settings
+        if os.name != "posix":
+            if self.main_window.isMinimized:
+                self.main_window.maximize()
+                self.main_window.resizeTo(1000, 400)  # FIXME: Don't hardcode this, place in settings
         self.destroy()
