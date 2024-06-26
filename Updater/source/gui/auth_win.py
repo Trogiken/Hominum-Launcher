@@ -67,4 +67,4 @@ class AuthWindow(customtkinter.CTkToplevel):
             SETTINGS.set_user(email=self.email)
         except Exception:
             # TODO: Handle this
-            print("Login failed")
+            pass

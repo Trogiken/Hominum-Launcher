@@ -69,7 +69,6 @@ def download(url: str, save_path: str, chunk_size=8192) -> str:
     - str: The path where the file was saved.
     """
     resp = get_request(url, stream=True)
-
     with open(save_path, "wb") as f:
         for chunk in resp.iter_content(chunk_size=chunk_size):
             if chunk:
@@ -91,6 +90,7 @@ def download_files(urls: list, mods_directory: str) -> Generator[tuple, None, No
     """
     count = 0
     total = len(urls)
+    # FIXME: The total doesn't take into account files that already exist!
     for url in urls:
         filename = url.split("/")[-1]  # Get the file name from the URL
         filename = filename.split("?")[0]  # Remove any query parameters from the file name
@@ -137,6 +137,7 @@ def get_file_download(file_path: str) -> str:
         raise FileNotFoundError(f"{name} not found on the server")
 
     return download_path_url
+
 
 def get_config() -> dict:
     """

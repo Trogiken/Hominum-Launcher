@@ -72,10 +72,11 @@ class MCManager:
         except Exception:
             # TODO: Add error handling
             pass
-
         try:
             remote_dir_url = self.remote_config["urls"][remote_dir]
-            server_mods = remote.get_filenames(self.remote_config["urls"][remote_dir_url])  # TODO: Error handling
+            if remote_dir_url is None:
+                return
+            server_mods = remote.get_filenames(remote_dir_url)  # TODO: Error handling
             # Remove invalid mods
             for file in os.listdir(local_dir):
                 if file not in server_mods:
@@ -88,7 +89,6 @@ class MCManager:
         except Exception:
             # TODO: Add error handling
             pass
-
 
     def sync_file(self, remote_file) -> None:
         """
@@ -116,6 +116,8 @@ class MCManager:
 
         try:
             remote_file_url = self.remote_config["urls"][remote_file]
+            if remote_file_url is None:
+                return
             server_file = remote.get_file_download(remote_file_url)
 
             # Remove the local file if it exists

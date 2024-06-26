@@ -44,13 +44,13 @@ class InstallFrame(customtkinter.CTkFrame):
         self.title_label = customtkinter.CTkLabel(
             self, text="Please Wait", font=SETTINGS.get_gui("font_large")
         )
-        self.title_label.grid(row=0, column=0, padx=(20, 0), pady=20)
+        self.title_label.grid(row=0, column=0, padx=20, pady=(20, 0))
 
         # Item Download Label
         self.download_item_label = customtkinter.CTkLabel(
             self, text="Getting things ready", font=SETTINGS.get_gui("font_normal")
         )
-        self.download_item_label.grid(row=1, column=0, padx=10, pady=20)
+        self.download_item_label.grid(row=1, column=0, padx=20, pady=10)
 
         # Progress bar
         self.progress_bar = customtkinter.CTkProgressBar(self, mode="indeterminate")
@@ -63,7 +63,7 @@ class InstallFrame(customtkinter.CTkFrame):
         self.install_thread = threading.Thread(target=self.install)
         self.install_thread.start()
         self.check_thread()
-    
+
     def check_thread(self):
         if self.install_thread.is_alive():
             # Check again after 100ms
@@ -82,12 +82,12 @@ class InstallFrame(customtkinter.CTkFrame):
                 self.mc.provision_environment(self.version, watcher=install_watcher)
                 break
             except Exception as e:
+                # TODO: Handle error
                 print(f"Error: {e}")
 
-        # FIXME: No files are being downloaded
         # Sync Mods
         self.update_title("Syncing Mods")
-        self.update_progress(0)
+        self.reset_progress()
         for count, total, filename in self.mc.sync_dir("mods"):
             self.update_item(filename)
             self.update_progress(count / total)
@@ -95,20 +95,20 @@ class InstallFrame(customtkinter.CTkFrame):
         if SETTINGS.get_user("first_start"):
             # Sync Configurations
             self.update_title("Syncing Configurations")
-            self.update_progress(0)
+            self.reset_progress()
             self.mc.sync_file("options")
             for count, total, filename in self.mc.sync_dir("config"):
                 self.update_item(filename)
                 self.update_progress(count / total)
             # Sync Resource Packs
             self.update_title("Syncing Resource Packs")
-            self.update_progress(0)
+            self.reset_progress()
             for count, total, filename in self.mc.sync_dir("resourcepacks"):
                 self.update_item(filename)
                 self.update_progress(count / total)
             # Sync Shader Packs
             self.update_title("Syncing Shader Packs")
-            self.update_progress(0)
+            self.reset_progress()
             for count, total, filename in self.mc.sync_dir("shaderpacks"):
                 self.update_item(filename)
                 self.update_progress(count / total)
