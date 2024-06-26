@@ -20,6 +20,7 @@ from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.backends import default_backend
 
+# TODO: Find a better way to enter these values for development to prevent leak
 PASSWORD = r""
 SALT = r""
 

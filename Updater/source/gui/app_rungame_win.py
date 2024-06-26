@@ -11,6 +11,7 @@ Classes:
 
 import threading
 import customtkinter
+import pygetwindow
 from portablemc.standard import \
 Watcher, DownloadCompleteEvent, DownloadProgressEvent, DownloadStartEvent
 from portablemc.fabric import FabricVersion
@@ -165,13 +166,21 @@ class InstallFrame(customtkinter.CTkFrame):
 
 class RunFrame(customtkinter.CTkFrame):
     """A class that displays the running progress of the game."""
-    def __init__(self, master, mc: MCManager, version: FabricVersion, on_run_complete=None):
+    def __init__(
+            self,
+            master,
+            mc: MCManager,
+            version: FabricVersion,
+            on_run_complete=None,
+            main_window: pygetwindow.Win32Window=None
+        ):
         super().__init__(master)
         self.grid_columnconfigure(0, weight=1)
 
         self.mc = mc
         self.version = version
         self.on_run_complete = on_run_complete
+        self.main_window = main_window
 
         self.title_label = customtkinter.CTkLabel(
             self, text="Game Running", font=SETTINGS.get_gui("font_large")
@@ -210,16 +219,21 @@ class RunFrame(customtkinter.CTkFrame):
         """Provision the environment and run the game."""
         env = self.mc.provision_environment(self.version)
         env.jvm_args.extend(SETTINGS.get_game("jvm_args"))
+        self.after(1000, self.main_window.minimize())
         env.run()
 
-
+# TODO: If this window is destroyed, the game should be stopped
 class RunGameWindow(customtkinter.CTkToplevel):
     """A class that is used to run the game."""
     def __init__(self, master, **kwargs):
         super().__init__(master, **kwargs)
-        self.title("Run Game")
+        self.title("Run Game")  # Set self.this_window also when changed!
+        # Used to minimize the window after the game starts
+        self.main_window: pygetwindow.Win32Window = pygetwindow.getWindowsWithTitle("Hominum")[0]
         self.mc = MCManager(context=path.CONTEXT)
-        self.auth_handler = AuthenticationHandler(email=SETTINGS.get_user("email"), context=path.CONTEXT)
+        self.auth_handler = AuthenticationHandler(
+            email=SETTINGS.get_user("email"), context=path.CONTEXT
+        )
         self.version = self.mc.provision_version(self.mc.fabric_version, self.mc.loader_version)
         session = self.auth_handler.refresh_session()
         # TODO: Handle no auth
@@ -229,16 +243,11 @@ class RunGameWindow(customtkinter.CTkToplevel):
         self.version.auth_session = session
         self.version.set_quick_play_multiplayer(self.mc.server_ip)
 
+        self.attributes("-topmost", True)  # Always on top
         self.geometry("500x150")
         self.resizable(False, False)
         self.columnconfigure(0, weight=1)  # configure grid system
         self.rowconfigure(0, weight=1)
-
-        # Make the window modal
-        self.transient(master)  # Set to be a transient window of the master window
-        self.grab_set()  # Direct all events to this window
-
-        self.protocol("WM_DELETE_WINDOW", self.destroy)  # Handle the close event
 
         # create install frame
         self.install_frame = InstallFrame(
@@ -249,9 +258,18 @@ class RunGameWindow(customtkinter.CTkToplevel):
     def on_install_complete(self):
         """Destroy the install frame and create the run frame."""
         self.install_frame.destroy()
-        run_frame = RunFrame(self, self.mc, self.version, on_run_complete=self.on_run_complete)
+        run_frame = RunFrame(
+            self,
+            self.mc,
+            self.version,
+            on_run_complete=self.on_run_complete,
+            main_window=self.main_window
+        )
         run_frame.grid(row=0, column=0, sticky="nsew")
 
     def on_run_complete(self):
         """Close this window."""
+        if self.main_window.isMinimized:
+            self.main_window.maximize()
+            self.main_window.resizeTo(1000, 400)  # FIXME: Don't hardcode this, place in settings
         self.destroy()

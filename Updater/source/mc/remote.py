@@ -91,12 +91,12 @@ def download_files(urls: list, mods_directory: str) -> Generator[tuple, None, No
         filename = filename.split("?")[0]  # Remove any query parameters from the file name
         save_path = os.path.join(mods_directory, filename)
         if not os.path.exists(save_path):
-            url_pairs.append((url, save_path))
+            url_pairs.append((url, save_path, filename))
 
     count = 0
     total = len(url_pairs)
     for pair in url_pairs:
-        url, save_path = pair
+        url, save_path, filename = pair
         retries_left = 3
 
         while retries_left > 0:

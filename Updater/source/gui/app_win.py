@@ -9,7 +9,6 @@ classes:
 """
 
 import customtkinter
-import pygetwindow
 from source.mc.authentication import AuthenticationHandler
 from source import path
 from source.gui.login_win import LoginWindow
@@ -153,17 +152,11 @@ class RightFrame(customtkinter.CTkFrame):
     def run_game(self):
         """Start Minecraft"""
         self.play_button.configure(state="disabled")
-        window: pygetwindow.Win32Window = pygetwindow.getWindowsWithTitle("Hominum")[0]
-        window.minimize()
 
         run_window = RunGameWindow(master=self.master)
-        run_window.transient(self)
         self.wait_window(run_window)
 
         self.play_button.configure(state="normal")
-        window.maximize()
-        window.resizeTo(1000, 400)
-
 
 
 class CenterFrame(customtkinter.CTkFrame):
@@ -172,7 +165,7 @@ class CenterFrame(customtkinter.CTkFrame):
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(0, weight=1)
         # TODO: Add a scrollable frame for misc info about the server
-        pass
+
 
 class App(customtkinter.CTk):
     """The main window of the application."""
