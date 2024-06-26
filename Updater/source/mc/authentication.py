@@ -1,18 +1,17 @@
 """
-This module contains the AuthenticationHandler class
-which is used to authenticate a user with Microsoft's services.
+A module used to authenticate a user with Microsoft's services.
 
 Classes:
 - AuthenticationHandler: A class used to authenticate a user with Microsoft's services.
 
 Constants:
-- LAUNCHER_NAME: The name of the launcher.
-- LAUNCHER_VERSION: The version of the launcher.
-- AUTH_DATABASE_FILE_NAME: The name of the authentication database file.
-- CLIENT_ID: The client ID.
-- APP_ID: The app ID.
-- CODE_REDIRECT_URI: The code redirect URI.
-- NONCE: The nonce.
+- AUTH_DATABASE_FILE_NAME (str): The name of the authentication database file.
+- CLIENT_ID (str): The client ID.
+- APP_ID (str): The app ID.
+- AUTH_SERVER_PORT (int): The port of the authentication server.
+- WEB_SERVER_PORT (int): The port of the web server.
+- CODE_REDIRECT_URI (str): The code redirect URI.
+- NONCE (str): The nonce.
 """
 
 import threading
@@ -25,21 +24,15 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 from portablemc.http import HttpError
 from portablemc.auth import MicrosoftAuthSession, AuthDatabase, AuthError
 from portablemc.standard import Context
-from source.path import PROGRAM_NAME, VERSION, APPLICATION_DIR
+from source.path import APPLICATION_DIR
 
-LAUNCHER_NAME, LAUNCHER_VERSION = PROGRAM_NAME, VERSION
-AUTH_DATABASE_FILE_NAME = "portablemc_auth.json"
-CLIENT_ID = "2b4ca0d5-a2f0-42bf-aed1-eeafa1139f26"
-APP_ID = "2b4ca0d5-a2f0-42bf-aed1-eeafa1139f26"
-CODE_REDIRECT_URI = "http://localhost:7969/code"  # URI of your choice
-NONCE = uuid4().hex  # random string
-
-
-# FIXME: When compiled to windowed only, the program doesn't send responses
-# FIXME: The above: There are two threads always waiting to finish network I/O,
-# FIXME: Even if the program is closed
-
-# TODO: Run servers in separate threads
+AUTH_DATABASE_FILE_NAME = "portablemc_auth.json"  # Authentication database file name
+CLIENT_ID = "2b4ca0d5-a2f0-42bf-aed1-eeafa1139f26"  # Same as APP_ID
+APP_ID = "2b4ca0d5-a2f0-42bf-aed1-eeafa1139f26"  # Application ID registered in Entra
+AUTH_SERVER_PORT = 8690  # Port of the authentication server
+WEB_SERVER_PORT = 7969  # Port of the web server
+CODE_REDIRECT_URI = "http://localhost:7969/code"  # URI registered in Entra
+NONCE = uuid4().hex  # Random string for security
 
 
 class AuthenticationHandler:
@@ -47,40 +40,17 @@ class AuthenticationHandler:
     A class used to authenticate a user with Microsoft's services.
     
     Methods:
-    - __init__: Initializes the AuthenticationHandler instance.
     - gen_auth_url: Generate the authentication URL.
-    - run_auth_server: Run the authentication server.
     - refresh_session: Refresh the authentication session.
     - authenticate: Authenticate the user with Microsoft's services.
     """
     def __init__(self, email: str, context: Context):
         self.email = email
-        # TODO: Just hardcode the path.CONTEXT constant here instead of parameter
         self.context = context
         self.auth_database = AuthDatabase(self.context.work_dir / AUTH_DATABASE_FILE_NAME)
 
-    def gen_auth_url(self) -> str:
-        """
-        Generate the authentication URL.
-
-        Returns:
-        - str: The authentication URL.
-        """
-        ref = urllib.parse.urlencode({
-            "client_id": APP_ID,
-            "redirect_uri": CODE_REDIRECT_URI,
-            "response_type": "code id_token",
-            "scope": "xboxlive.signin offline_access openid email",
-            "login_hint": self.email,
-            "nonce": NONCE,
-            "state": "port:8690",
-            "prompt": "login",
-            "response_mode": "fragment"
-        })
-        return f"https://login.live.com/oauth20_authorize.srf?{ref}"
-
     # TODO: Private this
-    def run_auth_server(self) -> str:
+    def _run_auth_server(self) -> str:
         """
         Run the authentication server.
         
@@ -95,7 +65,7 @@ class AuthenticationHandler:
             - __init__: Initializes the AuthServer instance.
             """
             def __init__(self):
-                super().__init__(("localhost", 8690), RequestHandler)
+                super().__init__(("localhost", AUTH_SERVER_PORT), RequestHandler)
                 self.timeout = 0.5
                 self.ms_auth_query = None
 
@@ -151,31 +121,59 @@ class AuthenticationHandler:
             return code
         return None
 
-    # TODO: Put this into a run_webserver method and private it like above
-    @staticmethod
-    class WebHandler(BaseHTTPRequestHandler):
+    def _run_web_server(self):
         """
-        The web handler for the web server.
-        
-        Methods:
-        - do_GET: Handles the GET request.
+        Run the web server in a separate thread.
         """
-        def do_GET(self):
+        class WebHandler(BaseHTTPRequestHandler):
             """
-            Handles the GET request.
+            The web handler for the web server.
             
-            Sends a response with the content-type header set to text/html.
+            Methods:
+            - do_GET: Handles the GET request.
             """
-            # read html file
-            file_path = APPLICATION_DIR / "assets" / "resp.html"
-            with open(file_path, "r", encoding="utf-8") as f:
-                html = f.read()
+            def do_GET(self):
+                """
+                Handles the GET request.
+                
+                Sends a response with the content-type header set to text/html.
+                """
+                # read html file
+                file_path = APPLICATION_DIR / "assets" / "resp.html"
+                with open(file_path, "r", encoding="utf-8") as f:
+                    html = f.read()
 
-            # send response
-            self.send_response(200)
-            self.send_header("Content-type", "text/html")
-            self.end_headers()
-            self.wfile.write(html.encode("utf-8"))
+                # send response
+                self.send_response(200)
+                self.send_header("Content-type", "text/html")
+                self.end_headers()
+                self.wfile.write(html.encode("utf-8"))
+        
+        server_address = ("", WEB_SERVER_PORT)
+        httpd = HTTPServer(server_address, WebHandler)
+        web_server = threading.Thread(target=httpd.serve_forever)
+        web_server.start()
+        return httpd, web_server
+
+    def gen_auth_url(self) -> str:
+        """
+        Generate the authentication URL.
+
+        Returns:
+        - str: The authentication URL.
+        """
+        ref = urllib.parse.urlencode({
+            "client_id": APP_ID,
+            "redirect_uri": CODE_REDIRECT_URI,
+            "response_type": "code id_token",
+            "scope": "xboxlive.signin offline_access openid email",
+            "login_hint": self.email,
+            "nonce": NONCE,
+            "state": f"port:{AUTH_SERVER_PORT}",
+            "prompt": "login",
+            "response_mode": "fragment"
+        })
+        return f"https://login.live.com/oauth20_authorize.srf?{ref}"
 
     def refresh_session(self) -> MicrosoftAuthSession:
         """
@@ -224,19 +222,16 @@ class AuthenticationHandler:
         q = Queue()
 
         # Modify the target function to put the result in the queue
-        def run_auth_server_and_store_result():
-            result = self.run_auth_server()
+        def _run_auth_server_and_store_result():
+            result = self._run_auth_server()
             q.put(result)
 
         # run auth server
-        auth_server = threading.Thread(target=run_auth_server_and_store_result)
+        auth_server = threading.Thread(target=_run_auth_server_and_store_result)
         auth_server.start()
 
         # Run web server
-        server_address = ("", 7969)
-        httpd = HTTPServer(server_address, self.WebHandler)
-        web_server = threading.Thread(target=httpd.serve_forever)
-        web_server.start()
+        httpd, web_server = self._run_web_server()
 
         # Get the result from the queue
         code = q.get()
