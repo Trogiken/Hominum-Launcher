@@ -6,3 +6,4 @@ pylint
 portablemc[certifi]
 customtkinter
 pillow
+pygetwindow

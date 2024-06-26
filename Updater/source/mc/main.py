@@ -1,4 +1,9 @@
-"""This module handles PortableMC"""
+"""
+This module contains the main class for handling Minecraft.
+
+Classes:
+- MCManager: A class that handles Minecraft.
+"""
 
 import os
 from typing import Generator
@@ -35,6 +40,10 @@ class MCManager:
     def provision_environment(self, version: FabricVersion, watcher: Watcher=None) -> Environment:
         """
         Provisions an environment for PortableMC.
+
+        Parameters:
+        - version (FabricVersion): The version for PortableMC.
+        - watcher (Watcher): The watcher for PortableMC. Defaults to None.
 
         Returns:
         - Environment: The environment for PortableMC.
@@ -95,7 +104,6 @@ class MCManager:
         Syncs the specified file with the server.
 
         Parameters:
-        - local_filepath (str): The local file to sync.
         - remote_file (str): The remote file to sync.
             Options: "options"
 

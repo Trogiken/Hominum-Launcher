@@ -114,21 +114,21 @@ class CenterFrame(customtkinter.CTkFrame):
             command=self.run_game
         )
         self.play_button.grid(row=0, column=0, padx=20, pady=20, sticky="nsew")
-    
+
     def run_game(self):
         """Start Minecraft"""
         self.play_button.configure(state="disabled")
-        window = pygetwindow.getWindowsWithTitle("Hominum")[0]
-        pygetwindow.Win32Window.minimize(window)
+        window: pygetwindow.Win32Window = pygetwindow.getWindowsWithTitle("Hominum")[0]
+        window.minimize(window)
 
         run_window = RunGameWindow(master=self.master)
         run_window.transient(self)
         self.wait_window(run_window)
 
         self.play_button.configure(state="normal")
-        pygetwindow.Win32Window.maximize(window)
-        pygetwindow.Win32Window.resizeTo(window, 1000, 400)
-        pygetwindow.Win32Window.moveTo(0 , 0)
+        window.maximize()
+        window.resizeTo(1000, 400)
+        window.moveTo(0, 0)
 
 
 class App(customtkinter.CTk):

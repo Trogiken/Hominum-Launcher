@@ -175,6 +175,30 @@ class AuthenticationHandler:
         })
         return f"https://login.live.com/oauth20_authorize.srf?{ref}"
 
+    def gen_logout_url(self) -> str:
+        """
+        Generate the logout URL.
+        
+        Note: This is not currently possible due to Entra not supporting http for logout redirects.
+        
+        Returns:
+        - str: The logout URL.
+        """
+        ref = urllib.parse.urlencode({
+            "client_id": APP_ID,
+            "redirect_uri": CODE_REDIRECT_URI
+        })
+        return f"https://login.live.com/oauth20_logout.srf?{ref}"
+
+    def get_player_data(self) -> dict:
+        """
+        Get the player data.
+
+        Returns:
+        - dict: The player data.
+        """
+        raise NotImplementedError
+
     def refresh_session(self) -> MicrosoftAuthSession:
         """
         Refresh the authentication session.

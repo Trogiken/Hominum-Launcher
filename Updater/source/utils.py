@@ -2,13 +2,14 @@
 This module handles things related to the gui
 
 Functions:
-- get_settings() -> GUISettings: Get the settings from the settings file.
-- save_settings(settings: GUISettings) -> pathlib.Path: Save the settings to the settings file.
-- reset_settings() -> GUISettings: Reset the settings to the default values.
-- get_image(image_name: str) -> Image: Get the image from the assets directory.
+- get_image: Get the image from the assets directory.
 
 Classes:
+- GUISettings: Stores the settings for the GUI.
+- UserSettings: Stores the settings for the user.
+- GameSettings: Stores the settings for the game.
 - Settings: Stores the settings for the program.
+
 
 Constants:
 - SETTINGS_FILENAME: The name of the settings file.
