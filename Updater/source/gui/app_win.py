@@ -15,6 +15,7 @@ from source.gui.login_win import LoginWindow
 from source.gui.app_settings_win import SettingsWindow
 from source.gui.app_rungame_win import RunGameWindow
 from source.utils import Settings, get_image
+
 SETTINGS = Settings()
 
 
