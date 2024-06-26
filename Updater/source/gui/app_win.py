@@ -165,6 +165,7 @@ class CenterFrame(customtkinter.CTkFrame):
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(0, weight=1)
         # TODO: Add a scrollable frame for misc info about the server
+        # TODO: Add a discord invite button
 
 
 class App(customtkinter.CTk):
