@@ -94,7 +94,48 @@ class LeftFrame(customtkinter.CTkFrame):
 class RightFrame(customtkinter.CTkFrame):
     def __init__(self, master):
         super().__init__(master)
-        # TODO: Display User account info and logout button
+        self.grid_columnconfigure(0, weight=1)
+        self.grid_rowconfigure(0, weight=1)
+
+        self.auth_handler = AuthenticationHandler(
+            email=SETTINGS.get_user("email"), context=path.CONTEXT
+        )
+
+        # User Dropdown
+        self.user_menu_var = customtkinter.StringVar(value=self.auth_handler.get_username())
+        self.user_menu = customtkinter.CTkOptionMenu(
+            self,
+            values=["Logout"],
+            font=SETTINGS.get_gui("font_normal"),
+            command=self.user_menu_callback,
+            variable=self.user_menu_var
+        )
+        self.user_menu.grid(row=0, column=0, padx=20, pady=20, sticky="n")
+
+    def user_menu_callback(self, action: str):
+        """
+        Callback function for the user menu.
+
+        Parameters:
+        - action (str): The action to perform.
+
+        Returns:
+        - None
+        """
+        action = action.casefold()
+        if action == "logout":
+            self.auth_handler.remove_session()
+            self.user_menu_var.set("Logged Out")
+            self.user_menu.configure(values=["Login"])
+            self.user_menu_var.set("Login")
+        if action == "login":
+            login_window = LoginWindow(master=self)
+            login_window.transient(self)
+            self.wait_window(login_window)
+            username = self.auth_handler.get_username()
+            if username:
+                self.user_menu_var.set(username)
+                self.user_menu.configure(values=["Logout"])
 
 
 class CenterFrame(customtkinter.CTkFrame):
@@ -128,7 +169,6 @@ class CenterFrame(customtkinter.CTkFrame):
         self.play_button.configure(state="normal")
         window.maximize()
         window.resizeTo(1000, 400)
-        window.moveTo(0, 0)
 
 
 class App(customtkinter.CTk):

@@ -190,14 +190,17 @@ class AuthenticationHandler:
         })
         return f"https://login.live.com/oauth20_logout.srf?{ref}"
 
-    def get_player_data(self) -> dict:
+    def get_username(self) -> str:
         """
-        Get the player data.
+        Get the player username.
 
         Returns:
-        - dict: The player data.
+        - str: The player username.
         """
-        raise NotImplementedError
+        session = self.refresh_session()
+        if session is None:
+            return ""
+        return session.username
 
     def refresh_session(self) -> MicrosoftAuthSession:
         """
