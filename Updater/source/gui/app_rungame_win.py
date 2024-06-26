@@ -166,7 +166,7 @@ class RunFrame(customtkinter.CTkFrame):
             # Thread is not alive, call the callback
             if self.on_run_complete:
                 self.on_run_complete()
-    
+
     def run(self):
         env = self.mc.provision_environment(self.version)
         env.jvm_args.extend(SETTINGS.get_game("jvm_args"))

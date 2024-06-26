@@ -88,20 +88,22 @@ def download_files(urls: list, mods_directory: str) -> Generator[tuple, None, No
         A generator that yields a tuple containing the count of downloaded files,
         the total number of files to download, and the name of the file.
     """
-    count = 0
-    total = len(urls)
-    # FIXME: The total doesn't take into account files that already exist!
+    url_pairs = []
     for url in urls:
         filename = url.split("/")[-1]  # Get the file name from the URL
         filename = filename.split("?")[0]  # Remove any query parameters from the file name
         save_path = os.path.join(mods_directory, filename)
+        if not os.path.exists(save_path):
+            url_pairs.append((url, save_path))
+
+    count = 0
+    total = len(url_pairs)
+    for pair in url_pairs:
+        url, save_path = pair
         retries_left = 3
 
         while retries_left > 0:
             try:
-                if os.path.exists(save_path):
-                    break
-
                 download(url, save_path)
                 count += 1
                 yield (count, total, filename)
