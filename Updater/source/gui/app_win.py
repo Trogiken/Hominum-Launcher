@@ -94,19 +94,22 @@ class LeftFrame(customtkinter.CTkFrame):
 class RightFrame(customtkinter.CTkFrame):
     def __init__(self, master):
         super().__init__(master)
+        self.login_window = None
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(0, weight=1)
 
-        self.auth_handler = AuthenticationHandler(
-            email=SETTINGS.get_user("email"), context=path.CONTEXT
-        )
-
         # User Dropdown
-        # FIXME: At fresh install, the name isnt updated to the username
-        username = self.auth_handler.get_username()
-        if username:
-            self.user_menu_var = customtkinter.StringVar(value=username)
-            user_menu_values = ["Logout"]
+        if SETTINGS.get_user("email"):
+            self.auth_handler = AuthenticationHandler(
+                email=SETTINGS.get_user("email"), context=path.CONTEXT
+            )
+            username = self.auth_handler.get_username()
+            if username:
+                self.user_menu_var = customtkinter.StringVar(value=username)
+                user_menu_values = ["Logout"]
+            else:
+                self.user_menu_var = customtkinter.StringVar(value="Logged Out")
+                user_menu_values = ["Login"]
         else:
             self.user_menu_var = customtkinter.StringVar(value="Logged Out")
             user_menu_values = ["Login"]
@@ -144,18 +147,26 @@ class RightFrame(customtkinter.CTkFrame):
         """
         action = action.casefold()
         if action == "logout":
-            self.auth_handler.remove_session()
+            auth_handler = AuthenticationHandler(SETTINGS.get_user("email"), path.CONTEXT)
+            auth_handler.remove_session()
             self.user_menu_var.set("Logged Out")
             self.user_menu.configure(values=["Login"])
             self.user_menu_var.set("Login")
         if action == "login":
-            login_window = LoginWindow(master=self)
-            login_window.transient(self)
-            self.wait_window(login_window)
-            username = self.auth_handler.get_username()
-            if username:
-                self.user_menu_var.set(username)
-                self.user_menu.configure(values=["Logout"])
+            if self.login_window is not None and self.login_window.winfo_exists():
+                self.login_window.lift()
+            else:
+                self.login_window = LoginWindow(master=self)
+                self.login_window.transient(self)
+                self.wait_window(self.login_window)
+                auth_handler = AuthenticationHandler(SETTINGS.get_user("email"), path.CONTEXT)
+                username = auth_handler.get_username()
+                if username:
+                    self.user_menu_var.set(username)
+                    self.user_menu.configure(values=["Logout"])
+                else:
+                    self.user_menu_var.set("Logged Out")
+                    self.user_menu.configure(values=["Login"])
 
     def run_game(self):
         """Start Minecraft"""
