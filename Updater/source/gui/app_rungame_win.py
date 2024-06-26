@@ -250,6 +250,9 @@ class RunGameWindow(customtkinter.CTkToplevel):
         self.version.auth_session = session
         self.version.set_quick_play_multiplayer(self.mc.server_ip)
 
+        # TODO: Maybe make this stop the game/installation
+        self.protocol("WM_DELETE_WINDOW", lambda: None)  # Prevent the closing of this window
+
         self.attributes("-topmost", True)  # Always on top
         self.geometry("500x150")
         self.resizable(False, False)
