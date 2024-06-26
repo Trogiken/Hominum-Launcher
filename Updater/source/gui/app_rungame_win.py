@@ -1,3 +1,14 @@
+"""
+This module contains the RunGameWindow class which is a custom tkinter window
+that is used to run minecraft.
+
+Classes:
+- InstallWatcher: A class that watches the installation of the game.
+- InstallFrame: A class that displays the installation progress accross operations.
+- RunFrame: A class that displays the running progress of the game.
+- RunGameWindow: A class that is used to run the game.
+"""
+
 import threading
 import customtkinter
 from portablemc.standard import \
@@ -12,11 +23,13 @@ SETTINGS = Settings()
 
 
 class InstallWatcher(Watcher):
+    """A class that watches the installation of the game."""
     def __init__(self, master):
         self.app = master
         self.total = 0
 
     def handle(self, event) -> None:
+        """Handle the event."""
         if isinstance(event, DownloadStartEvent):
             self.app.update_title("Downloading Fabric MC")
             self.app.reset_progress()
@@ -29,6 +42,7 @@ class InstallWatcher(Watcher):
 
 
 class InstallFrame(customtkinter.CTkFrame):
+    """A class that displays the installation progress accross operations."""
     def __init__(self, master, mc: MCManager, version: FabricVersion, on_install_complete=None):
         super().__init__(master)
         self.grid_columnconfigure(0, weight=1)
@@ -60,11 +74,20 @@ class InstallFrame(customtkinter.CTkFrame):
         self.start_installation()
 
     def start_installation(self):
+        """
+        Start the installation process.
+        
+        Returns:
+        - None"""
         self.install_thread = threading.Thread(target=self.install)
         self.install_thread.start()
         self.check_thread()
 
     def check_thread(self):
+        """
+        Check if the thread is alive.
+        If the thread is not alive, call the callback.
+        """
         if self.install_thread.is_alive():
             # Check again after 100ms
             self.after(100, self.check_thread)
@@ -74,6 +97,12 @@ class InstallFrame(customtkinter.CTkFrame):
                 self.on_install_complete()
 
     def install(self):
+        """
+        Install the game and other necessary files.
+        
+        Returns:
+        - None
+        """
         # TODO: Handle errors such that the game wont start if the installation fails
         # Install the game
         install_watcher = InstallWatcher(self)
@@ -116,21 +145,26 @@ class InstallFrame(customtkinter.CTkFrame):
         SETTINGS.set_user(first_start=False)
 
     def update_title(self, text):
+        """Update the title label."""
         self.title_label.configure(text=text)
 
     def update_item(self, text):
+        """Update the item label."""
         self.download_item_label.configure(text=text)
 
     def reset_progress(self):
+        """Reset the progress bar."""
         self.progress_bar.stop()
         self.progress_bar.configure(mode="determinate")
         self.progress_bar.set(0)
 
     def update_progress(self, value):
+        """Update the progress bar."""
         self.progress_bar.set(value)
 
 
 class RunFrame(customtkinter.CTkFrame):
+    """A class that displays the running progress of the game."""
     def __init__(self, master, mc: MCManager, version: FabricVersion, on_run_complete=None):
         super().__init__(master)
         self.grid_columnconfigure(0, weight=1)
@@ -154,11 +188,16 @@ class RunFrame(customtkinter.CTkFrame):
         self.run_game()
 
     def run_game(self):
+        """Start the game thread."""
         self.game_thread = threading.Thread(target=self.run)
         self.game_thread.start()
         self.check_thread()
 
     def check_thread(self):
+        """
+        Check if the thread is alive.
+        If the thread is not alive, call the callback.
+        """
         if self.game_thread.is_alive():
             # Check again after 100ms
             self.after(100, self.check_thread)
@@ -168,12 +207,14 @@ class RunFrame(customtkinter.CTkFrame):
                 self.on_run_complete()
 
     def run(self):
+        """Provision the environment and run the game."""
         env = self.mc.provision_environment(self.version)
         env.jvm_args.extend(SETTINGS.get_game("jvm_args"))
         env.run()
 
 
 class RunGameWindow(customtkinter.CTkToplevel):
+    """A class that is used to run the game."""
     def __init__(self, master, **kwargs):
         super().__init__(master, **kwargs)
         self.title("Run Game")
@@ -206,9 +247,11 @@ class RunGameWindow(customtkinter.CTkToplevel):
         self.install_frame.grid(row=0, column=0, sticky="nsew")
 
     def on_install_complete(self):
+        """Destroy the install frame and create the run frame."""
         self.install_frame.destroy()
         run_frame = RunFrame(self, self.mc, self.version, on_run_complete=self.on_run_complete)
         run_frame.grid(row=0, column=0, sticky="nsew")
 
     def on_run_complete(self):
+        """Close this window."""
         self.destroy()

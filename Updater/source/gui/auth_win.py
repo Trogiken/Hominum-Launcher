@@ -16,13 +16,7 @@ SETTINGS = Settings()
 
 
 class AuthWindow(customtkinter.CTkToplevel):
-    """
-    Toplevel window for authenticating the user with a Minecraft account.
-
-    Methods:
-    - __init__: Initializes the AuthWindow instance.
-    - auth: Runs the authentication process.
-    """
+    """Toplevel window for authenticating the user with a Minecraft account."""
     def __init__(self, master, email, **kwargs):
         super().__init__(master, **kwargs)
         self.title("Authentication")

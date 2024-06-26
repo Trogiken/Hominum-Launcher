@@ -1,20 +1,16 @@
 """
-This module provides functions related to file paths and directories.
-
-It includes functions to retrieve saved paths, save a new path, check if a path is valid,
-get the path to the mods folder, and get a path using the tk file dialog.
-
-Functions:
-- get_saved_paths() -> list: Return the saved paths if the file exists.
-- save_path(path: str) -> None: Save the path to the SAVED_PATH file.
-- is_valid_mod_path(path: str) -> bool: Check if the path is valid to be used as the mods path.
-- get_mods_path() -> str: Returns the path to the mods folder.
-- get_path_tk() -> str: Return path using tk file dialog
+This module contains the paths used by the launcher.
 
 Constants:
-- WORK_DIR: The path to the user application folder.
-- SAVED_PATH: The path to the saved paths file.
-- APPLICATION_DIRH: The path to the application directory.
+- PROGRAM_NAME (str): The name of the program.
+- PROGRAM_NAME_LONG (str): The long name of the program.
+- VERSION (str): The version of the program.
+- APPLICATION_DIR (pathlib.Path): The directory of the application.
+- ASSETS_DIR (pathlib.Path): The directory of the assets.
+- STORE_DIR (pathlib.Path): The directory of the store.
+- MAIN_DIR (pathlib.Path): The directory of the main data.
+- WORK_DIR (pathlib.Path): The directory of the working data.
+- CONTEXT (Context): The context of the program.
 """
 
 # TODO: Rename this module to constants

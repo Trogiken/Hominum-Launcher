@@ -1,7 +1,5 @@
-"""This module contains the popup window class.
-
-Classes:
-- PopupWindow: Represents a popup window.
+"""
+This module contains the PopupWindow class, which represents a popup window.
 """
 
 import customtkinter
@@ -11,13 +9,7 @@ SETTINGS = Settings()
 
 
 class PopupWindow(customtkinter.CTkToplevel):
-    """
-    Represents a popup window.
-
-    Methods:
-        __init__: Initializes the PopupWindow instance.
-    """
-
+    """Popup window."""
     def __init__(self, master, title, message, **kwargs):
         super().__init__(master, **kwargs)
         self.title(title)

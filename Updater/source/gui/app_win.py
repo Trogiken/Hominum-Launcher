@@ -1,7 +1,10 @@
 """
-Main window of the application.
+This module contains the main window of the application.
 
 classes:
+- LeftFrame: Contains a settings icon and functions.
+- RightFrame: Contains user account info and logout button.
+- CenterFrame: Contains tabs for whitelisting and syncing mods.
 - App: The main window of the application.
 """
 
@@ -137,7 +140,7 @@ class App(customtkinter.CTk):
 
         # Load settings
         customtkinter.set_appearance_mode(SETTINGS.get_gui("appearance"))
-        
+
         auth_handler = AuthenticationHandler(email=SETTINGS.get_user("email"), context=path.CONTEXT)
         session = auth_handler.refresh_session()
         if session is None:

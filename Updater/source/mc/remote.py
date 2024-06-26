@@ -19,10 +19,10 @@ Constants:
 - GITHUB_CONTENTS_BASE: The base URL for GitHub contents.
 """
 
+from typing import Generator
 import os
 import requests
 import yaml
-from typing import Generator
 from source import creds
 
 GITHUB_CONTENTS_BASE = r"https://api.github.com/repos/Trogiken/Hominum-Updates/contents"

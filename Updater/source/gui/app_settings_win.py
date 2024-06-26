@@ -1,8 +1,12 @@
 """
-This module contains the SettingsWindow class.
+This module contains the SettingsWindow class,
+which represents the settings window of the application.
 
 Classes:
-- SettingsWindow: Represents the setting window of the application.
+- GUISettingsFrame: A frame for the GUI settings.
+- UserSettingsFrame: A frame for the User settings.
+- GameSettingsFrame: A frame for the Game settings.
+- SettingsWindow: A window for the settings of the application.
 """
 
 import customtkinter
@@ -15,6 +19,7 @@ SETTINGS = Settings()
 
 
 class GUISettingsFrame(customtkinter.CTkFrame):
+    """A frame for the GUI settings."""
     def __init__(self, master):
         super().__init__(master)
         self.grid_columnconfigure(0, weight=1)
@@ -46,6 +51,7 @@ class GUISettingsFrame(customtkinter.CTkFrame):
 
 
 class UserSettingsFrame(customtkinter.CTkFrame):
+    """A frame for the User settings."""
     def __init__(self, master):
         super().__init__(master)
         self.grid_columnconfigure(0, weight=1)
@@ -79,6 +85,7 @@ class UserSettingsFrame(customtkinter.CTkFrame):
 
 
 class GameSettingsFrame(customtkinter.CTkFrame):
+    """A frame for the Game settings."""
     def __init__(self, master):
         super().__init__(master)
         self.grid_columnconfigure(0, weight=1)
@@ -92,7 +99,11 @@ class GameSettingsFrame(customtkinter.CTkFrame):
 
         # JVM Arguments Entry
         self.jvm_args_button = customtkinter.CTkButton(
-            self, text="JVM Arguments", font=SETTINGS.get_gui("font_normal"), command=self.open_jvm_args_dialog_event)
+            self,
+            text="JVM Arguments",
+            font=SETTINGS.get_gui("font_normal"),
+            command=self.open_jvm_args_dialog_event
+        )
         self.jvm_args_button.grid(row=1, column=0, padx=20, pady=10)
 
         # TODO: Add memory allocation slider
@@ -127,13 +138,7 @@ class GameSettingsFrame(customtkinter.CTkFrame):
 
 
 class SettingsWindow(customtkinter.CTkToplevel):
-    """
-    Represents the setting window of the application.
-
-    Methods:
-        __init__: Initializes the SettingsWindow instance.
-    """
-
+    """A window for the settings of the application."""
     def __init__(self, master, **kwargs):
         super().__init__(master, **kwargs)
         self.title("Settings")
