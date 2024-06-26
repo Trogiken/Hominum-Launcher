@@ -119,7 +119,7 @@ class CenterFrame(customtkinter.CTkFrame):
         """Start Minecraft"""
         self.play_button.configure(state="disabled")
         window: pygetwindow.Win32Window = pygetwindow.getWindowsWithTitle("Hominum")[0]
-        window.minimize(window)
+        window.minimize()
 
         run_window = RunGameWindow(master=self.master)
         run_window.transient(self)
