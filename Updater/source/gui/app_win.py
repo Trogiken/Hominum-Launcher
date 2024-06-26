@@ -101,6 +101,7 @@ class RightFrame(customtkinter.CTkFrame):
         )
 
         # User Dropdown
+        # TODO: Say login if the user isnt logged in here
         self.user_menu_var = customtkinter.StringVar(value=self.auth_handler.get_username())
         self.user_menu = customtkinter.CTkOptionMenu(
             self,
