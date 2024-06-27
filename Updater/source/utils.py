@@ -33,7 +33,7 @@ class GUISettings:
     """Stores the settings for the GUI."""
     font_small: tuple = ("Helvetica", 12)
     font_normal: tuple = ("Helvetica", 14)
-    font_large: tuple = ("Helvetica", 16)
+    font_large: tuple = ("Helvetica", 16, "bold")
     appearance: str = "system"
     image_small: tuple = (14, 14)
     image_normal: tuple = (18, 18)

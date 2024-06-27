@@ -182,36 +182,52 @@ class RightFrame(customtkinter.CTkFrame):
 class ScrollableFrame(customtkinter.CTkScrollableFrame):
     def __init__(self, master):
         super().__init__(master)
-        self.columnconfigure(0, weight=1)
         self.mc = MCManager(context=path.CONTEXT)
 
         # Parse the bulletin config and create the bulletin
-        # TODO: Make sure text wraps dynamically
-        bulletin_config: dict = self.mc.remote_config["bulletin"]
-        if not bulletin_config:  # FIXME Untested
+        bulletin_config: dict = self.mc.remote_config.get("bulletin", None)
+        if not bulletin_config:
+            self.columnconfigure(0, weight=1)
+            self.rowconfigure(0, weight=1)
+            # Create a frame that will center the label
+            centering_frame = customtkinter.CTkFrame(self)
+            centering_frame.grid(row=0, column=0, sticky="nsew", padx=10, pady=10)
+            self.grid_columnconfigure(0, weight=1)
+            self.grid_rowconfigure(0, weight=1)
+            # Now, centering_frame will expand to fill the ScrollableFrame
+
+            # Place the no_bulletin_label in the centering_frame
             no_bulletin_label = customtkinter.CTkLabel(
-                self, text="No bulletin available", font=SETTINGS.get_gui("font_large")
+                centering_frame, text="No Bulletin Available", font=SETTINGS.get_gui("font_large")
             )
-            no_bulletin_label.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
+            no_bulletin_label.place(relx=0.5, rely=0.5, anchor="center")
+            return
 
         for column in bulletin_config.keys():
             column_number = int(column.split("_")[1])
-            self.columnconfigure(column_number, weight=1)
+            self.columnconfigure(
+                column_number, weight=1, uniform="column_group"  # Change size together
+            )
+            # Below this line is management within the frames themselves
             section_row = 0
             for section, items in bulletin_config[column].items():
                 section_frame = customtkinter.CTkFrame(self)
-                section_frame.grid(row=section_row, column=column_number, padx=10, pady=10)
+                section_frame.grid(
+                    row=section_row, column=column_number, padx=10, pady=10, sticky="nsew"
+                )
+                section_frame.grid_columnconfigure(0, weight=1)
                 section_label = customtkinter.CTkLabel(
                     section_frame, text=section, font=SETTINGS.get_gui("font_large")
                 )
-                section_label.grid(row=section_row, column=column_number, padx=10, pady=10)
+                section_label.grid(row=section_row, column=0, padx=10, pady=10, sticky="n")
                 section_row += 1
                 item_row = section_row
-                for item in items:
+                for i, item in enumerate(items):
+                    pady = (10, 0) if i < len(items) - 1 else 10  # Add padding to the last item
                     item_label = customtkinter.CTkLabel(
                         section_frame, text=item, font=SETTINGS.get_gui("font_normal")
                     )
-                    item_label.grid(row=item_row, column=column_number, padx=10, pady=10)
+                    item_label.grid(row=item_row, column=0, padx=10, pady=pady, sticky="w")
                     item_row += 1
 
 
