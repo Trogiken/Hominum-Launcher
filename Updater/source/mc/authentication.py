@@ -49,7 +49,6 @@ class AuthenticationHandler:
         self.context = context
         self.auth_database = AuthDatabase(self.context.work_dir / AUTH_DATABASE_FILE_NAME)
 
-    # TODO: Private this
     def _run_auth_server(self) -> str:
         """
         Run the authentication server.
@@ -270,10 +269,13 @@ class AuthenticationHandler:
         if code is None:
             return None
 
-        # TODO: Add error handling here
-        session = MicrosoftAuthSession.authenticate(
-            self.auth_database.get_client_id(), APP_ID, code, CODE_REDIRECT_URI
-        )
+        try:
+            session = MicrosoftAuthSession.authenticate(
+                self.auth_database.get_client_id(), APP_ID, code, CODE_REDIRECT_URI
+            )
+        except Exception:
+            # TODO: Log error
+            return None
 
         if session is None:
             return None

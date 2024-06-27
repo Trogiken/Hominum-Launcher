@@ -25,7 +25,7 @@ from source import creds
 GITHUB_CONTENTS_BASE = r"https://api.github.com/repos/Trogiken/Hominum-Updates/contents"
 CONFIG_NAME = "config.yaml"
 
-
+# TODO: Make webrequests error handling more robust
 def get_request(url: str, timeout=5, headers=None, **kwargs) -> requests.models.Response:
     """
     Sends a GET request to the specified URL and returns the response object.
