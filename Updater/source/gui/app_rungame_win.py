@@ -282,5 +282,6 @@ class RunGameWindow(customtkinter.CTkToplevel):
         if os.name != "posix":
             if self.main_window.isMinimized:
                 self.main_window.maximize()
-                self.main_window.resizeTo(1000, 400)  # FIXME: Don't hardcode this, place in settings
+                min_length, min_height = SETTINGS.get_gui("main_window_min_size")
+                self.main_window.resizeTo(min_length, min_height)
         self.destroy()

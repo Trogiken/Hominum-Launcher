@@ -180,6 +180,7 @@ class RightFrame(customtkinter.CTkFrame):
 
 
 class ScrollableFrame(customtkinter.CTkScrollableFrame):
+    """A frame that contains the bulletin."""
     def __init__(self, master):
         super().__init__(master)
         self.mc = MCManager(context=path.CONTEXT)
@@ -253,8 +254,10 @@ class App(customtkinter.CTk):
     def __init__(self):
         super().__init__()
         self.title(path.PROGRAM_NAME)
-        self.geometry("1000x400")
-        self.minsize(1000, 400)
+        geom_length, geom_height = SETTINGS.get_gui("main_window_geometry")
+        min_length, min_height = SETTINGS.get_gui("main_window_min_size")
+        self.geometry(f"{geom_length}x{geom_height}")
+        self.minsize(min_length, min_height)
         self.grid_rowconfigure(0, weight=1)  # configure grid system
         self.grid_columnconfigure(0, weight=0)
         self.grid_columnconfigure(1, weight=1)

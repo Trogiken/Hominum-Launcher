@@ -31,6 +31,8 @@ SETTINGS_PATH = pathlib.Path(os.path.join(path.STORE_DIR, SETTINGS_FILENAME))
 @dataclass
 class GUISettings:
     """Stores the settings for the GUI."""
+    main_window_geometry: tuple = (1200, 500)
+    main_window_min_size: tuple = (1000, 400)
     font_small: tuple = ("Helvetica", 12)
     font_normal: tuple = ("Helvetica", 14)
     font_large: tuple = ("Helvetica", 16)
