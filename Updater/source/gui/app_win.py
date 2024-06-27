@@ -30,7 +30,7 @@ class LeftFrame(customtkinter.CTkFrame):
 
         # Title
         self.title_label = customtkinter.CTkLabel(
-            self, text=path.PROGRAM_NAME_LONG, font=SETTINGS.get_gui("font_large")
+            self, text=path.PROGRAM_NAME_LONG, font=SETTINGS.get_gui("font_title")
         )
         self.title_label.grid(row=0, column=0, padx=20, pady=(20, 0), sticky="n")
 
@@ -217,7 +217,7 @@ class ScrollableFrame(customtkinter.CTkScrollableFrame):
                 )
                 section_frame.grid_columnconfigure(0, weight=1)
                 section_label = customtkinter.CTkLabel(
-                    section_frame, text=section, font=SETTINGS.get_gui("font_large")
+                    section_frame, text=section, font=SETTINGS.get_gui("font_title")
                 )
                 section_label.grid(row=section_row, column=0, padx=10, pady=10, sticky="n")
                 section_row += 1
@@ -239,7 +239,7 @@ class CenterFrame(customtkinter.CTkFrame):
 
         # Title Label
         self.title_label = customtkinter.CTkLabel(
-            self, text="Server Bulletin", font=SETTINGS.get_gui("font_large")
+            self, text="Server Bulletin", font=SETTINGS.get_gui("font_title")
         )
         self.title_label.grid(row=0, column=0, padx=20, pady=(20, 0), sticky="n")
 

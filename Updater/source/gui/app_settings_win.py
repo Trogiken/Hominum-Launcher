@@ -27,7 +27,7 @@ class GUISettingsFrame(customtkinter.CTkFrame):
 
         # Frame Title
         self.title_label = customtkinter.CTkLabel(
-            self, text="GUI", font=SETTINGS.get_gui("font_large")
+            self, text="GUI", font=SETTINGS.get_gui("font_title")
         )
         self.title_label.grid(row=0, column=0, padx=20, pady=(20, 0), sticky="n")
 
@@ -59,7 +59,7 @@ class UserSettingsFrame(customtkinter.CTkFrame):
 
         # Frame Title
         self.title_label = customtkinter.CTkLabel(
-            self, text="User", font=SETTINGS.get_gui("font_large")
+            self, text="User", font=SETTINGS.get_gui("font_title")
         )
         self.title_label.grid(row=0, column=0, padx=20, pady=(20, 0), sticky="n")
 
@@ -93,7 +93,7 @@ class GameSettingsFrame(customtkinter.CTkFrame):
 
         # Frame Title
         self.title_label = customtkinter.CTkLabel(
-            self, text="Game", font=SETTINGS.get_gui("font_large")
+            self, text="Game", font=SETTINGS.get_gui("font_title")
         )
         self.title_label.grid(row=0, column=0, padx=20, pady=(20, 0), sticky="n")
 
