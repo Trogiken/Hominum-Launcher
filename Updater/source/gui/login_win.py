@@ -62,7 +62,7 @@ class LoginWindow(customtkinter.CTkToplevel):
         SETTINGS.set_user(email=self.entry.get())
         auth_handler = AuthenticationHandler(email=SETTINGS.get_user("email"), context=path.CONTEXT)
         self.auth_window = AuthWindow(master=self.master, email=self.entry.get())
-        if not auth_handler.refresh_session():  # if the session failed, re-enable the button
+        if not auth_handler.get_session():  # if the session failed, re-enable the button
             # TODO: Log this as an error
             self.button.configure(state="normal")
         else:

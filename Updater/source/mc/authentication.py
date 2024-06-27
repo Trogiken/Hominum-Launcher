@@ -41,7 +41,10 @@ class AuthenticationHandler:
     
     Methods:
     - gen_auth_url: Generate the authentication URL.
-    - refresh_session: Refresh the authentication session.
+    - gen_logout_url: Generate the logout URL.
+    - get_username: Get the player username.
+    - get_session: Get the authentication session.
+    - remove_session: Remove the authentication session.
     - authenticate: Authenticate the user with Microsoft's services.
     """
     def __init__(self, email: str, context: Context):
@@ -196,14 +199,15 @@ class AuthenticationHandler:
         Returns:
         - str: The player username.
         """
-        session = self.refresh_session()
+        session = self.get_session()
         if session is None:
             return ""
         return session.username
 
-    def refresh_session(self) -> MicrosoftAuthSession:
+    def get_session(self) -> MicrosoftAuthSession:
         """
-        Refresh the authentication session.
+        Get the authentication session.
+        Will try to refresh the session if it is invalid.
 
         Returns:
         - MicrosoftAuthSession: The Microsoft authentication session.
@@ -237,7 +241,7 @@ class AuthenticationHandler:
         - MicrosoftAuthSession: The Microsoft authentication session.
         - None: If the session could not be authenticated.
         """
-        session = self.refresh_session()
+        session = self.get_session()
         if session is not None:
             return session
 
