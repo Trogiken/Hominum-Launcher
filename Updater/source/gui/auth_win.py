@@ -10,7 +10,6 @@ import customtkinter
 from source.utils import Settings
 from source.mc import AuthenticationHandler
 from source import path
-from source import exceptions
 
 SETTINGS = Settings()
 
@@ -51,14 +50,5 @@ class AuthWindow(customtkinter.CTkToplevel):
 
     def auth(self):
         """Runs the authentication process. WORKING PROGRESS"""
-        auth_handler = AuthenticationHandler(email=self.email, context=path.CONTEXT)
-        try:
-            session = auth_handler.authenticate()
-
-            if session is None:
-                raise exceptions.AuthenticationFailed("No auth session")
-
-            SETTINGS.set_user(email=self.email)
-        except Exception:
-            # TODO: Handle this
-            pass
+        auth_handler = AuthenticationHandler(email=SETTINGS.get_user("email"), context=path.CONTEXT)
+        auth_handler.authenticate()

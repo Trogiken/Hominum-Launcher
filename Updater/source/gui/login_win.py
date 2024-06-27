@@ -6,8 +6,10 @@ Classes:
 """
 
 import customtkinter
+from source.mc import AuthenticationHandler
 from source.gui.auth_win import AuthWindow
 from source.utils import Settings
+from source import path
 
 SETTINGS = Settings()
 
@@ -24,25 +26,30 @@ class LoginWindow(customtkinter.CTkToplevel):
     def __init__(self, master, **kwargs):
         super().__init__(master, **kwargs)
         self.title("Login")
-        self.geometry("450x200")
+        self.geometry("450x150")
         self.resizable(False, False)
-        self.grid_columnconfigure(0, weight=1)  # configure grid system
+        # Configure grid system for centering
+        self.grid_columnconfigure(0, weight=1)
+        self.grid_columnconfigure(2, weight=1)
+        self.grid_rowconfigure(0, weight=1)
+        self.grid_rowconfigure(3, weight=1)
 
-        # TODO: Center these two widgets in the window
-        # FIXME: If the incorrect email is entered, no matter what the login session will be broken,
-        # FIXME: - even if windows corrects it as we store what they entered as the email in settings
-        # email entry
+        # email entry centered
         self.entry = customtkinter.CTkEntry(
-            self, width=200, font=SETTINGS.get_gui("font_normal"), placeholder_text="Microsoft Email Address"
+            self,
+            width=300,
+            font=SETTINGS.get_gui("font_normal"),
+            placeholder_text="Microsoft Email Address",
+            justify="center",
         )
-        self.entry.grid(row=0, column=0, pady=(20, 0))
-        self.entry.bind("<Return>", lambda _: self.login())
+        self.entry.grid(row=1, column=1, pady=(20, 10), sticky="nsew")
+        self.bind("<Return>", lambda _: self.login())
 
-        # button
+        # button centered
         self.button = customtkinter.CTkButton(
-            self, text="Login", command=self.login, font=SETTINGS.get_gui("font_normal")
+            self, width=150, text="Login", command=self.login, font=SETTINGS.get_gui("font_normal")
         )
-        self.button.grid(row=1, column=0, pady=(20, 0))
+        self.button.grid(row=2, column=1, pady=(10, 20))
 
     def login(self):
         """
@@ -52,5 +59,11 @@ class LoginWindow(customtkinter.CTkToplevel):
         to initiate the authentication process. Destroys the current login window.
         """
         self.button.configure(state="disabled")
+        SETTINGS.set_user(email=self.entry.get())
+        auth_handler = AuthenticationHandler(email=SETTINGS.get_user("email"), context=path.CONTEXT)
         self.auth_window = AuthWindow(master=self.master, email=self.entry.get())
-        self.destroy()
+        if not auth_handler.refresh_session():  # if the session failed, re-enable the button
+            # TODO: Log this as an error
+            self.button.configure(state="normal")
+        else:
+            self.destroy()
