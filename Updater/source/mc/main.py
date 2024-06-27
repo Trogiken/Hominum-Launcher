@@ -105,7 +105,7 @@ class MCManager:
 
         Parameters:
         - remote_file (str): The remote file to sync.
-            Options: "options"
+            Options: "options", "servers"
 
         Returns:
         - None
@@ -114,6 +114,8 @@ class MCManager:
             raise ValueError(f"Invalid remote file: {remote_file}")
         if remote_file == "options":
             local_filepath = self.context.work_dir / "options.txt"
+        elif remote_file == "servers":
+            local_filepath = self.context.work_dir / "servers.dat"
         else:
             raise ValueError(f"Unknown valid remote file: {remote_file}")
         try:

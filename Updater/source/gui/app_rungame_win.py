@@ -129,6 +129,7 @@ class InstallFrame(customtkinter.CTkFrame):
             # Sync Configurations
             self.update_title("Syncing Configurations")
             self.reset_progress()
+            self.mc.sync_file("servers")
             self.mc.sync_file("options")
             for count, total, filename in self.mc.sync_dir("config"):
                 self.update_item(filename)
