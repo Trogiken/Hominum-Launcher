@@ -9,6 +9,7 @@ classes:
 """
 
 import customtkinter
+from source.mc import MCManager
 from source.mc.authentication import AuthenticationHandler
 from source import path
 from source.gui.login_win import LoginWindow
@@ -178,13 +179,57 @@ class RightFrame(customtkinter.CTkFrame):
         self.play_button.configure(state="normal")
 
 
-class CenterFrame(customtkinter.CTkScrollableFrame):
+class ScrollableFrame(customtkinter.CTkScrollableFrame):
+    def __init__(self, master):
+        super().__init__(master)
+        self.columnconfigure(0, weight=1)
+        self.mc = MCManager(context=path.CONTEXT)
+
+        # Parse the bulletin config and create the bulletin
+        # TODO: Make sure text wraps dynamically
+        bulletin_config: dict = self.mc.remote_config["bulletin"]
+        if not bulletin_config:  # FIXME Untested
+            no_bulletin_label = customtkinter.CTkLabel(
+                self, text="No bulletin available", font=SETTINGS.get_gui("font_large")
+            )
+            no_bulletin_label.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
+
+        for column in bulletin_config.keys():
+            column_number = int(column.split("_")[1])
+            self.columnconfigure(column_number, weight=1)
+            section_row = 0
+            for section, items in bulletin_config[column].items():
+                section_frame = customtkinter.CTkFrame(self)
+                section_frame.grid(row=section_row, column=column_number, padx=10, pady=10)
+                section_label = customtkinter.CTkLabel(
+                    section_frame, text=section, font=SETTINGS.get_gui("font_large")
+                )
+                section_label.grid(row=section_row, column=column_number, padx=10, pady=10)
+                section_row += 1
+                item_row = section_row
+                for item in items:
+                    item_label = customtkinter.CTkLabel(
+                        section_frame, text=item, font=SETTINGS.get_gui("font_normal")
+                    )
+                    item_label.grid(row=item_row, column=column_number, padx=10, pady=10)
+                    item_row += 1
+
+
+class CenterFrame(customtkinter.CTkFrame):
     def __init__(self, master):
         super().__init__(master)
         self.grid_columnconfigure(0, weight=1)
-        self.grid_rowconfigure(0, weight=1)
-        # TODO: Add a scrollable frame for misc info about the server
-        # TODO: Add a discord invite button
+        self.grid_rowconfigure(1, weight=2)
+
+        # Title Label
+        self.title_label = customtkinter.CTkLabel(
+            self, text="Server Bulletin", font=SETTINGS.get_gui("font_large")
+        )
+        self.title_label.grid(row=0, column=0, padx=20, pady=(20, 0), sticky="n")
+
+        # Scrollable Frame
+        self.scrollable_frame = ScrollableFrame(self)
+        self.scrollable_frame.grid(row=1, column=0, padx=20, pady=20, sticky="nsew")
 
 
 class App(customtkinter.CTk):
