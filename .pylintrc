@@ -282,7 +282,6 @@ exclude-too-few-public-methods=
 
 # List of qualified class names to ignore when counting class parents (see
 # R0901)
-# TODO: Add the names of the classes that are ignored
 ignored-parents=
 
 # Maximum number of arguments for function / method.

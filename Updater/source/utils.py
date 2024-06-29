@@ -64,7 +64,6 @@ class GameSettings:
     ])
 
 
-# TODO: Fix docstring format
 class Settings:
     """
     A class that represents the settings for the application.

@@ -15,13 +15,14 @@ import customtkinter
 from portablemc.standard import \
 Watcher, DownloadCompleteEvent, DownloadProgressEvent, DownloadStartEvent
 from portablemc.fabric import FabricVersion
+from source.gui.popup_win import PopupWindow
 from source import path
 from source.utils import Settings
 from source.mc.authentication import AuthenticationHandler
 from source.mc import MCManager
 
 if os.name != "posix":
-    import pygetwindow
+    import pygetwindow as pygw
 
 SETTINGS = Settings()
 
@@ -47,7 +48,13 @@ class InstallWatcher(Watcher):
 
 class InstallFrame(customtkinter.CTkFrame):
     """A class that displays the installation progress accross operations."""
-    def __init__(self, master, mc: MCManager, version: FabricVersion, on_install_complete=None):
+    def __init__(self,
+                 master,
+                 mc: MCManager,
+                 version: FabricVersion,
+                 on_install_complete=None,
+                 on_install_error=None
+        ):
         super().__init__(master)
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(0, weight=1)
@@ -57,6 +64,8 @@ class InstallFrame(customtkinter.CTkFrame):
         self.mc = mc
         self.version = version
         self.on_install_complete = on_install_complete
+        self.on_install_error = on_install_error
+        self.errors_occurred = False
 
         # Title label
         self.title_label = customtkinter.CTkLabel(
@@ -97,8 +106,12 @@ class InstallFrame(customtkinter.CTkFrame):
             self.after(100, self.check_thread)
         else:
             # Thread is not alive, call the callback
+            if self.errors_occurred:
+                self.on_install_error()
+                return
             if self.on_install_complete:
                 self.on_install_complete()
+                return
 
     def install(self):
         """
@@ -110,44 +123,67 @@ class InstallFrame(customtkinter.CTkFrame):
         # TODO: Handle errors such that the game wont start if the installation fails
         # Install the game
         install_watcher = InstallWatcher(self)
-        for _ in range(3):
+        for _ in range(3):  # Retry 3 times
             try:
                 self.mc.provision_environment(self.version, watcher=install_watcher)
+                self.errors_occurred = False
                 break
-            except Exception as e:
-                # TODO: Handle error
-                print(f"Error: {e}")
+            except Exception:
+                # TODO: Log Errors
+                self.errors_occurred = True
+
+        # Prevent the next steps because the environment was not provisioned properly
+        if self.errors_occurred:
+            return
 
         # Sync Mods
-        self.update_title("Syncing Mods")
-        self.reset_progress()
-        for count, total, filename in self.mc.sync_dir("mods"):
-            self.update_item(filename)
-            self.update_progress(count / total)
+        try:
+            self.update_title("Syncing Mods")
+            self.reset_progress()
+            for count, total, filename in self.mc.sync_dir("mods"):
+                self.update_item(filename)
+                self.update_progress(count / total)
+        except Exception:
+            # TODO: Log Errors
+            self.errors_occurred = True
 
         if SETTINGS.get_user("first_start"):
             # Sync Configurations
-            self.update_title("Syncing Configurations")
-            self.reset_progress()
-            self.mc.sync_file("servers")
-            self.mc.sync_file("options")
-            for count, total, filename in self.mc.sync_dir("config"):
-                self.update_item(filename)
-                self.update_progress(count / total)
+            try:
+                self.update_title("Syncing Configurations")
+                self.reset_progress()
+                self.mc.sync_file("servers")
+                self.mc.sync_file("options")
+                for count, total, filename in self.mc.sync_dir("config"):
+                    self.update_item(filename)
+                    self.update_progress(count / total)
+            except Exception:
+                # TODO: Log Errors
+                self.errors_occurred = True
             # Sync Resource Packs
-            self.update_title("Syncing Resource Packs")
-            self.reset_progress()
-            for count, total, filename in self.mc.sync_dir("resourcepacks"):
-                self.update_item(filename)
-                self.update_progress(count / total)
+            try:
+                self.update_title("Syncing Resource Packs")
+                self.reset_progress()
+                for count, total, filename in self.mc.sync_dir("resourcepacks"):
+                    self.update_item(filename)
+                    self.update_progress(count / total)
+            except Exception:
+                # TODO: Log Errors
+                self.errors_occurred = True
             # Sync Shader Packs
-            self.update_title("Syncing Shader Packs")
-            self.reset_progress()
-            for count, total, filename in self.mc.sync_dir("shaderpacks"):
-                self.update_item(filename)
-                self.update_progress(count / total)
+            try:
+                self.update_title("Syncing Shader Packs")
+                self.reset_progress()
+                for count, total, filename in self.mc.sync_dir("shaderpacks"):
+                    self.update_item(filename)
+                    self.update_progress(count / total)
+            except Exception:
+                # TODO: Log Errors
+                self.errors_occurred = True
 
-        SETTINGS.set_user(first_start=False)
+        # Only set the user if no errors occurred
+        if not self.errors_occurred:
+            SETTINGS.set_user(first_start=False)
 
     def update_title(self, text):
         """Update the title label."""
@@ -228,6 +264,7 @@ class RunFrame(customtkinter.CTkFrame):
                 self.after(1000, self.main_window.minimize())
         env.run()
 
+
 # TODO: If this window is destroyed, the game should be stopped
 class RunGameWindow(customtkinter.CTkToplevel):
     """A class that is used to run the game."""
@@ -237,7 +274,7 @@ class RunGameWindow(customtkinter.CTkToplevel):
         # Used to minimize the window after the game starts
         self.main_window = None
         if os.name != "posix":
-            self.main_window: pygetwindow.Win32Window = pygetwindow.getWindowsWithTitle("Hominum")[0]
+            self.main_window: pygw.Win32Window = pygw.getWindowsWithTitle("Hominum")[0]
         self.mc = MCManager(context=path.CONTEXT)
         self.auth_handler = AuthenticationHandler(
             email=SETTINGS.get_user("email"), context=path.CONTEXT
@@ -246,7 +283,7 @@ class RunGameWindow(customtkinter.CTkToplevel):
         session = self.auth_handler.get_session()
         # TODO: Handle no auth
         if session is None:
-            print("No Auth")
+            # TODO: Handle no auth
             return
         self.version.auth_session = session
         self.version.set_quick_play_multiplayer(self.mc.server_ip)
@@ -262,7 +299,11 @@ class RunGameWindow(customtkinter.CTkToplevel):
 
         # create install frame
         self.install_frame = InstallFrame(
-            self, self.mc, self.version, on_install_complete=self.on_install_complete
+            self,
+            self.mc,
+            self.version,
+            on_install_complete=self.on_install_complete,
+            on_install_error=self.on_install_error
         )
         self.install_frame.grid(row=0, column=0, sticky="nsew")
 
@@ -277,6 +318,15 @@ class RunGameWindow(customtkinter.CTkToplevel):
             main_window=self.main_window
         )
         run_frame.grid(row=0, column=0, sticky="nsew")
+
+    def on_install_error(self):
+        """Display an error message."""
+        PopupWindow(
+            self,
+            title="Error",
+            message="An error occurred during the installation process",
+        )
+        self.destroy()
 
     def on_run_complete(self):
         """Close this window."""

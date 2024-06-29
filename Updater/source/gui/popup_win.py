@@ -14,7 +14,7 @@ class PopupWindow(customtkinter.CTkToplevel):
         super().__init__(master, **kwargs)
         self.title(title)
         self.geometry("400x100")
-        self.resizable(False, False)
+        self.resizable(True, True)
         self.grid_columnconfigure(0, weight=1)
 
         # Make the window modal
@@ -31,6 +31,6 @@ class PopupWindow(customtkinter.CTkToplevel):
         self.button = customtkinter.CTkButton(
             self, text="OK", command=self.destroy, font=SETTINGS.get_gui("font_normal")
         )
-        self.button.grid(row=1, column=0, pady=(20, 0))
+        self.button.grid(row=1, column=0, pady=20)
 
         self.wait_window()
