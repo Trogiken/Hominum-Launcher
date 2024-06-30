@@ -48,6 +48,7 @@ class UserSettings:
     """Stores the settings for the user."""
     email: str = ""
     first_start: bool = True
+    autojoin: bool = True
 
 
 @dataclass

@@ -123,6 +123,19 @@ class RightFrame(customtkinter.CTkFrame):
         )
         self.user_menu.grid(row=0, column=0, padx=20, pady=20, sticky="n")
 
+        # Auto-Join Switch
+        self.autojoin_switch_var = customtkinter.BooleanVar(value=SETTINGS.get_user("autojoin"))
+        self.autojoin_switch = customtkinter.CTkSwitch(
+            self,
+            text="Auto-Join",
+            font=SETTINGS.get_gui("font_normal"),
+            command=self.auto_join_callback,
+            variable=self.autojoin_switch_var,
+            onvalue=True,
+            offvalue=False
+        )
+        self.autojoin_switch.grid(row=1, column=0, padx=20, pady=0, sticky="s")
+
         self.play_button_photo = customtkinter.CTkImage(
             get_image("play.png").resize(SETTINGS.get_gui("image_large"))
         )
@@ -134,7 +147,22 @@ class RightFrame(customtkinter.CTkFrame):
             fg_color="green",
             command=self.run_game
         )
-        self.play_button.grid(row=0, column=0, padx=20, pady=20, sticky="s")
+        self.play_button.grid(row=2, column=0, padx=20, pady=20, sticky="s")
+
+    def auto_join_callback(self):
+        """
+        Callback function for the auto-join switch.
+
+        Returns:
+        - None
+        """
+        action = self.autojoin_switch_var.get()
+        if action is True:
+            self.autojoin_switch_var.set(True)
+            SETTINGS.set_user(autojoin=True)
+        elif action is False:
+            self.autojoin_switch_var.set(False)
+            SETTINGS.set_user(autojoin=False)
 
     def user_menu_callback(self, action: str):
         """
@@ -233,6 +261,7 @@ class ScrollableFrame(customtkinter.CTkScrollableFrame):
 
 
 class CenterFrame(customtkinter.CTkFrame):
+    """This frame contains the bulletin."""
     def __init__(self, master):
         super().__init__(master)
         self.grid_columnconfigure(0, weight=1)

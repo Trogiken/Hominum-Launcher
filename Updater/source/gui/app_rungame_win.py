@@ -286,7 +286,8 @@ class RunGameWindow(customtkinter.CTkToplevel):
             # TODO: Handle no auth
             return
         self.version.auth_session = session
-        self.version.set_quick_play_multiplayer(self.mc.server_ip)
+        if SETTINGS.get_user("autojoin"):
+            self.version.set_quick_play_multiplayer(self.mc.server_ip)
 
         # TODO: Maybe make this stop the game/installation
         self.protocol("WM_DELETE_WINDOW", lambda: None)  # Prevent the closing of this window
