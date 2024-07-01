@@ -13,8 +13,6 @@ Constants:
 - CONTEXT (Context): The context of the program.
 """
 
-# TODO: Rename this module to constants
-
 import os
 import pathlib
 import sys

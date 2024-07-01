@@ -120,7 +120,6 @@ class InstallFrame(customtkinter.CTkFrame):
         Returns:
         - None
         """
-        # TODO: Handle errors such that the game wont start if the installation fails
         # Install the game
         install_watcher = InstallWatcher(self)
         for _ in range(3):  # Retry 3 times
@@ -266,7 +265,6 @@ class RunFrame(customtkinter.CTkFrame):
         env.run()
 
 
-# TODO: If this window is destroyed, the game should be stopped
 class RunGameWindow(customtkinter.CTkToplevel):
     """A class that is used to run the game."""
     def __init__(self, master, **kwargs):
@@ -291,10 +289,9 @@ class RunGameWindow(customtkinter.CTkToplevel):
             self.after(100, self.destroy)
             return
         self.version.auth_session = session
-        if SETTINGS.get_game("autojoin"):
+        if SETTINGS.get_game("autojoin") and self.mc.server_ip:
             self.version.set_quick_play_multiplayer(self.mc.server_ip)
 
-        # TODO: Maybe make this stop the game/installation
         self.protocol("WM_DELETE_WINDOW", lambda: None)  # Prevent the closing of this window
 
         self.attributes("-topmost", True)  # Always on top

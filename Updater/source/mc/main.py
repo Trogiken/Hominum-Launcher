@@ -18,9 +18,9 @@ class MCManager:
         self.context = context
         self.remote_config = remote.get_config()
 
-        self.server_ip: str = self.remote_config["client"]["server_ip"]
-        self.fabric_version: str = self.remote_config["client"]["fabric_version"]
-        self.loader_version: str = self.remote_config["client"]["loader_version"]
+        self.server_ip: str = self.remote_config.get("client", {}).get("server_ip", "")
+        self.fabric_version: str = self.remote_config.get("client", {}).get("fabric_version", "")
+        self.loader_version: str = self.remote_config.get("client", {}).get("loader_version", "")
 
     def provision_version(self, vanilla_version: str, loader_version: str=None) -> FabricVersion:
         """

@@ -21,8 +21,8 @@ if __name__ == "__main__":
         app = App()
         app.mainloop()
     finally:
-        sys.stdout.close()
-        sys.stderr.close()
         if not IS_DEVELOPMENT:
+            sys.stdout.close()
+            sys.stderr.close()
             sys.stdout = original_stdout
             sys.stderr = original_stderr
