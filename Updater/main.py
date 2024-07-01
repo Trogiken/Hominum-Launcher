@@ -6,6 +6,8 @@ import sys
 import os
 from source.gui.app_win import App
 
+# FIXME: Doesn't work right when compiled
+
 IS_DEVELOPMENT = True  # This should be set to False before release
 
 
