@@ -13,7 +13,7 @@ class PopupWindow(customtkinter.CTkToplevel):
     def __init__(self, master, title, message, **kwargs):
         super().__init__(master, **kwargs)
         self.title(title)
-        self.geometry("400x100")
+        self.geometry("400x150")
         self.resizable(True, True)
         self.grid_columnconfigure(0, weight=1)
 

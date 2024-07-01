@@ -282,9 +282,13 @@ class RunGameWindow(customtkinter.CTkToplevel):
         )
         self.version = self.mc.provision_version(self.mc.fabric_version, self.mc.loader_version)
         session = self.auth_handler.get_session()
-        # TODO: Handle no auth
         if session is None:
-            # TODO: Handle no auth
+            PopupWindow(
+                self,
+                title="Authentication Error",
+                message="No authentication session found. Please login."
+            )
+            self.after(100, self.destroy)
             return
         self.version.auth_session = session
         if SETTINGS.get_game("autojoin"):
