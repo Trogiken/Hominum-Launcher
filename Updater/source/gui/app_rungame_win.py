@@ -147,7 +147,7 @@ class InstallFrame(customtkinter.CTkFrame):
             # TODO: Log Errors
             self.errors_occurred = True
 
-        if SETTINGS.get_user("first_start"):
+        if SETTINGS.get_game("first_start"):
             # Sync Configurations
             try:
                 self.update_title("Syncing Configurations")
@@ -183,7 +183,7 @@ class InstallFrame(customtkinter.CTkFrame):
 
         # Only set the user if no errors occurred
         if not self.errors_occurred:
-            SETTINGS.set_user(first_start=False)
+            SETTINGS.set_game(first_start=False)
 
     def update_title(self, text):
         """Update the title label."""
@@ -258,7 +258,8 @@ class RunFrame(customtkinter.CTkFrame):
     def run(self):
         """Provision the environment and run the game."""
         env = self.mc.provision_environment(self.version)
-        env.jvm_args.extend(SETTINGS.get_game("jvm_args"))
+        args = SETTINGS.get_game("ram_jvm_args") + SETTINGS.get_game("additional_jvm_args")
+        env.jvm_args.extend(args)
         if os.name != "posix":
             if not self.main_window.isMinimized:
                 self.after(1000, self.main_window.minimize())
@@ -286,7 +287,7 @@ class RunGameWindow(customtkinter.CTkToplevel):
             # TODO: Handle no auth
             return
         self.version.auth_session = session
-        if SETTINGS.get_user("autojoin"):
+        if SETTINGS.get_game("autojoin"):
             self.version.set_quick_play_multiplayer(self.mc.server_ip)
 
         # TODO: Maybe make this stop the game/installation

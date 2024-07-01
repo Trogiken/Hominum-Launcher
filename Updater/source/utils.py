@@ -47,15 +47,15 @@ class GUISettings:
 class UserSettings:
     """Stores the settings for the user."""
     email: str = ""
-    first_start: bool = True
-    autojoin: bool = True
 
 
 @dataclass
 class GameSettings:
     """Stores the settings for the game."""
-    jvm_args: list = field(default_factory=lambda: [
-        "-Xmx2G",
+    first_start: bool = True
+    autojoin: bool = True
+    ram_jvm_args: list = field(default_factory=lambda: ["-Xms2048M", "-Xmx2048M"])
+    additional_jvm_args: list = field(default_factory=lambda: [
         "-XX:+UnlockExperimentalVMOptions",
         "-XX:+UseG1GC",
         "-XX:G1NewSizePercent=20",

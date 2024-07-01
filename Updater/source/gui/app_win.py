@@ -124,7 +124,7 @@ class RightFrame(customtkinter.CTkFrame):
         self.user_menu.grid(row=0, column=0, padx=20, pady=20, sticky="n")
 
         # Auto-Join Switch
-        self.autojoin_switch_var = customtkinter.BooleanVar(value=SETTINGS.get_user("autojoin"))
+        self.autojoin_switch_var = customtkinter.BooleanVar(value=SETTINGS.get_game("autojoin"))
         self.autojoin_switch = customtkinter.CTkSwitch(
             self,
             text="Auto-Join",
@@ -159,10 +159,10 @@ class RightFrame(customtkinter.CTkFrame):
         action = self.autojoin_switch_var.get()
         if action is True:
             self.autojoin_switch_var.set(True)
-            SETTINGS.set_user(autojoin=True)
+            SETTINGS.set_game(autojoin=True)
         elif action is False:
             self.autojoin_switch_var.set(False)
-            SETTINGS.set_user(autojoin=False)
+            SETTINGS.set_game(autojoin=False)
 
     def user_menu_callback(self, action: str):
         """

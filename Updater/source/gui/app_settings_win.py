@@ -84,12 +84,94 @@ class UserSettingsFrame(customtkinter.CTkFrame):
         )
 
 
+class JVMArgsWindow(customtkinter.CTkToplevel):
+    """A window for the JVM Arguments."""
+    def __init__(self, master, **kwargs):
+        super().__init__(master, **kwargs)
+        self.title("JVM Arguments")
+        self.geometry("600x300")
+        self.grid_columnconfigure(0, weight=1)
+        self.grid_rowconfigure(2, weight=1)
+        self.grid_rowconfigure(4, weight=1)
+
+        self.attributes("-topmost", True)
+
+        initial_heap, max_heap = SETTINGS.get_game("ram_jvm_args")
+        # Get the number from the JVM Arguments
+        initial_heap = int(initial_heap.split("-Xms")[1].replace("M", ""))
+        max_heap = int(max_heap.split("-Xmx")[1].replace("M", ""))
+        if initial_heap == max_heap:
+            self.current_ram_allocation = initial_heap
+        else:
+            # TODO: Log that these values arent matching
+            self.current_ram_allocation = max_heap
+
+        # Ram Slider Label
+        self.ram_slider_label = customtkinter.CTkLabel(
+            self, text="Memory Allocation", font=SETTINGS.get_gui("font_large")
+        )
+        self.ram_slider_label.grid(row=0, column=0, padx=20, pady=(20, 0))
+        # Ram Slider Value Label
+        self.ram_value_var = customtkinter.IntVar(value=self.current_ram_allocation)
+        self.ram_slider_value_label = customtkinter.CTkLabel(
+            self, text=f"RAM: {self.ram_value_var.get()} MB", font=SETTINGS.get_gui("font_normal")
+        )
+        self.ram_slider_value_label.grid(row=1, column=0, padx=20, pady=10, sticky="w")
+        # Ram Slider
+        self.ram_slider = customtkinter.CTkSlider(
+            self,
+            from_=512,
+            to=16384,
+            number_of_steps=512,
+            variable=self.ram_value_var,
+            command=self.slider_event
+        )
+        self.ram_slider.grid(row=2, column=0, padx=20, pady=(0, 20), sticky="we")
+
+        # JVM Arguments Label
+        self.jvm_args_label = customtkinter.CTkLabel(
+            self, text="Additional JVM Arguments", font=SETTINGS.get_gui("font_large")
+        )
+        self.jvm_args_label.grid(row=3, column=0, padx=20, pady=(0, 10))
+        # JVM Arguments Entry
+        self.jvm_args_entry = customtkinter.CTkEntry(
+            self, font=SETTINGS.get_gui("font_normal"), width=300
+        )
+        self.jvm_args_entry.insert(0, " ".join(SETTINGS.get_game("additional_jvm_args")))
+        self.jvm_args_entry.grid(row=4, column=0, padx=20, pady=(0, 20), sticky="we")
+
+        # Save Button
+        self.save_button = customtkinter.CTkButton(
+            self,
+            text="Save",
+            width=160,
+            height=32,
+            font=SETTINGS.get_gui("font_large"),
+            command=self.save_jvm_args
+        )
+        self.save_button.grid(row=5, column=0, padx=20, pady=(0, 20), sticky="s")
+
+    def slider_event(self, value):
+        """Update the value label when the slider is moved."""
+        self.ram_value_var.set(int(value))
+        self.ram_slider_value_label.configure(text=f"RAM: {self.ram_value_var.get()} MB")
+
+    def save_jvm_args(self):
+        """Save the JVM Arguments to the settings."""
+        ram_jvm_args = [f"-Xms{self.ram_value_var.get()}M", f"-Xmx{self.ram_value_var.get()}M"]
+        additional_jvm_args = self.jvm_args_entry.get().split()
+        additional_jvm_args = list(filter(None, additional_jvm_args))  # filter out empty strings
+        SETTINGS.set_game(ram_jvm_args=ram_jvm_args, additional_jvm_args=additional_jvm_args)
+        self.destroy()
+
+
 class GameSettingsFrame(customtkinter.CTkFrame):
     """A frame for the Game settings."""
     def __init__(self, master):
         super().__init__(master)
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(0, weight=1)
+        self.jvm_args_window = None
 
         # Frame Title
         self.title_label = customtkinter.CTkLabel(
@@ -102,11 +184,9 @@ class GameSettingsFrame(customtkinter.CTkFrame):
             self,
             text="JVM Arguments",
             font=SETTINGS.get_gui("font_normal"),
-            command=self.open_jvm_args_dialog_event
+            command=self.open_jvm_args_window
         )
         self.jvm_args_button.grid(row=1, column=0, padx=20, pady=10)
-
-        # TODO: Add memory allocation slider
 
         # Reset Game Settings Button
         self.reset_game_settings_button = customtkinter.CTkButton(
@@ -117,15 +197,15 @@ class GameSettingsFrame(customtkinter.CTkFrame):
         )
         self.reset_game_settings_button.grid(row=2, column=0, padx=20, pady=(0, 20), sticky="s")
 
-    def open_jvm_args_dialog_event(self):
+    def open_jvm_args_window(self):
         """Open the JVM Arguments dialog."""
-        dialog = customtkinter.CTkInputDialog(
-            text=f"{SETTINGS.get_game('jvm_args')}\n\nSeparate Args With Spaces",
-            title="JVM Arguments"
-        )
-        user_input = dialog.get_input()
-        if user_input is not None:
-            SETTINGS.set_game(jvm_args=user_input.split())
+        if self.jvm_args_window is not None and self.jvm_args_window.winfo_exists():
+            self.jvm_args_window.lift()
+        else:
+            self.jvm_args_window = JVMArgsWindow(self.master)
+            self.jvm_args_window.transient(self)
+            self.wait_window(self.jvm_args_window)
+            self.jvm_args_window = None
 
     def reset_game_settings(self):
         """Reset the Game settings to the default values."""
