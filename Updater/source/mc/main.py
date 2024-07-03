@@ -93,8 +93,8 @@ class MCManager:
 
             # Download mods
             urls_to_download = remote.get_file_downloads(remote_dir_url)
-            for count, total, filename in remote.download_files(urls_to_download, local_dir):
-                yield (count, total, filename)
+            for count, total, filename, error_occured in remote.download_files(urls_to_download, local_dir):
+                yield (count, total, filename, error_occured)
         except Exception:
             # TODO: Add error handling
             pass

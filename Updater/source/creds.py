@@ -11,6 +11,7 @@ Constants:
 - SALT: The salt used to generate the key.
 """
 
+import logging
 import base64
 import pickle
 import os
@@ -19,6 +20,8 @@ from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.backends import default_backend
+
+logger = logging.getLogger(__name__)
 
 # TODO: Find a better way to enter these values for development to prevent leak
 PASSWORD = r""
@@ -70,9 +73,21 @@ def get_api_key():
     Returns:
     - str: The decrypted API key.
     """
-    with open(os.path.join(APPLICATION_DIR, "creds"), "rb") as f:
-        token = pickle.load(f)
-    key = generate_key()
-    decrypted_token = decrypt(token, key)
+    try:
+        with open(os.path.join(APPLICATION_DIR, "creds"), "rb") as f:
+            token = pickle.load(f)
+    except FileNotFoundError:
+        logger.critical("API key file not found")
+        return None
+    try:
+        key = generate_key()
+    except Exception:
+        logger.critical("Failed to generate key")
+        return None
+    try:
+        decrypted_token = decrypt(token, key)
+    except Exception:
+        logger.critical("Failed to decrypt API key")
+        return None
 
     return decrypted_token

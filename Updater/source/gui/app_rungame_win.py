@@ -115,9 +115,11 @@ class InstallFrame(customtkinter.CTkFrame):
         try:
             self.update_title("Syncing Mods")
             self.reset_progress()
-            for count, total, filename in self.mc.sync_dir("mods"):
+            for count, total, filename, error_occured in self.mc.sync_dir("mods"):
                 self.update_item(filename)
                 self.update_progress(count / total)
+                if error_occured:
+                    self.errors_occurred = True
         except Exception:
             # TODO: Log Errors
             self.errors_occurred = True
@@ -129,9 +131,11 @@ class InstallFrame(customtkinter.CTkFrame):
                 self.reset_progress()
                 self.mc.sync_file("servers")
                 self.mc.sync_file("options")
-                for count, total, filename in self.mc.sync_dir("config"):
+                for count, total, filename, error_occured in self.mc.sync_dir("config"):
                     self.update_item(filename)
                     self.update_progress(count / total)
+                    if error_occured:
+                        self.errors_occurred = True
             except Exception:
                 # TODO: Log Errors
                 self.errors_occurred = True
@@ -139,9 +143,11 @@ class InstallFrame(customtkinter.CTkFrame):
             try:
                 self.update_title("Syncing Resource Packs")
                 self.reset_progress()
-                for count, total, filename in self.mc.sync_dir("resourcepacks"):
+                for count, total, filename, error_occured in self.mc.sync_dir("resourcepacks"):
                     self.update_item(filename)
                     self.update_progress(count / total)
+                    if error_occured:
+                        self.errors_occurred = True
             except Exception:
                 # TODO: Log Errors
                 self.errors_occurred = True
@@ -149,9 +155,11 @@ class InstallFrame(customtkinter.CTkFrame):
             try:
                 self.update_title("Syncing Shader Packs")
                 self.reset_progress()
-                for count, total, filename in self.mc.sync_dir("shaderpacks"):
+                for count, total, filename, error_occured in self.mc.sync_dir("shaderpacks"):
                     self.update_item(filename)
                     self.update_progress(count / total)
+                    if error_occured:
+                        self.errors_occurred = True
             except Exception:
                 # TODO: Log Errors
                 self.errors_occurred = True

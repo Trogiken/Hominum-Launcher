@@ -18,8 +18,26 @@ from source import path
 IS_DEVELOPMENT = True  # This should be set to False before release
 
 
+class ErrorTrackingHandler(logging.Handler):
+    """A custom logging handler that tracks if an error occurred."""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.error_occurred = False
+        self.errors = []
+
+    def emit(self, record):
+        if record.levelno >= logging.ERROR:
+            self.errors.append(record)
+            self.error_occurred = True
+
+
 def configure_logging():
-    """Configures the logging for the application."""
+    """
+    Configures the logging for the application.
+
+    Returns:
+    - ErrorTrackingHandler: The error tracking handler used to track if an error occurred.
+    """
     log_directory = path.APPLICATION_DIR / "logs"
     log_directory.mkdir(parents=True, exist_ok=True)
 
@@ -41,6 +59,9 @@ def configure_logging():
         datefmt="%Y:%m:%d %H:%M:%S",
     )
 
+    error_tracker = ErrorTrackingHandler()
+    error_tracker.setFormatter(log_formatter)
+
     file_handler = logging.FileHandler(log_file)
     file_handler.setFormatter(log_formatter)
 
@@ -48,13 +69,18 @@ def configure_logging():
     console_handler.setFormatter(log_formatter)
 
     # setup logging for the application
-    logging.basicConfig(
-        level=logging.DEBUG if IS_DEVELOPMENT else logging.INFO,
-        handlers=[file_handler, console_handler] if IS_DEVELOPMENT else [file_handler],
-    )
+    root_logger = logging.getLogger()
+    root_logger.setLevel(logging.DEBUG if IS_DEVELOPMENT else logging.INFO)
+    root_logger.addHandler(error_tracker)  # Attach the error handler to the root logger
+    root_logger.addHandler(file_handler)
+    if IS_DEVELOPMENT:
+        root_logger.addHandler(console_handler)
+
+    return error_tracker
+
 
 if __name__ == "__main__":
-    configure_logging()
+    application_errors = configure_logging()
     logger = logging.getLogger(__name__)
 
     # log constants
@@ -78,7 +104,12 @@ if __name__ == "__main__":
         logger.info("Starting application")
         app = App()
         app.mainloop()
-        logger.info("Application finished successfully")
+        if application_errors.error_occurred:
+            logger.warning("Application finished with errors")
+            for error in application_errors.errors:
+                logger.warning(error)
+        else:
+            logger.info("Application finished successfully")
     except Exception as e:
         logger.exception("An unhandled exception occurred")
         raise
