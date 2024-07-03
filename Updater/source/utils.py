@@ -16,6 +16,7 @@ Constants:
 - SETTINGS_PATH: The path to the settings file.
 """
 
+import logging
 import os
 import pickle
 import pathlib
@@ -23,6 +24,7 @@ from dataclasses import dataclass, field
 from PIL import Image
 from source import path
 
+logger = logging.getLogger(__name__)
 
 SETTINGS_FILENAME = "settings.pkl"
 SETTINGS_PATH = pathlib.Path(os.path.join(path.STORE_DIR, SETTINGS_FILENAME))
@@ -106,6 +108,7 @@ class Settings:
             self._user = UserSettings()
             self._game = GameSettings()
             self.save()
+            logger.warning("Settings file not found. Default settings used.")
 
     def save(self):
         """
@@ -128,6 +131,7 @@ class Settings:
         self._user = UserSettings()
         self._game = GameSettings()
         self.save()
+        logger.debug("Settings reset to default values.")
 
     def reset_gui(self):
         """
@@ -135,6 +139,7 @@ class Settings:
         """
         self._gui = GUISettings()
         self.save()
+        logger.info("GUI settings reset to default values.")
 
     def reset_user(self):
         """
@@ -142,6 +147,7 @@ class Settings:
         """
         self._user = UserSettings()
         self.save()
+        logger.info("User settings reset to default values.")
 
     def reset_game(self):
         """
@@ -149,6 +155,7 @@ class Settings:
         """
         self._game = GameSettings()
         self.save()
+        logger.info("Game settings reset to default values.")
 
     def get_gui(self, key: str) -> any:
         """
@@ -161,7 +168,9 @@ class Settings:
         - Any: The value of the setting.
         """
         self.load()
-        return getattr(self._gui, key)
+        value = getattr(self._gui, key)
+        logger.debug("GUI setting '%s' retrieved value '%s'", key, value)
+        return value
 
     def get_user(self, key: str) -> any:
         """
@@ -174,7 +183,9 @@ class Settings:
         - Any: The value of the setting.
         """
         self.load()
-        return getattr(self._user, key)
+        value = getattr(self._user, key)
+        logger.debug("User setting '%s' retrieved value '%s'", key, value)
+        return value
 
     def get_game(self, key: str) -> any:
         """
@@ -187,7 +198,9 @@ class Settings:
         - Any: The value of the setting.
         """
         self.load()
-        return getattr(self._game, key)
+        value = getattr(self._game, key)
+        logger.debug("Game setting '%s' retrieved value '%s'", key, value)
+        return value
 
     def set_gui(self, **kwargs) -> None:
         """
@@ -198,6 +211,7 @@ class Settings:
         """
         for key, value in kwargs.items():
             setattr(self._gui, key, value)
+            logger.debug("GUI setting '%s' updated to value '%s'", key, value)
         self.save()
 
     def set_user(self, **kwargs) -> None:
@@ -209,6 +223,7 @@ class Settings:
         """
         for key, value in kwargs.items():
             setattr(self._user, key, value)
+            logger.debug("User setting '%s' updated to value '%s'", key, value)
         self.save()
 
     def set_game(self, **kwargs) -> None:
@@ -220,6 +235,7 @@ class Settings:
         """
         for key, value in kwargs.items():
             setattr(self._game, key, value)
+            logger.debug("Game setting '%s' updated to value '%s'", key, value)
         self.save()
 
 
@@ -233,4 +249,10 @@ def get_image(image_name: str) -> Image.Image:
     Returns:
     - Image: The image.
     """
-    return Image.open(path.ASSETS_DIR / "images" / image_name)
+    try:
+        image = Image.open(path.ASSETS_DIR / "images" / image_name)
+    except FileNotFoundError:
+        logger.error("Image '%s' not found", image_name)
+        raise
+    logger.debug("Image '%s' loaded", image_name)
+    return image

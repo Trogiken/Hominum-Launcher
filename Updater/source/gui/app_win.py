@@ -9,6 +9,7 @@ classes:
 - App: The main window of the application.
 """
 
+import logging
 import customtkinter
 from source.mc import MCManager
 from source.mc.authentication import AuthenticationHandler
@@ -18,6 +19,8 @@ from source.gui.app_settings_win import SettingsWindow
 from source.gui.app_rungame_win import RunGameWindow
 from source.utils import Settings, get_image
 
+logger = logging.getLogger(__name__)
+
 SETTINGS = Settings()
 
 
@@ -25,6 +28,8 @@ class LeftFrame(customtkinter.CTkFrame):
     """This frame contains a settings icon and functions."""
     def __init__(self, master):
         super().__init__(master)
+        logger.debug("Creating left frame")
+
         self.settings_window = None
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(2, weight=1)
@@ -65,6 +70,8 @@ class LeftFrame(customtkinter.CTkFrame):
         )
         self.settings_button.grid(row=3, column=0, padx=20, pady=(0, 20), sticky="s")
 
+        logger.debug("Left frame created")
+
     def theme_menu_callback(self, theme: str):
         """
         Changes and saves the current program appearance
@@ -97,6 +104,8 @@ class RightFrame(customtkinter.CTkFrame):
     """This frame contains the user dropdown and functions."""
     def __init__(self, master):
         super().__init__(master)
+        logger.debug("Creating right frame")
+
         self.login_window = None
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(0, weight=1)
@@ -150,6 +159,8 @@ class RightFrame(customtkinter.CTkFrame):
             command=self.run_game
         )
         self.play_button.grid(row=2, column=0, padx=20, pady=20, sticky="s")
+
+        logger.debug("Right frame created")
 
     def auto_join_callback(self):
         """
@@ -213,6 +224,8 @@ class ScrollableFrame(customtkinter.CTkScrollableFrame):
     """A frame that contains the bulletin."""
     def __init__(self, master):
         super().__init__(master)
+        logger.debug("Creating scrollable frame")
+
         self.mc = MCManager(context=path.CONTEXT)
 
         # Parse the bulletin config and create the bulletin
@@ -261,11 +274,15 @@ class ScrollableFrame(customtkinter.CTkScrollableFrame):
                     item_label.grid(row=item_row, column=0, padx=10, pady=pady, sticky="w")
                     item_row += 1
 
+        logger.debug("Scrollable frame created")
+
 
 class CenterFrame(customtkinter.CTkFrame):
     """This frame contains the bulletin."""
     def __init__(self, master):
         super().__init__(master)
+        logger.debug("Creating center frame")
+
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(1, weight=2)
 
@@ -279,11 +296,15 @@ class CenterFrame(customtkinter.CTkFrame):
         self.scrollable_frame = ScrollableFrame(self)
         self.scrollable_frame.grid(row=1, column=0, padx=20, pady=20, sticky="nsew")
 
+        logger.debug("Center frame created")
+
 
 class App(customtkinter.CTk):
     """The main window of the application."""
     def __init__(self):
         super().__init__()
+        logger.debug("Creating main window")
+
         self.title(path.PROGRAM_NAME)
         geom_length, geom_height = SETTINGS.get_gui("main_window_geometry")
         min_length, min_height = SETTINGS.get_gui("main_window_min_size")
@@ -305,3 +326,5 @@ class App(customtkinter.CTk):
 
         self.center_frame = CenterFrame(self)
         self.center_frame.grid(row=0, column=1, padx=10, pady=10, sticky="nsew")
+
+        logger.debug("Main window created")
