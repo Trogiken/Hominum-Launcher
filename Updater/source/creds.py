@@ -14,12 +14,13 @@ Constants:
 import base64
 import pickle
 import os
-from source.path import APPLICATION_PATH
+from source.path import APPLICATION_DIR
 from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.backends import default_backend
 
+# TODO: Find a better way to enter these values for development to prevent leak
 PASSWORD = r""
 SALT = r""
 
@@ -69,7 +70,7 @@ def get_api_key():
     Returns:
     - str: The decrypted API key.
     """
-    with open(os.path.join(APPLICATION_PATH, "creds"), "rb") as f:
+    with open(os.path.join(APPLICATION_DIR, "creds"), "rb") as f:
         token = pickle.load(f)
     key = generate_key()
     decrypted_token = decrypt(token, key)
