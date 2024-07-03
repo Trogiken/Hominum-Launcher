@@ -78,7 +78,7 @@ class AuthenticationHandler:
             Methods:
             - do_GET: Handles the GET request.
             """
-            def do_GET(self):
+            def do_GET(self):  # pylint: disable=invalid-name
                 """
                 Handles the GET request.
                 
@@ -134,7 +134,7 @@ class AuthenticationHandler:
             Methods:
             - do_GET: Handles the GET request.
             """
-            def do_GET(self):
+            def do_GET(self):  # pylint: disable=invalid-name
                 """
                 Handles the GET request.
                 
@@ -150,7 +150,7 @@ class AuthenticationHandler:
                 self.send_header("Content-type", "text/html")
                 self.end_headers()
                 self.wfile.write(html.encode("utf-8"))
-        
+
         server_address = ("", WEB_SERVER_PORT)
         httpd = HTTPServer(server_address, WebHandler)
         web_server = threading.Thread(target=httpd.serve_forever)

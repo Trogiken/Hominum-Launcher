@@ -2,9 +2,10 @@
 This module contains the main window of the application.
 
 classes:
-- LeftFrame: Contains a settings icon and functions.
-- RightFrame: Contains user account info and logout button.
-- CenterFrame: Contains tabs for whitelisting and syncing mods.
+- LeftFrame: Contains the settings icon and functions.
+- RightFrame: Contains the user dropdown and functions.
+- ScrollableFrame: Contains the bulletin.
+- CenterFrame: Contains the bulletin.
 - App: The main window of the application.
 """
 
@@ -93,6 +94,7 @@ class LeftFrame(customtkinter.CTkFrame):
 
 
 class RightFrame(customtkinter.CTkFrame):
+    """This frame contains the user dropdown and functions."""
     def __init__(self, master):
         super().__init__(master)
         self.login_window = None

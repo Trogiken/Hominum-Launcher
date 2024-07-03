@@ -87,23 +87,19 @@ class InstallFrame(customtkinter.CTkFrame):
         self.start_installation()
 
     def start_installation(self):
-        """
-        Start the installation process.
-        
-        Returns:
-        - None"""
-        self.install_thread = threading.Thread(target=self.install)
+        """Start the installation process."""
+        self.install_thread = threading.Thread(target=self._install)
         self.install_thread.start()
-        self.check_thread()
+        self._check_thread()
 
-    def check_thread(self):
+    def _check_thread(self):
         """
         Check if the thread is alive.
         If the thread is not alive, call the callback.
         """
         if self.install_thread.is_alive():
             # Check again after 100ms
-            self.after(100, self.check_thread)
+            self.after(100, self._check_thread)
         else:
             # Thread is not alive, call the callback
             if self.errors_occurred:
@@ -113,28 +109,8 @@ class InstallFrame(customtkinter.CTkFrame):
                 self.on_install_complete()
                 return
 
-    def install(self):
-        """
-        Install the game and other necessary files.
-        
-        Returns:
-        - None
-        """
-        # Install the game
-        install_watcher = InstallWatcher(self)
-        for _ in range(3):  # Retry 3 times
-            try:
-                self.mc.provision_environment(self.version, watcher=install_watcher)
-                self.errors_occurred = False
-                break
-            except Exception:
-                # TODO: Log Errors
-                self.errors_occurred = True
-
-        # Prevent the next steps because the environment was not provisioned properly
-        if self.errors_occurred:
-            return
-
+    def _sync(self):
+        """Sync the game files with the server."""
         # Sync Mods
         try:
             self.update_title("Syncing Mods")
@@ -179,6 +155,31 @@ class InstallFrame(customtkinter.CTkFrame):
             except Exception:
                 # TODO: Log Errors
                 self.errors_occurred = True
+
+    def _install(self):
+        """
+        Install the game and other necessary files.
+        
+        Returns:
+        - None
+        """
+        # Install the game
+        install_watcher = InstallWatcher(self)
+        for _ in range(3):  # Retry 3 times
+            try:
+                self.mc.provision_environment(self.version, watcher=install_watcher)
+                self.errors_occurred = False
+                break
+            except Exception:
+                # TODO: Log Errors
+                self.errors_occurred = True
+
+        # Prevent the next steps because the environment was not provisioned properly
+        if self.errors_occurred:
+            return
+
+        # Sync the game files
+        self._sync()
 
         # Only set the user if no errors occurred
         if not self.errors_occurred:
@@ -239,16 +240,16 @@ class RunFrame(customtkinter.CTkFrame):
         """Start the game thread."""
         self.game_thread = threading.Thread(target=self.run)
         self.game_thread.start()
-        self.check_thread()
+        self._check_thread()
 
-    def check_thread(self):
+    def _check_thread(self):
         """
         Check if the thread is alive.
         If the thread is not alive, call the callback.
         """
         if self.game_thread.is_alive():
             # Check again after 100ms
-            self.after(100, self.check_thread)
+            self.after(100, self._check_thread)
         else:
             # Thread is not alive, call the callback
             if self.on_run_complete:

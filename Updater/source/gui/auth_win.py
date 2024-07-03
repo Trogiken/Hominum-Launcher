@@ -49,6 +49,6 @@ class AuthWindow(customtkinter.CTkToplevel):
         self.destroy()
 
     def auth(self):
-        """Runs the authentication process. WORKING PROGRESS"""
+        """Runs the authentication process."""
         auth_handler = AuthenticationHandler(email=SETTINGS.get_user("email"), context=path.CONTEXT)
         auth_handler.authenticate()
