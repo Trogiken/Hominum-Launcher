@@ -148,7 +148,7 @@ def get_file_download(file_path: str) -> str:
     """
     path, name = os.path.split(file_path)
     download_path_url = ""
-    resp = get_request(f"GITHUB_CONTENTS_BASE/{path}")
+    resp = get_request(f"{GITHUB_CONTENTS_BASE}/{path}")
     if not resp:
         logger.warning("Failed to get download url from server")
         return None
@@ -176,7 +176,7 @@ def get_file_downloads(directory: str) -> list:
     - None: If the response is empty.
     - exceptions.NoResponseError: If no response is received from the server.
     """
-    resp = get_request(f"GITHUB_CONTENTS_BASE/{directory}")
+    resp = get_request(f"{GITHUB_CONTENTS_BASE}/{directory}")
     if not resp:
         logger.warning("Failed to get download urls from server")
         return None
@@ -216,7 +216,7 @@ def get_filenames(directory: str) -> list:
     - list: A list of mod names.
     - None: If the response is empty.
     """
-    resp = get_request(f"GITHUB_CONTENTS_BASE/{directory}")
+    resp = get_request(f"{GITHUB_CONTENTS_BASE}/{directory}")
     if not resp:
         logger.warning("Failed to get filenames from server")
         return None
