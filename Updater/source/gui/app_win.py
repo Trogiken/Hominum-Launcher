@@ -188,15 +188,18 @@ class RightFrame(customtkinter.CTkFrame):
         - None
         """
         action = action.casefold()
+        logger.debug("User menu callback action: %s", action)
         if action == "logout":
             auth_handler = AuthenticationHandler(SETTINGS.get_user("email"), path.CONTEXT)
             auth_handler.remove_session()
             self.user_menu_var.set("Logged Out")
             self.user_menu.configure(values=["Login"])
             self.user_menu_var.set("Login")
+            logger.debug("Logout complete")
         if action == "login":
             if self.login_window is not None and self.login_window.winfo_exists():
                 self.login_window.lift()
+                logger.debug("Login window already exists")
             else:
                 self.login_window = LoginWindow(master=self)
                 self.login_window.transient(self)
@@ -209,6 +212,9 @@ class RightFrame(customtkinter.CTkFrame):
                 else:
                     self.user_menu_var.set("Logged Out")
                     self.user_menu.configure(values=["Login"])
+                self.login_window = None
+                logger.debug("Login complete")
+
 
     def run_game(self):
         """Start Minecraft"""
@@ -315,7 +321,6 @@ class App(customtkinter.CTk):
         self.grid_columnconfigure(1, weight=1)
         self.grid_columnconfigure(2, weight=0)
 
-        # Load settings
         customtkinter.set_appearance_mode(SETTINGS.get_gui("appearance"))
 
         self.settings_frame = LeftFrame(self)

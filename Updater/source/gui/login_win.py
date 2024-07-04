@@ -5,11 +5,14 @@ Classes:
 - LoginWindow: Represents the login window of the application.
 """
 
+import logging
 import customtkinter
 from source.mc import AuthenticationHandler
 from source.gui.auth_win import AuthWindow
 from source.utils import Settings
 from source import path
+
+logger = logging.getLogger(__name__)
 
 SETTINGS = Settings()
 
@@ -25,6 +28,8 @@ class LoginWindow(customtkinter.CTkToplevel):
 
     def __init__(self, master, **kwargs):
         super().__init__(master, **kwargs)
+        logger.debug("Creating login window")
+
         self.title("Login")
         self.geometry("450x150")
         self.resizable(False, False)
@@ -51,6 +56,8 @@ class LoginWindow(customtkinter.CTkToplevel):
         )
         self.button.grid(row=2, column=1, pady=(10, 20))
 
+        logger.debug("Login window created")
+
     def login(self):
         """
         Handles the login process.
@@ -63,7 +70,9 @@ class LoginWindow(customtkinter.CTkToplevel):
         auth_handler = AuthenticationHandler(email=SETTINGS.get_user("email"), context=path.CONTEXT)
         self.auth_window = AuthWindow(master=self.master, email=self.entry.get())
         if not auth_handler.get_session():  # if the session failed, re-enable the button
-            # TODO: Log this as an error
+            logger.error("Login session could not be established, releasing button")
             self.button.configure(state="normal")
         else:
+            logger.debug("Login was successful")
             self.destroy()
+            logger.debug("Login window destroyed")

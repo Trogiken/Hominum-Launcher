@@ -2,8 +2,11 @@
 This module contains the PopupWindow class, which represents a popup window.
 """
 
+import logging
 import customtkinter
 from source.utils import Settings
+
+logger = logging.getLogger(__name__)
 
 SETTINGS = Settings()
 
@@ -12,6 +15,11 @@ class PopupWindow(customtkinter.CTkToplevel):
     """Popup window."""
     def __init__(self, master, title, message, **kwargs):
         super().__init__(master, **kwargs)
+        logger.debug("Creating popup window")
+
+        logger.debug("Popup window title: %s", title)
+        logger.debug("Popup window message: %s", message)
+
         self.title(title)
         self.geometry("400x150")
         self.resizable(True, True)
@@ -33,4 +41,4 @@ class PopupWindow(customtkinter.CTkToplevel):
         )
         self.button.grid(row=1, column=0, pady=20)
 
-        self.wait_window()
+        logger.debug("Popup window created")
