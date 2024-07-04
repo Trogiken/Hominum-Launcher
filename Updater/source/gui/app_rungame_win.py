@@ -9,6 +9,7 @@ Classes:
 - RunGameWindow: A class that is used to run the game.
 """
 
+import logging
 import os
 import threading
 import customtkinter
@@ -24,6 +25,8 @@ from source.mc import MCManager
 if os.name != "posix":
     import pygetwindow as pygw
 
+logger = logging.getLogger(__name__)
+
 SETTINGS = Settings()
 
 
@@ -36,7 +39,7 @@ class InstallWatcher(Watcher):
     def handle(self, event) -> None:
         """Handle the event."""
         if isinstance(event, DownloadStartEvent):
-            self.app.update_title("Downloading Fabric MC")
+            self.app.update_title("Provisioning Environment")
             self.app.reset_progress()
             self.total = event.entries_count
         elif isinstance(event, DownloadProgressEvent):
@@ -56,6 +59,8 @@ class InstallFrame(customtkinter.CTkFrame):
                  on_install_error=None
         ):
         super().__init__(master)
+        logger.debug("Creating install frame")
+
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(0, weight=1)
         self.grid_rowconfigure(1, weight=1)
@@ -86,6 +91,8 @@ class InstallFrame(customtkinter.CTkFrame):
 
         self.start_installation()
 
+        logger.debug("Install frame created")
+
     def start_installation(self):
         """Start the installation process."""
         self.install_thread = threading.Thread(target=self._install)
@@ -113,6 +120,7 @@ class InstallFrame(customtkinter.CTkFrame):
         """Sync the game files with the server."""
         # Sync Mods
         try:
+            logger.info("Syncing Mods")
             self.update_title("Syncing Mods")
             self.reset_progress()
             for count, total, filename, error_occured in self.mc.sync_dir("mods"):
@@ -120,13 +128,18 @@ class InstallFrame(customtkinter.CTkFrame):
                 self.update_progress(count / total)
                 if error_occured:
                     self.errors_occurred = True
-        except Exception:
-            # TODO: Log Errors
+            if self.errors_occurred:
+                logger.warning("Some mods failed to sync")
+            else:
+                logger.info("Mods synced successfully")
+        except Exception as mod_error:
+            logger.error("Error syncing mods: %s", mod_error)
             self.errors_occurred = True
 
         if SETTINGS.get_game("first_start"):
             # Sync Configurations
             try:
+                logger.info("Syncing Configurations")
                 self.update_title("Syncing Configurations")
                 self.reset_progress()
                 self.mc.sync_file("servers")
@@ -136,11 +149,16 @@ class InstallFrame(customtkinter.CTkFrame):
                     self.update_progress(count / total)
                     if error_occured:
                         self.errors_occurred = True
-            except Exception:
-                # TODO: Log Errors
+                if self.errors_occurred:
+                    logger.warning("Some configurations failed to sync")
+                else:
+                    logger.info("Configurations synced successfully")
+            except Exception as config_error:
+                logger.error("Error syncing configurations: %s", config_error)
                 self.errors_occurred = True
             # Sync Resource Packs
             try:
+                logger.info("Syncing Resource Packs")
                 self.update_title("Syncing Resource Packs")
                 self.reset_progress()
                 for count, total, filename, error_occured in self.mc.sync_dir("resourcepacks"):
@@ -148,11 +166,16 @@ class InstallFrame(customtkinter.CTkFrame):
                     self.update_progress(count / total)
                     if error_occured:
                         self.errors_occurred = True
+                if self.errors_occurred:
+                    logger.warning("Some resource packs failed to sync")
+                else:
+                    logger.info("Resource Packs synced successfully")
             except Exception:
-                # TODO: Log Errors
+                logger.error("Error syncing resource packs: %s", config_error)
                 self.errors_occurred = True
             # Sync Shader Packs
             try:
+                logger.info("Syncing Shader Packs")
                 self.update_title("Syncing Shader Packs")
                 self.reset_progress()
                 for count, total, filename, error_occured in self.mc.sync_dir("shaderpacks"):
@@ -160,8 +183,12 @@ class InstallFrame(customtkinter.CTkFrame):
                     self.update_progress(count / total)
                     if error_occured:
                         self.errors_occurred = True
+                if self.errors_occurred:
+                    logger.warning("Some shader packs failed to sync")
+                else:
+                    logger.info("Shader Packs synced successfully")
             except Exception:
-                # TODO: Log Errors
+                logger.error("Error syncing shader packs: %s", config_error)
                 self.errors_occurred = True
 
     def _install(self):
@@ -171,19 +198,23 @@ class InstallFrame(customtkinter.CTkFrame):
         Returns:
         - None
         """
+        logger.info("Starting Installation")
         # Install the game
         install_watcher = InstallWatcher(self)
         for _ in range(3):  # Retry 3 times
             try:
+                logger.info("Provisioning Environment")
                 self.mc.provision_environment(self.version, watcher=install_watcher)
                 self.errors_occurred = False
+                logger.info("Environment provisioned successfully")
                 break
-            except Exception:
-                # TODO: Log Errors
+            except Exception as env_error:
+                logger.error("Error provisioning environment: %s", env_error)
                 self.errors_occurred = True
 
         # Prevent the next steps because the environment was not provisioned properly
         if self.errors_occurred:
+            logger.warning("Environment was not provisioned properly, stopping installation")
             return
 
         # Sync the game files
@@ -192,24 +223,31 @@ class InstallFrame(customtkinter.CTkFrame):
         # Only set the user if no errors occurred
         if not self.errors_occurred:
             SETTINGS.set_game(first_start=False)
+            logger.info("Installation finished successfully")
+        else:
+            logger.warning("Installation finished with errors")
 
     def update_title(self, text):
         """Update the title label."""
         self.title_label.configure(text=text)
+        logger.debug("Title set to '%s'", text)
 
     def update_item(self, text):
         """Update the item label."""
         self.download_item_label.configure(text=text)
+        logger.debug("Item set to '%s'", text)
 
     def reset_progress(self):
         """Reset the progress bar."""
         self.progress_bar.stop()
         self.progress_bar.configure(mode="determinate")
         self.progress_bar.set(0)
+        logger.debug("Progress bar reset")
 
     def update_progress(self, value):
         """Update the progress bar."""
         self.progress_bar.set(value)
+        logger.debug("Progress set to '%s'", value)
 
 
 class RunFrame(customtkinter.CTkFrame):
@@ -223,6 +261,8 @@ class RunFrame(customtkinter.CTkFrame):
             main_window=None
         ):
         super().__init__(master)
+        logger.debug("Creating run frame")
+
         self.grid_columnconfigure(0, weight=1)
 
         self.mc = mc
@@ -243,6 +283,8 @@ class RunFrame(customtkinter.CTkFrame):
         self.message_label.grid(row=1, column=0, padx=20, pady=(0, 20))
 
         self.run_game()
+
+        logger.debug("Run frame created")
 
     def run_game(self):
         """Start the game thread."""
@@ -265,12 +307,15 @@ class RunFrame(customtkinter.CTkFrame):
 
     def run(self):
         """Provision the environment and run the game."""
+        logger.info("Running game")
         env = self.mc.provision_environment(self.version)
         args = SETTINGS.get_game("ram_jvm_args") + SETTINGS.get_game("additional_jvm_args")
+        logger.debug("Runtime args: %s", args)
         env.jvm_args.extend(args)
         if os.name != "posix":
             if not self.main_window.isMinimized:
                 self.after(1000, self.main_window.minimize())
+                logger.debug("Main window minimized")
         env.run()
 
 
@@ -278,6 +323,8 @@ class RunGameWindow(customtkinter.CTkToplevel):
     """A class that is used to run the game."""
     def __init__(self, master, **kwargs):
         super().__init__(master, **kwargs)
+        logger.debug("Creating run game window")
+
         self.title("Run Game")  # Set self.this_window also when changed!
         # Used to minimize the window after the game starts
         self.main_window = None
@@ -300,6 +347,7 @@ class RunGameWindow(customtkinter.CTkToplevel):
         self.version.auth_session = session
         if SETTINGS.get_game("autojoin") and self.mc.server_ip:
             self.version.set_quick_play_multiplayer(self.mc.server_ip)
+            logger.debug("Auto-join set to '%s'", self.mc.server_ip)
 
         self.protocol("WM_DELETE_WINDOW", lambda: None)  # Prevent the closing of this window
 
@@ -319,9 +367,12 @@ class RunGameWindow(customtkinter.CTkToplevel):
         )
         self.install_frame.grid(row=0, column=0, sticky="nsew")
 
+        logger.debug("Created run game window")
+
     def on_install_complete(self):
         """Destroy the install frame and create the run frame."""
         self.install_frame.destroy()
+        logger.debug("Install frame destroyed")
         run_frame = RunFrame(
             self,
             self.mc,
@@ -339,12 +390,16 @@ class RunGameWindow(customtkinter.CTkToplevel):
             message="An error occurred during the installation process",
         )
         self.destroy()
+        logger.debug("Popup destroyed")
 
     def on_run_complete(self):
         """Close this window."""
         if os.name != "posix":
             if self.main_window.isMinimized:
                 self.main_window.maximize()
+                logger.debug("Main window maximized")
                 min_length, min_height = SETTINGS.get_gui("main_window_min_size")
                 self.main_window.resizeTo(min_length, min_height)
+                logger.debug("Main window resized to '%s'x'%s'", min_length, min_height)
         self.destroy()
+        logger.debug("Run game window destroyed")

@@ -5,11 +5,14 @@ Classes:
 - MCManager: A class that handles Minecraft.
 """
 
+import logging
 import os
 from typing import Generator
 from source.mc import remote
 from portablemc.standard import Context, Environment, Watcher
 from portablemc.fabric import FabricVersion
+
+logger = logging.getLogger(__name__)
 
 
 class MCManager:
@@ -21,6 +24,10 @@ class MCManager:
         self.server_ip: str = self.remote_config.get("client", {}).get("server_ip", "")
         self.fabric_version: str = self.remote_config.get("client", {}).get("fabric_version", "")
         self.loader_version: str = self.remote_config.get("client", {}).get("loader_version", "")
+
+        logger.debug("Server IP: %s", self.server_ip)
+        logger.debug("Fabric Version: %s", self.fabric_version)
+        logger.debug("Loader Version: %s", self.loader_version)
 
     def provision_version(self, vanilla_version: str, loader_version: str=None) -> FabricVersion:
         """
@@ -64,6 +71,8 @@ class MCManager:
         Returns:
         - Generator[tuple, None, None]: A generator that yields the progress of the sync.
         """
+        if self.remote_config is None:
+            raise ValueError("Remote config is not set")
         if remote_dir not in self.remote_config["urls"]:
             raise ValueError(f"Invalid remote directory: {remote_dir}")
         if remote_dir == "config":
@@ -76,28 +85,31 @@ class MCManager:
             local_dir = self.context.work_dir / "shaderpacks"
         else:
             raise ValueError(f"Unknown valid remote directory: {remote_dir}")
-        try:
-            os.makedirs(local_dir, exist_ok=True)
-        except Exception:
-            # TODO: Add error handling
-            pass
-        try:
-            remote_dir_url = self.remote_config["urls"][remote_dir]
-            if remote_dir_url is None:
-                return
-            server_mods = remote.get_filenames(remote_dir_url)  # TODO: Error handling
-            # Remove invalid mods
-            for file in os.listdir(local_dir):
-                if file not in server_mods:
-                    os.remove(os.path.join(local_dir, file))
 
-            # Download mods
-            urls_to_download = remote.get_file_downloads(remote_dir_url)
-            for count, total, filename, error_occured in remote.download_files(urls_to_download, local_dir):
-                yield (count, total, filename, error_occured)
-        except Exception:
-            # TODO: Add error handling
-            pass
+        local_dir.mkdir(parents=True, exist_ok=True)
+        remote_dir_url = self.remote_config["urls"][remote_dir]
+        logger.debug("Remote directory URL: %s", remote_dir_url)
+        if remote_dir_url is None:
+            logger.warning("Remote directory '%s' is not set", remote_dir)
+            return
+        server_mods = remote.get_filenames(remote_dir_url)
+        if server_mods is None:
+            raise ValueError("Server filenames are not set")
+        # Remove invalid mods
+        for file in os.listdir(local_dir):
+            if file not in server_mods:
+                file_path = os.path.join(local_dir, file)
+                os.remove(file_path)
+                logger.info("Invalid mod '%s' removed", file_path)
+
+        # Download mods
+        urls_to_download = remote.get_file_downloads(remote_dir_url)
+        if urls_to_download is None:
+            raise ValueError("URLs to download are not set")
+        for count, total, filename, error_occured in remote.download_files(
+            urls_to_download, local_dir
+        ):
+            yield (count, total, filename, error_occured)
 
     def sync_file(self, remote_file) -> None:
         """
@@ -118,24 +130,21 @@ class MCManager:
             local_filepath = self.context.work_dir / "servers.dat"
         else:
             raise ValueError(f"Unknown valid remote file: {remote_file}")
-        try:
-            os.makedirs(os.path.dirname(local_filepath), exist_ok=True)
-        except Exception:
-            # TODO: Add error handling
-            pass
 
-        try:
-            remote_file_url = self.remote_config["urls"][remote_file]
-            if remote_file_url is None:
-                return
-            server_file = remote.get_file_download(remote_file_url)
+        os.makedirs(os.path.dirname(local_filepath), exist_ok=True)
+        remote_file_url = self.remote_config["urls"][remote_file]
+        logger.debug("Remote file URL: %s", remote_file_url)
+        if remote_file_url is None:
+            logger.warning("Remote file '%s' is not set", remote_file)
+            return
+        server_file = remote.get_file_download(remote_file_url)
+        if server_file is None:
+            raise ValueError("Server file is not set")
 
-            # Remove the local file if it exists
-            if os.path.exists(local_filepath):
-                os.remove(local_filepath)
+        # Remove the local file if it exists
+        if os.path.exists(local_filepath):
+            os.remove(local_filepath)
+            logger.info("Removed existing local file '%s'", local_filepath)
 
-            # Download the file from the server
-            remote.download(server_file, local_filepath)
-        except Exception:
-            # TODO: Add error handling
-            pass
+        # Download the file from the server
+        remote.download(server_file, local_filepath)
