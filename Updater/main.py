@@ -8,14 +8,11 @@ import logging
 import logging.config
 import logging.handlers
 from datetime import datetime
-import sys
 import os
 from source.gui.app_win import App
 from source import path
 
-# FIXME: Doesn't work right when compiled
-
-IS_DEVELOPMENT = True  # This should be set to False before release
+IS_DEVELOPMENT = False  # This should be set to False before release
 
 
 class ErrorTrackingHandler(logging.Handler):
@@ -70,8 +67,10 @@ def configure_logging():
 
     # setup logging for the application
     root_logger = logging.getLogger()
-    root_logger.setLevel(logging.DEBUG if IS_DEVELOPMENT else logging.INFO)
+    root_logger.setLevel(logging.DEBUG)
     logging.getLogger("urllib3.connectionpool").setLevel(logging.WARNING)  # Mute connectionpool
+    logging.getLogger("httpx").setLevel(logging.WARNING)  # Mute httpx
+    logging.getLogger("http").setLevel(logging.WARNING)  # Mute http
     root_logger.addHandler(error_tracker)  # Attach the error handler to the root logger
     root_logger.addHandler(file_handler)
     if IS_DEVELOPMENT:
@@ -95,13 +94,6 @@ if __name__ == "__main__":
     logger.info("MAIN_DIR: %s", path.MAIN_DIR)
     logger.info("WORK_DIR: %s", path.WORK_DIR)
 
-    if not IS_DEVELOPMENT:
-        original_stdout = sys.stdout
-        original_stderr = sys.stderr
-        with open(os.devnull, 'w', encoding='utf-8') as devnull:
-            sys.stdout = devnull
-            sys.stderr = devnull
-
     try:
         logger.info("Starting application")
         app = App()
@@ -115,9 +107,3 @@ if __name__ == "__main__":
     except Exception as e:
         logger.exception("An unhandled exception occurred")
         raise
-    finally:
-        if not IS_DEVELOPMENT:
-            sys.stdout.close()
-            sys.stderr.close()
-            sys.stdout = original_stdout
-            sys.stderr = original_stderr

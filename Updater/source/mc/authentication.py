@@ -89,6 +89,9 @@ class AuthenticationHandler:
             Methods:
             - do_GET: Handles the GET request.
             """
+            def log_message(self, *args):
+                pass
+
             def do_GET(self):  # pylint: disable=invalid-name
                 """
                 Handles the GET request.
@@ -154,6 +157,9 @@ class AuthenticationHandler:
             Methods:
             - do_GET: Handles the GET request.
             """
+            def log_message(self, *args):
+                pass
+
             def do_GET(self):  # pylint: disable=invalid-name
                 """
                 Handles the GET request.
