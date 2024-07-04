@@ -71,6 +71,7 @@ def configure_logging():
     # setup logging for the application
     root_logger = logging.getLogger()
     root_logger.setLevel(logging.DEBUG if IS_DEVELOPMENT else logging.INFO)
+    logging.getLogger("urllib3.connectionpool").setLevel(logging.WARNING)  # Mute connectionpool
     root_logger.addHandler(error_tracker)  # Attach the error handler to the root logger
     root_logger.addHandler(file_handler)
     if IS_DEVELOPMENT:
@@ -81,6 +82,7 @@ def configure_logging():
 
 if __name__ == "__main__":
     application_errors = configure_logging()
+
     logger = logging.getLogger(__name__)
 
     # log constants
