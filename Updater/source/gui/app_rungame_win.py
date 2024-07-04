@@ -116,80 +116,36 @@ class InstallFrame(customtkinter.CTkFrame):
                 self.on_install_complete()
                 return
 
-    def _sync(self):
-        """Sync the game files with the server."""
-        # Sync Mods
+    def _sync_items(self, item_name: str, remote_dir: str, is_dir: bool=True):
+        """
+        Sync the items of a specific type.
+        
+        Parameters:
+        - item_name: The name of the item. Used for display and logging purposes.
+        - remote_dir: The remote directory/file to sync.
+        - is_dir: Whether the item is a directory or not. Set False if syncing one file
+        """
         try:
-            logger.info("Syncing Mods")
-            self.update_title("Syncing Mods")
+            logger.info("Syncing %s", item_name.title())
+            self.update_title(f"Syncing {item_name}")
             self.reset_progress()
-            for count, total, filename, error_occured in self.mc.sync_dir("mods"):
+            if is_dir:
+                sync_iter = self.mc.sync_dir(remote_dir)
+            else:
+                self.mc.sync_file(remote_dir)
+                sync_iter = []
+            for count, total, filename, error_occured in sync_iter:
                 self.update_item(filename)
                 self.update_progress(count / total)
                 if error_occured:
                     self.errors_occurred = True
             if self.errors_occurred:
-                logger.warning("Some mods failed to sync")
+                logger.warning("Some %s failed to sync", item_name.lower())
             else:
-                logger.info("Mods synced successfully")
-        except Exception as mod_error:
-            logger.error("Error syncing mods: %s", mod_error)
+                logger.info("%s synced successfully", item_name.title())
+        except Exception as sync_error:
+            logger.error("Error syncing %s: %s", item_name.lower(), sync_error)
             self.errors_occurred = True
-
-        if SETTINGS.get_game("first_start"):
-            # Sync Configurations
-            try:
-                logger.info("Syncing Configurations")
-                self.update_title("Syncing Configurations")
-                self.reset_progress()
-                self.mc.sync_file("servers")
-                self.mc.sync_file("options")
-                for count, total, filename, error_occured in self.mc.sync_dir("config"):
-                    self.update_item(filename)
-                    self.update_progress(count / total)
-                    if error_occured:
-                        self.errors_occurred = True
-                if self.errors_occurred:
-                    logger.warning("Some configurations failed to sync")
-                else:
-                    logger.info("Configurations synced successfully")
-            except Exception as config_error:
-                logger.error("Error syncing configurations: %s", config_error)
-                self.errors_occurred = True
-            # Sync Resource Packs
-            try:
-                logger.info("Syncing Resource Packs")
-                self.update_title("Syncing Resource Packs")
-                self.reset_progress()
-                for count, total, filename, error_occured in self.mc.sync_dir("resourcepacks"):
-                    self.update_item(filename)
-                    self.update_progress(count / total)
-                    if error_occured:
-                        self.errors_occurred = True
-                if self.errors_occurred:
-                    logger.warning("Some resource packs failed to sync")
-                else:
-                    logger.info("Resource Packs synced successfully")
-            except Exception:
-                logger.error("Error syncing resource packs: %s", config_error)
-                self.errors_occurred = True
-            # Sync Shader Packs
-            try:
-                logger.info("Syncing Shader Packs")
-                self.update_title("Syncing Shader Packs")
-                self.reset_progress()
-                for count, total, filename, error_occured in self.mc.sync_dir("shaderpacks"):
-                    self.update_item(filename)
-                    self.update_progress(count / total)
-                    if error_occured:
-                        self.errors_occurred = True
-                if self.errors_occurred:
-                    logger.warning("Some shader packs failed to sync")
-                else:
-                    logger.info("Shader Packs synced successfully")
-            except Exception:
-                logger.error("Error syncing shader packs: %s", config_error)
-                self.errors_occurred = True
 
     def _install(self):
         """
@@ -217,8 +173,20 @@ class InstallFrame(customtkinter.CTkFrame):
             logger.warning("Environment was not provisioned properly, stopping installation")
             return
 
-        # Sync the game files
-        self._sync()
+        # Sync Mods
+        self._sync_items("Mods", "mods")
+
+        if SETTINGS.get_game("first_start"):
+            # Sync Configurations
+            self._sync_items("Configurations", "servers", is_dir=False)
+            self._sync_items("Configurations", "options", is_dir=False)
+            self._sync_items("Configurations", "config")
+
+            # Sync Resource Packs
+            self._sync_items("Resource Packs", "resourcepacks")
+
+            # Sync Shader Packs
+            self._sync_items("Shader Packs", "shaderpacks")
 
         # Only set the user if no errors occurred
         if not self.errors_occurred:
@@ -394,6 +362,7 @@ class RunGameWindow(customtkinter.CTkToplevel):
 
     def on_run_complete(self):
         """Close this window."""
+        logger.info("Game stopped")
         if os.name != "posix":
             if self.main_window.isMinimized:
                 self.main_window.maximize()
