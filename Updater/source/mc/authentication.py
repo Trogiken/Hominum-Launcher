@@ -14,6 +14,7 @@ Constants:
 - NONCE (str): The nonce.
 """
 
+import logging
 import threading
 from queue import Queue
 import urllib.parse
@@ -24,13 +25,15 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 from portablemc.http import HttpError
 from portablemc.auth import MicrosoftAuthSession, AuthDatabase, AuthError
 from portablemc.standard import Context
-from source.path import APPLICATION_DIR
+from source import utils
+
+logger = logging.getLogger(__name__)
 
 AUTH_DATABASE_FILE_NAME = "portablemc_auth.json"  # Authentication database file name
 CLIENT_ID = "2b4ca0d5-a2f0-42bf-aed1-eeafa1139f26"  # Same as APP_ID
 APP_ID = "2b4ca0d5-a2f0-42bf-aed1-eeafa1139f26"  # Application ID registered in Entra
 AUTH_SERVER_PORT = 8690  # Port of the authentication server
-WEB_SERVER_PORT = 7969  # Port of the web server
+WEB_SERVER_PORT = 7969  # Port of the web server. This must be the same as Microsoft Entra
 CODE_REDIRECT_URI = "http://localhost:7969/code"  # URI registered in Entra
 NONCE = uuid4().hex  # Random string for security
 
@@ -48,9 +51,17 @@ class AuthenticationHandler:
     - authenticate: Authenticate the user with Microsoft's services.
     """
     def __init__(self, email: str, context: Context):
+        logger.debug("Initializing AuthenticationHandler")
+
         self.email = email
         self.context = context
         self.auth_database = AuthDatabase(self.context.work_dir / AUTH_DATABASE_FILE_NAME)
+
+        logger.debug("Email: %s", self.email)
+        logger.debug("Context: %s", self.context)
+        logger.debug("Auth Database: %s", self.auth_database)
+
+        logger.debug("AuthenticationHandler initialized")
 
     def _run_auth_server(self) -> str:
         """
@@ -91,8 +102,10 @@ class AuthenticationHandler:
                 if parsed.path in ("", "/"):
                     cast(AuthServer, self.server).ms_auth_query = parsed.query
                     self.send_response(200)
+                    logger.debug("Received auth query: %s", parsed.query)
                 else:
                     self.send_response(404)
+                    logger.debug("Received invalid path: %s", parsed.path)
                 self.send_header("Access-Control-Allow-Origin", "*")
                 self.end_headers()
                 self.wfile.flush()
@@ -100,12 +113,15 @@ class AuthenticationHandler:
         # Run the server and handle incoming requests
         with AuthServer() as server:
             try:
+                logger.debug("Starting auth server")
                 while server.ms_auth_query is None:
                     server.handle_request()
+                logger.debug("Auth query received, stopping server")
             except KeyboardInterrupt:
                 pass
 
             if server.ms_auth_query is None:
+                logger.warning("No auth query received")
                 return None
 
             auth_query = server.ms_auth_query
@@ -117,7 +133,11 @@ class AuthenticationHandler:
             id_token = qs["id_token"][0]
             code = qs["code"][0]
 
+            logger.debug("ID Token: %s", id_token)
+            logger.debug("Code: %s", code)
+
             if not MicrosoftAuthSession.check_token_id(id_token, self.email, NONCE):
+                logger.error("Invalid id token: %s", id_token)
                 return None
 
             return code
@@ -140,21 +160,18 @@ class AuthenticationHandler:
                 
                 Sends a response with the content-type header set to text/html.
                 """
-                # read html file
-                file_path = APPLICATION_DIR / "assets" / "resp.html"
-                with open(file_path, "r", encoding="utf-8") as f:
-                    html = f.read()
-
                 # send response
                 self.send_response(200)
                 self.send_header("Content-type", "text/html")
                 self.end_headers()
-                self.wfile.write(html.encode("utf-8"))
+                self.wfile.write(utils.get_html_resp().encode("utf-8"))
 
         server_address = ("", WEB_SERVER_PORT)
+        logger.debug("Server Address: %s", server_address)
         httpd = HTTPServer(server_address, WebHandler)
         web_server = threading.Thread(target=httpd.serve_forever)
         web_server.start()
+        logger.debug("Web server started")
         return httpd, web_server
 
     def gen_auth_url(self) -> str:
@@ -175,6 +192,7 @@ class AuthenticationHandler:
             "prompt": "login",
             "response_mode": "fragment"
         })
+        logger.debug("Auth Ref: %s", ref)
         return f"https://login.live.com/oauth20_authorize.srf?{ref}"
 
     def gen_logout_url(self) -> str:
@@ -202,7 +220,9 @@ class AuthenticationHandler:
         session = self.get_session()
         if session is None:
             return ""
-        return session.username
+        username = session.username
+        logger.debug("Username: %s", username)
+        return username
 
     def get_session(self) -> MicrosoftAuthSession:
         """
@@ -216,13 +236,17 @@ class AuthenticationHandler:
         self.auth_database.load()
         session = self.auth_database.get(self.email, MicrosoftAuthSession)
         if session is None:
+            logger.debug("No session found")
             return None
         try:
             if not session.validate():
                 session.refresh()
                 self.auth_database.save()
+                logger.debug("Session refreshed")
+            logger.debug("Returning valid session")
             return session
         except (AuthError, HttpError):
+            logger.warning("Session invalid")
             return None
 
     def remove_session(self):
@@ -232,6 +256,9 @@ class AuthenticationHandler:
         self.auth_database.load()
         self.auth_database.remove(self.email, MicrosoftAuthSession)
         self.auth_database.save()
+        settings = utils.Settings()
+        settings.set_user(email="")
+        logger.info("Session removed for '%s'", self.email)
 
     def authenticate(self) -> MicrosoftAuthSession:
         """
@@ -243,10 +270,12 @@ class AuthenticationHandler:
         """
         session = self.get_session()
         if session is not None:
+            logger.debug("Returning existing session")
             return session
 
         url = self.gen_auth_url()
         webbrowser.open(url)
+        logger.debug("Opened browser at '%s'", url)
 
         # Create a Queue object
         q = Queue()
@@ -266,25 +295,32 @@ class AuthenticationHandler:
         # Get the result from the queue
         code = q.get()
 
+        logger.debug("Stopping web server and auth server")
         httpd.shutdown()
         web_server.join()
         auth_server.join()
+        logger.debug("Web server and auth server stopped")
 
         if code is None:
+            logger.warning("Auth code is None, returning None")
             return None
 
         try:
+            logger.info("Authenticating to Minecraft API")
             session = MicrosoftAuthSession.authenticate(
                 self.auth_database.get_client_id(), APP_ID, code, CODE_REDIRECT_URI
             )
-        except Exception:
-            # TODO: Log error
-            return None
+            logger.debug("Authenticated to Minecraft API")
+        except Exception as auth_error:
+            logger.error("Failed to authenticate to Minecraft API: %s", auth_error)
+            session = None
 
         if session is None:
+            logger.warning("Failed to authenticate, session returning None")
             return None
 
         self.auth_database.put(self.email, session)
         self.auth_database.save()
+        logger.debug("Session saved to database")
 
         return session

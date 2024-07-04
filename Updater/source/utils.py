@@ -256,3 +256,23 @@ def get_image(image_name: str) -> Image.Image:
         raise
     logger.debug("Image '%s' loaded", image_name)
     return image
+
+
+def get_html_resp() -> str:
+    """
+    Get the HTML response from the assets directory.
+
+    Exceptions:
+    - FileNotFoundError: If the HTML response is not found.
+
+    Returns:
+    - str: The HTML response.
+    """
+    try:
+        with open(path.ASSETS_DIR / "resp.html", "r", encoding="utf-8") as f:
+            html_resp = f.read()
+    except FileNotFoundError:
+        logger.error("HTML response not found")
+        raise
+    logger.debug("HTML response loaded")
+    return html_resp
