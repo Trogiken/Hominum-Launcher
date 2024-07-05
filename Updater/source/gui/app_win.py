@@ -9,7 +9,10 @@ classes:
 - App: The main window of the application.
 """
 
+from time import sleep
 import logging
+import os
+import importlib.util
 import customtkinter
 from source.mc import MCManager
 from source.mc.authentication import AuthenticationHandler
@@ -18,6 +21,16 @@ from source.gui.login_win import LoginWindow
 from source.gui.app_settings_win import SettingsWindow
 from source.gui.app_rungame_win import RunGameWindow
 from source.utils import Settings, get_image
+
+# TODO: Check if the splash screen works on all target OS's
+if '_PYIBoot_SPLASH' in os.environ and importlib.util.find_spec("pyi_splash"):
+    try:
+        import pyi_splash  # type: ignore
+        SPLASH_FOUND = True
+    except ImportError:
+        SPLASH_FOUND = False
+else:
+    SPLASH_FOUND = False
 
 logger = logging.getLogger(__name__)
 
@@ -309,6 +322,13 @@ class App(customtkinter.CTk):
     """The main window of the application."""
     def __init__(self):
         super().__init__()
+        if SPLASH_FOUND:
+            pyi_splash.update_text("Loading Prerequisites")
+            logger.debug("Updated splash text")
+            sleep(1)
+        else:
+            logger.warning("Splash screen not found")
+
         logger.debug("Creating main window")
 
         self.title(path.PROGRAM_NAME)
@@ -323,13 +343,29 @@ class App(customtkinter.CTk):
 
         customtkinter.set_appearance_mode(SETTINGS.get_gui("appearance"))
 
+        if SPLASH_FOUND:
+            pyi_splash.update_text("Loading Left Frame")
+            logger.debug("Updated splash text")
+            sleep(.25)
         self.settings_frame = LeftFrame(self)
         self.settings_frame.grid(row=0, column=0, padx=(10, 0), pady=10, sticky="nsw")
 
+        if SPLASH_FOUND:
+            pyi_splash.update_text("Loading Right Frame")
+            logger.debug("Updated splash text")
+            sleep(.25)
         self.right_frame = RightFrame(self)
         self.right_frame.grid(row=0, column=2, padx=(0, 10), pady=10, sticky="nse")
 
+        if SPLASH_FOUND:
+            pyi_splash.update_text("Loading Center Frame")
+            logger.debug("Updated splash text")
+            sleep(.25)
         self.center_frame = CenterFrame(self)
         self.center_frame.grid(row=0, column=1, padx=10, pady=10, sticky="nsew")
 
         logger.debug("Main window created")
+
+        if SPLASH_FOUND:
+            pyi_splash.close()
+            logger.debug("Closed splash screen")
