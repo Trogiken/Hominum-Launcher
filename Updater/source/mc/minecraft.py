@@ -67,15 +67,15 @@ class MCManager:
         """
         if self.remote_config is None:
             raise ValueError("Remote config is not set")
-        if remote not in self.remote_config["urls"]:
+        if remote_dir not in self.remote_config["urls"]:
             raise ValueError(f"Invalid remote directory: {remote}")
-        if remote == "config":
+        if remote_dir == "config":
             local_dir = self.context.work_dir / "config"
-        elif remote == "mods":
+        elif remote_dir == "mods":
             local_dir = self.context.work_dir / "mods"
-        elif remote == "resourcepacks":
+        elif remote_dir == "resourcepacks":
             local_dir = self.context.work_dir / "resourcepacks"
-        elif remote == "shaderpacks":
+        elif remote_dir == "shaderpacks":
             local_dir = self.context.work_dir / "shaderpacks"
         else:
             raise ValueError(f"Unknown valid remote directory: {remote}")

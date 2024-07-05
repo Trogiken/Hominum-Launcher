@@ -134,12 +134,16 @@ class InstallFrame(customtkinter.CTkFrame):
             else:
                 self.mc.sync_file(remote_dir)
                 sync_iter = []
+
+            errors = False
             for count, total, filename, error_occured in sync_iter:
                 self.update_item(filename)
                 self.update_progress(count / total)
                 if error_occured:
                     self.errors_occurred = True
-            if self.errors_occurred:
+                    errors = True
+                    logger.error("'%s' failed to sync", filename)
+            if errors:
                 logger.warning("Some %s failed to sync", item_name.lower())
             else:
                 logger.info("%s synced successfully", item_name.title())
@@ -358,7 +362,7 @@ class RunGameWindow(customtkinter.CTkToplevel):
             message="An error occurred during the installation process",
         )
         self.destroy()
-        logger.debug("Popup destroyed")
+        logger.debug("Run game window destroyed")
 
     def on_run_complete(self):
         """Close this window."""
