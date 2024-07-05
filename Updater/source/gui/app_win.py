@@ -322,6 +322,8 @@ class App(customtkinter.CTk):
     """The main window of the application."""
     def __init__(self):
         super().__init__()
+        # pylint: disable=W0012
+        # pylint: disable=E0606
         if SPLASH_FOUND:
             pyi_splash.update_text("Loading Prerequisites")
             logger.debug("Updated splash text")
@@ -369,3 +371,5 @@ class App(customtkinter.CTk):
         if SPLASH_FOUND:
             pyi_splash.close()
             logger.debug("Closed splash screen")
+        # pylint: enable=E0606
+        # pylint: enable=W0012
