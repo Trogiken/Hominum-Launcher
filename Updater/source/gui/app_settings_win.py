@@ -11,7 +11,7 @@ Classes:
 
 import customtkinter
 from source import path
-from source.utils import Settings
+from source.utils import Settings, open_directory
 from source.gui.popup_win import PopupWindow
 from source.mc.authentication import AuthenticationHandler
 
@@ -177,7 +177,16 @@ class GameSettingsFrame(customtkinter.CTkFrame):
         self.title_label = customtkinter.CTkLabel(
             self, text="Game", font=SETTINGS.get_gui("font_title")
         )
-        self.title_label.grid(row=0, column=0, padx=20, pady=(20, 0), sticky="n")
+        self.title_label.grid(row=0, column=0, padx=20, pady=(20, 5), sticky="n")
+
+        # Open MC Data Folder
+        self.open_data_folder_button = customtkinter.CTkButton(
+            self,
+            text="Open Game Folder",
+            font=SETTINGS.get_gui("font_normal"),
+            command=self.open_data_folder,
+        )
+        self.open_data_folder_button.grid(row=1, column=0, padx=20, pady=5)
 
         # JVM Arguments Entry
         self.jvm_args_button = customtkinter.CTkButton(
@@ -186,7 +195,7 @@ class GameSettingsFrame(customtkinter.CTkFrame):
             font=SETTINGS.get_gui("font_normal"),
             command=self.open_jvm_args_window
         )
-        self.jvm_args_button.grid(row=1, column=0, padx=20, pady=10)
+        self.jvm_args_button.grid(row=2, column=0, padx=20, pady=5)
 
         # Reset Game Settings Button
         self.reset_game_settings_button = customtkinter.CTkButton(
@@ -195,7 +204,11 @@ class GameSettingsFrame(customtkinter.CTkFrame):
             font=SETTINGS.get_gui("font_normal"),
             command=self.reset_game_settings
         )
-        self.reset_game_settings_button.grid(row=2, column=0, padx=20, pady=(0, 20), sticky="s")
+        self.reset_game_settings_button.grid(row=3, column=0, padx=20, pady=(5, 20), sticky="s")
+
+    def open_data_folder(self):
+        """Open the data folder"""
+        open_directory(path.WORK_DIR)
 
     def open_jvm_args_window(self):
         """Open the JVM Arguments dialog."""

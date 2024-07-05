@@ -3,6 +3,8 @@ This module handles things related to the gui
 
 Functions:
 - get_image: Get the image from the assets directory.
+- get_html_resp: Get the HTML response from the assets directory.
+- open_directory: Open a folder on the users computer.
 
 Classes:
 - GUISettings: Stores the settings for the GUI.
@@ -18,6 +20,8 @@ Constants:
 
 import logging
 import os
+import subprocess
+import platform
 import pickle
 import pathlib
 from dataclasses import dataclass, field
@@ -276,3 +280,23 @@ def get_html_resp() -> str:
         raise
     logger.debug("HTML response loaded")
     return html_resp
+
+
+def open_directory(directory_path: str | pathlib.Path):
+    """
+    Open a folder on the users computer.
+
+    Parameters:
+    - directory_path (str | pathlib.Path): The directory to open.
+    """
+    system_platform = platform.system()
+
+    if system_platform == "Windows":
+        os.startfile(directory_path)
+    elif system_platform == "Darwin":  # macOS
+        with subprocess.Popen(["open", directory_path]) as proc:
+            proc.communicate()
+    else:  # Linux and other Unix-like systems
+        with subprocess.Popen(["xdg-open", directory_path]) as proc:
+            proc.communicate()
+    logger.debug("Opened directory: '%s'", directory_path)
