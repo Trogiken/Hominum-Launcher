@@ -292,7 +292,7 @@ def open_directory(directory_path: str | pathlib.Path):
     system_platform = platform.system()
 
     if system_platform == "Windows":
-        os.startfile(directory_path)
+        os.startfile(directory_path)  # pylint: disable=no-member
     elif system_platform == "Darwin":  # macOS
         with subprocess.Popen(["open", directory_path]) as proc:
             proc.communicate()
