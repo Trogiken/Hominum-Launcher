@@ -5,11 +5,14 @@ Classes:
 - AuthWindow: Toplevel window for authenticating the user with the Minecraft account.
 """
 
+import logging
 import threading
 import customtkinter
 from source.utils import Settings
 from source.mc import AuthenticationHandler
 from source import path
+
+logger = logging.getLogger(__name__)
 
 SETTINGS = Settings()
 
@@ -18,6 +21,8 @@ class AuthWindow(customtkinter.CTkToplevel):
     """Toplevel window for authenticating the user with a Minecraft account."""
     def __init__(self, master, email, **kwargs):
         super().__init__(master, **kwargs)
+        logger.debug("Creating authentication window")
+
         self.title("Authentication")
         self.email = email
         self.geometry("400x100")
@@ -42,11 +47,14 @@ class AuthWindow(customtkinter.CTkToplevel):
         auth_thread = threading.Thread(target=self.auth, daemon=True)
         auth_thread.start()
 
+        logger.debug("Authentication window created")
+
         while auth_thread.is_alive():
             self.update_idletasks()
             self.update()
 
         self.destroy()
+        logger.debug("Authentication window destroyed")
 
     def auth(self):
         """Runs the authentication process."""

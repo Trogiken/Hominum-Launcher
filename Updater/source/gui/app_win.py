@@ -9,6 +9,10 @@ classes:
 - App: The main window of the application.
 """
 
+from time import sleep
+import logging
+import os
+import importlib.util
 import customtkinter
 from source.mc import MCManager
 from source.mc.authentication import AuthenticationHandler
@@ -18,6 +22,18 @@ from source.gui.app_settings_win import SettingsWindow
 from source.gui.app_rungame_win import RunGameWindow
 from source.utils import Settings, get_image
 
+# TODO: Check if the splash screen works on all target OS's
+if '_PYIBoot_SPLASH' in os.environ and importlib.util.find_spec("pyi_splash"):
+    try:
+        import pyi_splash  # type: ignore
+        SPLASH_FOUND = True
+    except ImportError:
+        SPLASH_FOUND = False
+else:
+    SPLASH_FOUND = False
+
+logger = logging.getLogger(__name__)
+
 SETTINGS = Settings()
 
 
@@ -25,6 +41,8 @@ class LeftFrame(customtkinter.CTkFrame):
     """This frame contains a settings icon and functions."""
     def __init__(self, master):
         super().__init__(master)
+        logger.debug("Creating left frame")
+
         self.settings_window = None
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(2, weight=1)
@@ -65,6 +83,8 @@ class LeftFrame(customtkinter.CTkFrame):
         )
         self.settings_button.grid(row=3, column=0, padx=20, pady=(0, 20), sticky="s")
 
+        logger.debug("Left frame created")
+
     def theme_menu_callback(self, theme: str):
         """
         Changes and saves the current program appearance
@@ -97,6 +117,8 @@ class RightFrame(customtkinter.CTkFrame):
     """This frame contains the user dropdown and functions."""
     def __init__(self, master):
         super().__init__(master)
+        logger.debug("Creating right frame")
+
         self.login_window = None
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(0, weight=1)
@@ -151,6 +173,8 @@ class RightFrame(customtkinter.CTkFrame):
         )
         self.play_button.grid(row=2, column=0, padx=20, pady=20, sticky="s")
 
+        logger.debug("Right frame created")
+
     def auto_join_callback(self):
         """
         Callback function for the auto-join switch.
@@ -177,15 +201,18 @@ class RightFrame(customtkinter.CTkFrame):
         - None
         """
         action = action.casefold()
+        logger.debug("User menu callback action: %s", action)
         if action == "logout":
             auth_handler = AuthenticationHandler(SETTINGS.get_user("email"), path.CONTEXT)
             auth_handler.remove_session()
             self.user_menu_var.set("Logged Out")
             self.user_menu.configure(values=["Login"])
             self.user_menu_var.set("Login")
+            logger.debug("Logout complete")
         if action == "login":
             if self.login_window is not None and self.login_window.winfo_exists():
                 self.login_window.lift()
+                logger.debug("Login window already exists")
             else:
                 self.login_window = LoginWindow(master=self)
                 self.login_window.transient(self)
@@ -198,6 +225,9 @@ class RightFrame(customtkinter.CTkFrame):
                 else:
                     self.user_menu_var.set("Logged Out")
                     self.user_menu.configure(values=["Login"])
+                self.login_window = None
+                logger.debug("Login complete")
+
 
     def run_game(self):
         """Start Minecraft"""
@@ -213,6 +243,8 @@ class ScrollableFrame(customtkinter.CTkScrollableFrame):
     """A frame that contains the bulletin."""
     def __init__(self, master):
         super().__init__(master)
+        logger.debug("Creating scrollable frame")
+
         self.mc = MCManager(context=path.CONTEXT)
 
         # Parse the bulletin config and create the bulletin
@@ -261,11 +293,15 @@ class ScrollableFrame(customtkinter.CTkScrollableFrame):
                     item_label.grid(row=item_row, column=0, padx=10, pady=pady, sticky="w")
                     item_row += 1
 
+        logger.debug("Scrollable frame created")
+
 
 class CenterFrame(customtkinter.CTkFrame):
     """This frame contains the bulletin."""
     def __init__(self, master):
         super().__init__(master)
+        logger.debug("Creating center frame")
+
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(1, weight=2)
 
@@ -279,11 +315,24 @@ class CenterFrame(customtkinter.CTkFrame):
         self.scrollable_frame = ScrollableFrame(self)
         self.scrollable_frame.grid(row=1, column=0, padx=20, pady=20, sticky="nsew")
 
+        logger.debug("Center frame created")
+
 
 class App(customtkinter.CTk):
     """The main window of the application."""
     def __init__(self):
         super().__init__()
+        # pylint: disable=W0012
+        # pylint: disable=E0606
+        if SPLASH_FOUND:
+            pyi_splash.update_text("Loading Prerequisites")
+            logger.debug("Updated splash text")
+            sleep(1)
+        else:
+            logger.warning("Splash screen not found")
+
+        logger.debug("Creating main window")
+
         self.title(path.PROGRAM_NAME)
         geom_length, geom_height = SETTINGS.get_gui("main_window_geometry")
         min_length, min_height = SETTINGS.get_gui("main_window_min_size")
@@ -294,14 +343,33 @@ class App(customtkinter.CTk):
         self.grid_columnconfigure(1, weight=1)
         self.grid_columnconfigure(2, weight=0)
 
-        # Load settings
         customtkinter.set_appearance_mode(SETTINGS.get_gui("appearance"))
 
+        if SPLASH_FOUND:
+            pyi_splash.update_text("Loading Left Frame")
+            logger.debug("Updated splash text")
+            sleep(.25)
         self.settings_frame = LeftFrame(self)
         self.settings_frame.grid(row=0, column=0, padx=(10, 0), pady=10, sticky="nsw")
 
+        if SPLASH_FOUND:
+            pyi_splash.update_text("Loading Right Frame")
+            logger.debug("Updated splash text")
+            sleep(.25)
         self.right_frame = RightFrame(self)
         self.right_frame.grid(row=0, column=2, padx=(0, 10), pady=10, sticky="nse")
 
+        if SPLASH_FOUND:
+            pyi_splash.update_text("Loading Center Frame")
+            logger.debug("Updated splash text")
+            sleep(.25)
         self.center_frame = CenterFrame(self)
         self.center_frame.grid(row=0, column=1, padx=10, pady=10, sticky="nsew")
+
+        logger.debug("Main window created")
+
+        if SPLASH_FOUND:
+            pyi_splash.close()
+            logger.debug("Closed splash screen")
+        # pylint: enable=E0606
+        # pylint: enable=W0012

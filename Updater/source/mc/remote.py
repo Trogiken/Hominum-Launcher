@@ -16,16 +16,19 @@ Constants:
 - CONFIG_NAME (str): The name of the config file on the server.
 """
 
+import logging
 from typing import Generator
 import os
 import requests
 import yaml
 from source import creds, exceptions
 
+logger = logging.getLogger(__name__)
+
 GITHUB_CONTENTS_BASE = r"https://api.github.com/repos/Trogiken/Hominum-Updates/contents"
 CONFIG_NAME = "config.yaml"
 
-# TODO: Make webrequests error handling more robust
+
 def get_request(url: str, timeout=5, headers=None, **kwargs) -> requests.models.Response:
     """
     Sends a GET request to the specified URL and returns the response object.
@@ -51,8 +54,8 @@ def get_request(url: str, timeout=5, headers=None, **kwargs) -> requests.models.
     try:
         resp = requests.get(url, timeout=timeout, headers=headers, **kwargs)
         resp.raise_for_status()
-    except Exception:
-        # TODO: Log error
+    except Exception as error:
+        logger.error("Failed to get '%s': %s", url, error)
         return None
     return resp
 
@@ -69,61 +72,66 @@ def download(url: str, save_path: str, chunk_size=8192) -> str:
     Returns:
     - str: The path where the file was saved.
     """
-    resp = get_request(url, stream=True)
-    if not resp:
-        return None
-    with open(save_path, "wb") as f:
-        for chunk in resp.iter_content(chunk_size=chunk_size):
-            if chunk:
-                f.write(chunk)
+    try:
+        resp = get_request(url, stream=True)
+        with open(save_path, "wb") as f:
+            for chunk in resp.iter_content(chunk_size=chunk_size):
+                if chunk:
+                    f.write(chunk)
+        logger.info("Downloaded '%s' to '%s'", url, save_path)
+    except Exception as error:
+        raise exceptions.DownloadError(f"Failed to download '{url}': {error}")
 
     return save_path
 
 
-def download_files(urls: list, mods_directory: str) -> Generator[tuple, None, None]:
+def download_files(urls: list, save_directory: str) -> Generator[tuple, None, None]:
     """
     Downloads files from the given URLs to the specified mods_directory.
 
     Parameters:
     - urls (list): A list of URLs to download the files from.
-    - mods_directory (str): The directory to save the downloaded files to.
+    - save_directory (str): The directory to save the downloaded files to.
 
     Returns:
     - Generator[tuple, None, None]:
         A generator that yields a tuple containing the count of downloaded files,
-        the total number of files to download, and the name of the file.
+        the total number of files to download, the name of the file, and error boolean.
     """
     url_pairs = []
     for url in urls:
         filename = url.split("/")[-1]  # Get the file name from the URL
         filename = filename.split("?")[0]  # Remove any query parameters from the file name
-        save_path = os.path.join(mods_directory, filename)
+        save_path = os.path.join(save_directory, filename)
         if not os.path.exists(save_path):
             url_pairs.append((url, save_path, filename))
 
     count = 0
     total = len(url_pairs)
+    logger.debug("Downloading '%d' files", total)
+    logger.debug("URL pairs: %s", url_pairs)
     for pair in url_pairs:
         url, save_path, filename = pair
+        error_occured = False
         retries_left = 3
 
         while retries_left > 0:
             try:
-                save = download(url, save_path)
-                if not save:
-                    raise exceptions.NoResponseError(f"No response from {url}")
+                download(url, save_path)
                 count += 1
-                yield (count, total, filename)
+                yield (count, total, filename, error_occured)
                 break
-            except Exception:
-                # TODO: Log error
+            except exceptions.DownloadError as error:
                 if os.path.exists(save_path):
                     os.remove(save_path)  # Remove incomplete file
+                    logger.warning("Removed incomplete file '%s'", save_path)
                 retries_left -= 1
                 if retries_left == 0:
-                    # Optionally, handle the error further or raise an exception
-                    yield (count, total, filename)
+                    logger.error("Max retries reached for '%s': %s", url, error)
+                    error_occured = True
+                    yield (count, total, filename, error_occured)
                     break
+                logger.warning("Failed to download '%s', trying again", url)
 
 
 def get_file_download(file_path: str) -> str:
@@ -140,16 +148,18 @@ def get_file_download(file_path: str) -> str:
     """
     path, name = os.path.split(file_path)
     download_path_url = ""
-    resp = get_request(GITHUB_CONTENTS_BASE + f"/{path}")
+    resp = get_request(f"{GITHUB_CONTENTS_BASE}/{path}")
     if not resp:
-        # TODO: Log error
+        logger.warning("Failed to get download url from server")
         return None
     for file in resp.json():
         if file["name"] == name:
             download_path_url = file["download_url"]
             break
     if not download_path_url:
-        raise FileNotFoundError(f"{name} not found on the server")
+        logger.error("'%s' not found on the server", name)
+        return None
+    logger.debug("Download URL: %s", download_path_url)
 
     return download_path_url
 
@@ -166,13 +176,14 @@ def get_file_downloads(directory: str) -> list:
     - None: If the response is empty.
     - exceptions.NoResponseError: If no response is received from the server.
     """
-    resp = get_request(GITHUB_CONTENTS_BASE + f"/{directory}")
+    resp = get_request(f"{GITHUB_CONTENTS_BASE}/{directory}")
     if not resp:
-        # TODO: Log error
+        logger.warning("Failed to get download urls from server")
         return None
     download_urls = []
     for file in resp.json():
         download_urls.append(file["download_url"])
+    logger.debug("Download URLs: %s", download_urls)
 
     return download_urls
 
@@ -186,9 +197,10 @@ def get_config() -> dict:
     """
     resp = get_request(get_file_download(CONFIG_NAME))
     if not resp:
-        # TODO: Log error
+        logger.warning("Failed to get config from server")
         return {}
     config = yaml.safe_load(resp.text)
+    logger.debug("Config: %s", config)
 
     return config
 
@@ -204,12 +216,13 @@ def get_filenames(directory: str) -> list:
     - list: A list of mod names.
     - None: If the response is empty.
     """
-    resp = get_request(GITHUB_CONTENTS_BASE + f"/{directory}")
+    resp = get_request(f"{GITHUB_CONTENTS_BASE}/{directory}")
     if not resp:
-        # TODO: Log error
+        logger.warning("Failed to get filenames from server")
         return None
     names = []
     for file in resp.json():
         names.append(file["name"])
+    logger.debug("Filenames: %s", names)
 
     return names

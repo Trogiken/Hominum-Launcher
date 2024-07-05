@@ -13,14 +13,17 @@ Constants:
 - CONTEXT (Context): The context of the program.
 """
 
+import logging
 import os
 import pathlib
 import sys
 from portablemc.standard import Context
 
+logger = logging.getLogger(__name__)
+
 PROGRAM_NAME = "Hominum"
 PROGRAM_NAME_LONG = "Hominum Launcher"
-VERSION = "4.6.3.4"
+VERSION = "4.7.3.4"
 
 if getattr(sys, 'frozen', False):
     APPLICATION_DIR = pathlib.Path(sys.executable).parent
@@ -42,3 +45,6 @@ CONTEXT = Context(MAIN_DIR, WORK_DIR)
 os.makedirs(STORE_DIR, exist_ok=True)
 os.makedirs(MAIN_DIR, exist_ok=True)
 os.makedirs(WORK_DIR, exist_ok=True)
+
+if not os.path.exists(ASSETS_DIR):
+    raise FileNotFoundError(f"Assets directory not found: {ASSETS_DIR}")
