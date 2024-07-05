@@ -306,7 +306,6 @@ class RunGameWindow(customtkinter.CTkToplevel):
         self.auth_handler = AuthenticationHandler(
             email=SETTINGS.get_user("email"), context=path.CONTEXT
         )
-        self.version = self.mc.provision_version(self.mc.fabric_version, self.mc.loader_version)
         session = self.auth_handler.get_session()
         if session is None:
             PopupWindow(
@@ -316,10 +315,9 @@ class RunGameWindow(customtkinter.CTkToplevel):
             )
             self.after(100, self.destroy)
             return
-        self.version.auth_session = session
-        if SETTINGS.get_game("autojoin") and self.mc.server_ip:
-            self.version.set_quick_play_multiplayer(self.mc.server_ip)
-            logger.debug("Auto-join set to '%s'", self.mc.server_ip)
+        self.version = self.mc.provision_version(
+            auth_session=session, autojoin=SETTINGS.get_game("autojoin")
+        )
 
         self.protocol("WM_DELETE_WINDOW", lambda: None)  # Prevent the closing of this window
 
