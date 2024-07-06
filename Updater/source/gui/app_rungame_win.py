@@ -14,8 +14,9 @@ import os
 import threading
 import customtkinter
 from portablemc.standard import \
-Watcher, DownloadCompleteEvent, DownloadProgressEvent, DownloadStartEvent
+Watcher, DownloadCompleteEvent, DownloadProgressEvent, DownloadStartEvent, Version, Environment
 from portablemc.fabric import FabricVersion
+from portablemc.forge import ForgeVersion
 from source.gui.popup_win import PopupWindow
 from source import path
 from source.utils import Settings
@@ -47,6 +48,7 @@ class InstallWatcher(Watcher):
             self.app.update_progress(event.count / self.total)
         elif isinstance(event, DownloadCompleteEvent):
             self.app.update_item("Download Complete")
+            self.app.progress_indeterminate()
 
 
 class InstallFrame(customtkinter.CTkFrame):
@@ -68,6 +70,7 @@ class InstallFrame(customtkinter.CTkFrame):
 
         self.mc = mc
         self.version = version
+        self.environment = None
         self.on_install_complete = on_install_complete
         self.on_install_error = on_install_error
         self.errors_occurred = False
@@ -113,7 +116,7 @@ class InstallFrame(customtkinter.CTkFrame):
                 self.on_install_error()
                 return
             if self.on_install_complete:
-                self.on_install_complete()
+                self.on_install_complete(self.environment)
                 return
 
     def _sync_items(self, item_name: str, remote_dir: str, is_dir: bool=True):
@@ -164,7 +167,7 @@ class InstallFrame(customtkinter.CTkFrame):
         for _ in range(3):  # Retry 3 times
             try:
                 logger.info("Provisioning Environment")
-                self.mc.provision_environment(self.version, watcher=install_watcher)
+                self.environment = self.mc.provision_environment(self.version, watcher=install_watcher)
                 self.errors_occurred = False
                 logger.info("Environment provisioned successfully")
                 break
@@ -216,6 +219,10 @@ class InstallFrame(customtkinter.CTkFrame):
         self.progress_bar.set(0)
         logger.debug("Progress bar reset")
 
+    def progress_indeterminate(self):
+        """Sets the progress bar to be indeterminate"""
+        self.progress_bar.configure(mode="indeterminate")
+
     def update_progress(self, value):
         """Update the progress bar."""
         self.progress_bar.set(value)
@@ -228,7 +235,8 @@ class RunFrame(customtkinter.CTkFrame):
             self,
             master,
             mc: MCManager,
-            version: FabricVersion,
+            version: Version | FabricVersion | ForgeVersion,
+            environment: Environment,
             on_run_complete=None,
             main_window=None
         ):
@@ -239,6 +247,7 @@ class RunFrame(customtkinter.CTkFrame):
 
         self.mc = mc
         self.version = version
+        self.environment = environment
         self.on_run_complete = on_run_complete
         self.main_window = main_window
 
@@ -280,7 +289,7 @@ class RunFrame(customtkinter.CTkFrame):
     def run(self):
         """Provision the environment and run the game."""
         logger.info("Running game")
-        env = self.mc.provision_environment(self.version)
+        env = self.environment
         args = SETTINGS.get_game("ram_jvm_args") + SETTINGS.get_game("additional_jvm_args")
         logger.debug("Runtime args: %s", args)
         env.jvm_args.extend(args)
@@ -339,7 +348,7 @@ class RunGameWindow(customtkinter.CTkToplevel):
 
         logger.debug("Created run game window")
 
-    def on_install_complete(self):
+    def on_install_complete(self, environment: Environment):
         """Destroy the install frame and create the run frame."""
         self.install_frame.destroy()
         logger.debug("Install frame destroyed")
@@ -347,6 +356,7 @@ class RunGameWindow(customtkinter.CTkToplevel):
             self,
             self.mc,
             self.version,
+            environment,
             on_run_complete=self.on_run_complete,
             main_window=self.main_window
         )

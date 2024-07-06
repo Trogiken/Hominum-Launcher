@@ -182,7 +182,7 @@ class MCManager:
         - ForgeVersion: Forge version.
         """
         logger.debug("mc_version: %s", mc_version)
-        logger.debug("loader_version: %s", forge_version)
+        logger.debug("forge_version: %s", forge_version)
         if forge_version is None:
             forge_version = "recommended"
 
@@ -237,6 +237,7 @@ class MCManager:
         version.auth_session = auth_session
         if autojoin:
             version.set_quick_play_multiplayer(self.server_ip)
+        logger.debug("Version: %s", version)
 
         return version
 
