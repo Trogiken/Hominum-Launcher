@@ -9,14 +9,14 @@ import logging
 import customtkinter
 from source.gui.popup_win import PopupWindow
 from source import path, exceptions
-from source.utils import Settings
+from source import utils
 from source.mc.authentication import AuthenticationHandler
 from source.mc import MCManager
 from source.mc.minecraft import InstallWatcher
 
 logger = logging.getLogger(__name__)
 
-SETTINGS = Settings()
+SETTINGS = utils.Settings()
 
 
 class InstallWindow(customtkinter.CTkToplevel):
@@ -25,7 +25,7 @@ class InstallWindow(customtkinter.CTkToplevel):
         super().__init__()
         logger.debug("Creating install window")
 
-        self.title = "Install"
+        self.title("Install")
         self.attributes("-topmost", True)  # Always on top
         self.geometry("500x150")
         self.grid_columnconfigure(0, weight=1)
@@ -116,6 +116,8 @@ class InstallWindow(customtkinter.CTkToplevel):
         logger.info("Starting Installation")
         # Install the game
         install_watcher = InstallWatcher(self)
+        if SETTINGS.get_game("environment"):  # Reset environment if one exists
+            SETTINGS.set_game(environment=utils.GameSettings().environment)
         for _ in range(3):  # Retry 3 times
             try:
                 logger.info("Provisioning Environment")

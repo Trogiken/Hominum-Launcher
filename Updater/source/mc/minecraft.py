@@ -193,6 +193,9 @@ class InstallWatcher(SimpleWatcher):
 
         if e.done:
             logger.debug("File Downloaded: %s", e.entry)
+            # TODO: Make sure this allows other versions to install properly
+            if str(e.entry) == "<DownloadEntry modules>":  # Janky way to stop install from hanging
+                raise exceptions.VersionInstallTimeout("Modules install detected")
             self.size += e.size
 
         item_msg = f"Total Downloaded: {size:>8} - {speed}"
