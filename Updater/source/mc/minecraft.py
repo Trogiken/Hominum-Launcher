@@ -2,20 +2,20 @@
 This module contains the main class for handling Minecraft.
 
 Classes:
-- InstallWatcher: Observes and logs the installation process of a version install.
 - MCManager: A class that handles Minecraft.
+- InstallWatcher: A class that observes and logs the installation process of a version install.
+- EnvironmentRunner: A class that updates the GUI.
 """
 
 import logging
-# import threading
-# import time
+import time
 import os
+from subprocess import Popen
 from typing import Generator, List
-# import psutil
 from source import exceptions, utils, path
 from source.mc import remote
 from portablemc.auth import MicrosoftAuthSession
-from portablemc.standard import Context, Version, SimpleWatcher, Environment, \
+from portablemc.standard import Context, Version, SimpleWatcher, Environment, StandardRunner, \
     DownloadStartEvent, DownloadProgressEvent, DownloadCompleteEvent, \
     VersionLoadingEvent, VersionFetchingEvent, VersionLoadedEvent, \
     JvmLoadingEvent, JvmLoadedEvent, JarFoundEvent, \
@@ -213,87 +213,29 @@ class InstallWatcher(SimpleWatcher):
         self.app.progress_indeterminate()
 
 
-# class Installation:
-#     def __init__(
-#             self, version: Version | FabricVersion | ForgeVersion, watcher: InstallWatcher
-#         ):
-#         self.version = version
-#         self.watcher = watcher
+class EnvironmentRunner(StandardRunner):
+    """
+    A runner that updates the GUI.
 
-#     def _is_process_idle(self, proc, threshold=1):
-#         # Check CPU usage of the process
-#         cpu_usage = proc.cpu_percent(interval=1)
+    Attributes:
+    - app: The app to update.
+    """
+    def __init__(self, app) -> None:
+        self.app = app
 
-#         # Check IO usage of the process
-#         io_counters = proc.io_counters()
-#         read_count = io_counters.read_count
-#         write_count = io_counters.write_count
-#         time.sleep(1)
-#         new_io_counters = proc.io_counters()
-#         new_read_count = new_io_counters.read_count
-#         new_write_count = new_io_counters.write_count
-#         logger.debug(
-#             "Checked Idle: CPU: %s, Read: %s/%s, Write: %s/%s",
-#             cpu_usage, read_count, new_read_count, write_count, new_write_count
-#         )
-
-#         # Determine if process is idle based on CPU and IO usage
-#         is_idle = \
-#             cpu_usage < threshold\
-#             and read_count == new_read_count\
-#             and write_count == new_write_count
-#         return is_idle
-
-#     def download(self) -> None:
-#         """
-#         This is a rewrite of the install function in the PortableMC Version class
-#         """
-#         watcher = self.watcher
-
-#         # pylint: disable=protected-access
-#         self.version._dl.clear()
-#         self.version._applied_fixes.clear()
-
-#         self.version._resolve_version(watcher)
-#         self.version._resolve_metadata(watcher)
-#         self.version._resolve_features(watcher)
-#         self.version._resolve_jvm(watcher)
-#         self.version._resolve_jar(watcher)
-#         self.version._resolve_assets(watcher)
-#         self.version._resolve_libraries(watcher)
-#         self.version._resolve_logger(watcher)
-#         self.version._download(watcher)
-#         self.version._finalize_assets(watcher)
-#         # pylint: enable=protected-access
-
-#     def install(self) -> Environment:
-#         """
-#         Run and monitor install for idleness
-        
-#         Exceptions:
-#         - VersionInstallTimeout: If the installation times out.
-
-#         Returns:
-#         - Environment: The environment for the version.
-#         """
-#         download_thread = threading.Thread(target=self.download)
-#         download_thread.start()
-
-#         start_time = time.time()
-#         process = psutil.Process(os.getpid())  # The current process
-#         check_interval = 5  # Seconds until next check
-#         timeout = 30  # Seconds until exception is raised while idle
-
-#         while download_thread.is_alive() and not os.path.exists(path.GLOBAL_KILL):
-#             if self._is_process_idle(process):
-#                 logger.debug("Process is idle")
-#                 if time.time() - start_time > timeout:
-#                     raise exceptions.VersionInstallTimeout("Install timed out")
-#             else:
-#                 start_time = time.time()  # Reset the timer if not idle
-#             time.sleep(check_interval)
-
-#         return self.version._resolve_env(self.watcher)  # pylint: disable=protected-access
+    def process_wait(self, process: Popen) -> None:
+        try:
+            while process.poll() is None:
+                self.app.update_gui()
+                if self.app.kill_process:
+                    raise exceptions.GlobalKill()
+                time.sleep(0.1)
+        except exceptions.GlobalKill:
+            process.kill()
+            raise
+        finally:
+            process.wait()
+            self.app.on_run_complete()
 
 
 class MCManager:

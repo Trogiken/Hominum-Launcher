@@ -1,8 +1,15 @@
+"""
+A module that contains the RunWindow class.
+
+Classes:
+- RunWindow: A class that is used to run the game.
+"""
+
 import os
 import logging
-import threading
 import customtkinter
 from portablemc.standard import Environment
+from source.mc.minecraft import EnvironmentRunner
 from source.gui.popup_win import PopupWindow
 from source import utils
 
@@ -26,7 +33,9 @@ class RunWindow(customtkinter.CTkToplevel):
         if os.name != "posix":
             self.main_window: pygw.Win32Window = pygw.getWindowsWithTitle("Hominum")[0]
 
-        self.protocol("WM_DELETE_WINDOW", lambda: None)  # Prevent the closing of this window
+        self.kill_process = False  # Used by EnvironmentRunner
+
+        self.protocol("WM_DELETE_WINDOW", self.destroy)  # Prevent the closing of this window
         self.attributes("-topmost", True)  # Always on top
         self.geometry("500x150")
         self.resizable(False, False)
@@ -44,27 +53,18 @@ class RunWindow(customtkinter.CTkToplevel):
         )
         self.message_label.grid(row=1, column=0, padx=20, pady=(0, 20))
 
-        self.run_game()
+        self.after(100, self.run)
 
         logger.debug("Created game window")
 
-    def run_game(self):
-        """Start the game thread."""
-        self.game_thread = threading.Thread(target=self.run)
-        self.game_thread.start()
-        self.check_thread()
+    def destroy(self):
+        """Destroy the window. This overrides the default destroy method to stop the game."""
+        self.stop_run()
 
-    def check_thread(self):
-        """
-        Check if the thread is alive.
-        If the thread is not alive, call the callback.
-        """
-        if self.game_thread.is_alive():
-            # Check again after 1000ms
-            self.after(1000, self.check_thread)
-        else:
-            # Thread is not alive, call the callback
-            self.on_run_complete()
+    def stop_run(self):
+        """Stop the game."""
+        logger.info("Stopping game")
+        self.kill_process = True
 
     def run(self):
         """Provision the environment and run the game."""
@@ -83,7 +83,12 @@ class RunWindow(customtkinter.CTkToplevel):
             if not self.main_window.isMinimized:
                 self.after(1000, self.main_window.minimize())
                 logger.debug("Main window minimized")
-        env.run()
+        env.run(EnvironmentRunner(self))
+
+    def update_gui(self):
+        """Update the GUI."""
+        self.update()
+        self.update_idletasks()
 
     def on_run_complete(self):
         """Close this window."""
@@ -96,5 +101,5 @@ class RunWindow(customtkinter.CTkToplevel):
                 min_length, min_height = SETTINGS.get_gui("main_window_min_size")
                 self.main_window.resizeTo(min_length, min_height)
                 logger.debug("Main window resized to '%s'x'%s'", min_length, min_height)
-        self.destroy()
+        super().destroy()
         logger.debug("Run game window destroyed")

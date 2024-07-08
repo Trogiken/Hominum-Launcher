@@ -141,7 +141,7 @@ class InstallWindow(customtkinter.CTkToplevel):
             logger.warning("Environment was not provisioned properly, stopping installation")
         else:
             # Sync Mods
-            self._sync_items("Mods", "mods")
+            #self._sync_items("Mods", "mods") # FIXME: Add this back
 
             if SETTINGS.get_game("first_start"):
                 # Sync Configurations
