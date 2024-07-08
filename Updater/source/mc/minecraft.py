@@ -2,6 +2,7 @@
 This module contains the main class for handling Minecraft.
 
 Classes:
+- InstallWatcher: Observes and logs the installation process of a version install.
 - MCManager: A class that handles Minecraft.
 """
 
@@ -9,7 +10,7 @@ import logging
 import threading
 import time
 import os
-from typing import Generator, List
+from typing import Generator, List, Optional
 import psutil
 from source import exceptions, utils
 from source.mc import remote
@@ -185,96 +186,87 @@ class InstallWatcher(SimpleWatcher):
         self.app.progress_indeterminate()
 
 
-# class InstallMonitor:
-#     """
-#     Monitors the install process and restarts if it gets idle.
-    
-#     Parameters:
-#     - version (Version | FabricVersion | ForgeVersion): The version to install.
-#     - watcher (Watcher): The watcher for PortableMC. Defaults to None.
-#     - timeout (int): The timeout for the install process. Defaults to 30.
-#     - check_interval (int): The interval to check for idleness. Defaults to 5.
-#     """
-#     def __init__(
-#         self,
-#         version: Version | FabricVersion | ForgeVersion,
-#         watcher: Watcher=None,
-#         timeout=30,
-#         check_interval=5,
-#         ):
-#         self.version = version
-#         self.watcher = watcher
-#         self.timeout = timeout
-#         self.check_interval = check_interval
+class Installation:
+    def __init__(
+            self, version: Version | FabricVersion | ForgeVersion, watcher: InstallWatcher
+        ):
+        self.version = version
+        self.watcher = watcher
 
-#         self.restart_count = 0
-#         self.result = None
-#         self.completion_event = threading.Event()
+    def _is_process_idle(self, proc, threshold=1):
+        # Check CPU usage of the process
+        cpu_usage = proc.cpu_percent(interval=1)
 
-#     def _is_process_idle(self, proc, threshold=1):
-#         # Check CPU usage of the process
-#         cpu_usage = proc.cpu_percent(interval=1)
+        # Check IO usage of the process
+        io_counters = proc.io_counters()
+        read_count = io_counters.read_count
+        write_count = io_counters.write_count
+        time.sleep(1)
+        new_io_counters = proc.io_counters()
+        new_read_count = new_io_counters.read_count
+        new_write_count = new_io_counters.write_count
+        logger.debug(
+            "Checked Idle: CPU: %s, Read: %s/%s, Write: %s/%s",
+            cpu_usage, read_count, new_read_count, write_count, new_write_count
+        )
 
-#         # Check IO usage of the process
-#         io_counters = proc.io_counters()
-#         read_count = io_counters.read_count
-#         write_count = io_counters.write_count
-#         time.sleep(1)
-#         new_io_counters = proc.io_counters()
-#         new_read_count = new_io_counters.read_count
-#         new_write_count = new_io_counters.write_count
-#         logger.debug(
-#             "Checked Idle: CPU: %s, Read: %s/%s, Write: %s/%s",
-#             cpu_usage, read_count, new_read_count, write_count, new_write_count
-#         )
+        # Determine if process is idle based on CPU and IO usage
+        is_idle = \
+            cpu_usage < threshold\
+            and read_count == new_read_count\
+            and write_count == new_write_count
+        return is_idle
 
-#         # Determine if process is idle based on CPU and IO usage
-#         is_idle = \
-#             cpu_usage < threshold\
-#             and read_count == new_read_count\
-#             and write_count == new_write_count
-#         return is_idle
+    def download(self) -> None:
+        """
+        This is a rewrite of the install function in the PortableMC Version class
+        """
+        watcher = self.watcher
 
-#     def _install(self):
-#         self.result = self.version.install(watcher=self.watcher)
+        # pylint: disable=protected-access
+        self.version._dl.clear()
+        self.version._applied_fixes.clear()
 
-#     def _install_wrapper(self):
-#         while not self.completion_event.is_set():
-#             try:
-#                 if self.restart_count == 5:
-#                     raise exceptions.VersionInstallTimeout("Version failed to install too many times")
-#                 install_thread = threading.Thread(target=self._install)
-#                 proc = psutil.Process(os.getpid())
-#                 logger.debug("Process ID: %s", proc.pid)
-#                 start_time = time.time()
+        self.version._resolve_version(watcher)
+        self.version._resolve_metadata(watcher)
+        self.version._resolve_features(watcher)
+        self.version._resolve_jvm(watcher)
+        self.version._resolve_jar(watcher)
+        self.version._resolve_assets(watcher)
+        self.version._resolve_libraries(watcher)
+        self.version._resolve_logger(watcher)
+        self.version._download(watcher)
+        self.version._finalize_assets(watcher)
+        # pylint: enable=protected-access
 
-#                 while True:
-#                     if self._is_process_idle(proc):
-#                         logger.debug("Process is idle")
-#                         if time.time() - start_time > self.timeout:
-#                             self.restart_count += 1
-#                             logger.warning("Detected idleness. Restarting install...")
-#                             install_thread.join(timeout=1)  # FIXME: This doesnt kill thread
-#                             break  # Break the while loop to restart the install
-#                     else:
-#                         start_time = time.time()  # Reset the timer if not idle
+    def install(self) -> Environment:
+        """
+        Run and monitor install for idleness
+        
+        Exceptions:
+        - VersionInstallTimeout: If the installation times out.
 
-#                     time.sleep(self.check_interval)  # Check interval
+        Returns:
+        - Environment: The environment for the version.
+        """
+        download_thread = threading.Thread(target=self.download)
+        download_thread.start()
 
-#                     # Check for completion
-#                     if self.result:
-#                         self.completion_event.set()
-#                         logger.debug("Install completed successfully.")
-#                         return
-#             except Exception as e:
-#                 logger.error("Install process failed with error %s. Restarting...", e)
+        start_time = time.time()
+        process = psutil.Process(os.getpid())  # The current process
+        check_interval = 5  # Seconds until next check
+        timeout = 30  # Seconds until exception is raised while idle
 
-#     def run(self):
-#         monitor_thread = threading.Thread(target=self._install_wrapper)
-#         monitor_thread.start()
-#         monitor_thread.join()
+        while download_thread.is_alive():
+            if self._is_process_idle(process):
+                logger.debug("Process is idle")
+                if time.time() - start_time > timeout:
+                    raise exceptions.VersionInstallTimeout("Install timed out")
+            else:
+                start_time = time.time()  # Reset the timer if not idle
+            time.sleep(check_interval)
 
-#         return self.result
+        return self.version._resolve_env(self.watcher)  # pylint: disable=protected-access
 
 
 class MCManager:
@@ -505,7 +497,7 @@ class MCManager:
             self, version: Version | FabricVersion | ForgeVersion, watcher: Watcher=None
         )-> Environment:
         """
-        Provisions an environment for the version to run
+        Provisions an environment for the version to run.
 
         Parameters:
         - version (Version | FabricVersion | ForgeVersion): The version.
@@ -514,15 +506,26 @@ class MCManager:
         Returns:
         - Environment: The environment for PortableMC.
         """
-        # force install of normal game files
-        vanilla_mc = self._create_vanilla_version(
-            self.remote_config["games"][self.game_selected]["mc_version"]
-        )
-        vanilla_mc.install(watcher=watcher)
-        # Return actual environment requested
-        env = version.install(watcher=watcher)
-
-        return env
+        # FIXME: Installation() still doesn't solve the issue of thread remaining after program close
+        timeout_count = 0
+        while True:
+            try:
+                # force install of normal game files
+                vanilla_mc_version = self._create_vanilla_version(
+                    self.remote_config["games"][self.game_selected]["mc_version"]
+                )
+                vanilla_mc = Installation(vanilla_mc_version, watcher)
+                vanilla_mc.install()
+                # Return actual environment requested
+                version_install = Installation(version, watcher)
+                return version_install.install()
+            except exceptions.VersionInstallTimeout as timeout_error:
+                if timeout_count > 3:
+                    raise timeout_error
+                timeout_count += 1
+                continue
+            except Exception as install_error:
+                raise install_error
 
     def sync_dir(self, remote_dir: str) -> Generator[tuple, None, None]:
         """

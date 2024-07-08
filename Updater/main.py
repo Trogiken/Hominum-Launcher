@@ -124,8 +124,10 @@ if __name__ == "__main__":
             logger.warning("Application finished with errors")
             for error in application_errors.errors:
                 logger.warning(error)
+            sys.exit(1)
         else:
             logger.info("Application finished successfully")
+        sys.exit(0)
     except Exception as e:
         logger.exception("An unhandled exception occurred")
-        raise
+        sys.exit(1)
