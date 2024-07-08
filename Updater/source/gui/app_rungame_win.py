@@ -13,8 +13,7 @@ import logging
 import os
 import threading
 import customtkinter
-from portablemc.standard import \
-Watcher, DownloadCompleteEvent, DownloadProgressEvent, DownloadStartEvent, Version, Environment
+from portablemc.standard import Version, Environment
 from portablemc.fabric import FabricVersion
 from portablemc.forge import ForgeVersion
 from source.gui.popup_win import PopupWindow
@@ -22,6 +21,7 @@ from source import path
 from source.utils import Settings
 from source.mc.authentication import AuthenticationHandler
 from source.mc import MCManager
+from source.mc.minecraft import InstallWatcher
 
 if os.name != "posix":
     import pygetwindow as pygw
@@ -29,26 +29,6 @@ if os.name != "posix":
 logger = logging.getLogger(__name__)
 
 SETTINGS = Settings()
-
-
-class InstallWatcher(Watcher):
-    """A class that watches the installation of the game."""
-    def __init__(self, master):
-        self.app = master
-        self.total = 0
-
-    def handle(self, event) -> None:
-        """Handle the event."""
-        if isinstance(event, DownloadStartEvent):
-            self.app.update_title("Provisioning Environment")
-            self.app.reset_progress()
-            self.total = event.entries_count
-        elif isinstance(event, DownloadProgressEvent):
-            self.app.update_item(event.entry)
-            self.app.update_progress(event.count / self.total)
-        elif isinstance(event, DownloadCompleteEvent):
-            self.app.update_item("Download Complete")
-            self.app.progress_indeterminate()
 
 
 class InstallFrame(customtkinter.CTkFrame):
@@ -167,7 +147,9 @@ class InstallFrame(customtkinter.CTkFrame):
         for _ in range(3):  # Retry 3 times
             try:
                 logger.info("Provisioning Environment")
-                self.environment = self.mc.provision_environment(self.version, watcher=install_watcher)
+                self.environment = self.mc.provision_environment(
+                    self.version, watcher=install_watcher
+                )
                 self.errors_occurred = False
                 logger.info("Environment provisioned successfully")
                 break
@@ -222,6 +204,7 @@ class InstallFrame(customtkinter.CTkFrame):
     def progress_indeterminate(self):
         """Sets the progress bar to be indeterminate"""
         self.progress_bar.configure(mode="indeterminate")
+        self.progress_bar.start()
 
     def update_progress(self, value):
         """Update the progress bar."""

@@ -300,3 +300,19 @@ def open_directory(directory_path: str | pathlib.Path):
         with subprocess.Popen(["xdg-open", directory_path]) as proc:
             proc.communicate()
     logger.debug("Opened directory: '%s'", directory_path)
+
+
+def format_number(n: float) -> str:
+    """
+    Format a float into correct measurement
+
+    Returns:
+    - str: The formatted number
+    """
+    if n < 1000:
+        return f"{int(n)} "
+    if n < 1000000:
+        return f"{(int(n / 100) / 10):.1f} k"
+    if n < 1000000000:
+        return f"{(int(n / 100000) / 10):.1f} M"
+    return f"{(int(n / 100000000) / 10):.1f} G"

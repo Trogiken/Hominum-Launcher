@@ -6,15 +6,275 @@ Classes:
 """
 
 import logging
+import threading
+import time
 import os
-from typing import Generator
+from typing import Generator, List
+import psutil
+from source import exceptions, utils
 from source.mc import remote
 from portablemc.auth import MicrosoftAuthSession
-from portablemc.standard import Context, Environment, Watcher, Version
-from portablemc.fabric import FabricVersion
-from portablemc.forge import ForgeVersion
+from portablemc.standard import Watcher, Context, Version, SimpleWatcher, Environment, \
+    DownloadStartEvent, DownloadProgressEvent, DownloadCompleteEvent, \
+    VersionLoadingEvent, VersionFetchingEvent, VersionLoadedEvent, \
+    JvmLoadingEvent, JvmLoadedEvent, JarFoundEvent, \
+    AssetsResolveEvent, LibrariesResolvingEvent, LibrariesResolvedEvent, LoggerFoundEvent
+from portablemc.fabric import FabricVersion, FabricResolveEvent
+from portablemc.forge import ForgeVersion, ForgeResolveEvent, ForgePostProcessingEvent, \
+    ForgePostProcessedEvent
 
 logger = logging.getLogger(__name__)
+
+# FIXME: Incorporate a thread watcher here that kills thread if they pause or if the program closes
+
+
+class InstallWatcher(SimpleWatcher):
+    """
+    Observes and logs the installation process of a version install.
+    This also prevents the installation process from idling.
+    
+    Attributes:
+    app: A class, particurely the install frame that has methods to update the gui info.
+    """
+    def __init__(self, app) -> None:  # pylint: disable=too-many-statements
+        def progress_task(key: str, **kwargs) -> None:
+            if key == "start.version.loading":
+                logger.debug("Loading version %s...", kwargs["version"])
+            elif key == "start.version.fetching":
+                logger.debug("Fetching version %s...", kwargs["version"])
+            elif key == "start.jvm.loading":
+                logger.debug("Loading JVM...")
+            elif key == "start.libraries.resolving":
+                logging.debug("Checking libraries...")
+            elif key == "start.forge.post_processing":
+                logger.debug("Forge post processing %s...", kwargs["task"])
+            else:
+                logger.debug("Progress task: %s", key)
+
+        def finish_task(key: str, **kwargs) -> None:
+            if key == "start.version.loaded":
+                logger.info("Loaded version %s", kwargs["version"])
+            elif key == "start.version.loaded.fetched":
+                logger.info("Loaded version %s (fetched)", kwargs["version"])
+            elif key == f"start.jvm.loaded.{JvmLoadedEvent.MOJANG}":
+                logger.info("Loaded Mojang java %s", kwargs["version"])
+            elif key == f"start.jvm.loaded.{JvmLoadedEvent.BUILTIN}":
+                logger.info("Loaded builtin java %s", kwargs["version"])
+            elif key == f"start.jvm.loaded.{JvmLoadedEvent.CUSTOM}":
+                logger.info("Loaded custom java %s", kwargs["version"])
+            elif key == "start.jar.found":
+                logger.info("Checked version jar")
+            elif key == "start.logger.found":
+                logger.info("Using logger %s", kwargs["version"])
+            elif key == "start.forge.post_processed":
+                logger.info("Forge post processing done")
+            else:
+                logger.info("Finished task: %s", key)
+
+        def assets_resolve(e: AssetsResolveEvent) -> None:
+            if e.count is None:
+                logger.debug("Resolving assets for version %s", e.index_version)
+            else:
+                logger.debug("Resolved %s assets for version %s", e.count, e.index_version)
+
+        def libraries_resolved(e: LibrariesResolvedEvent) -> None:
+            logger.debug(
+                "Resolved %s class libraries and %s native libraries",
+                e.class_libs_count, e.native_libs_count
+            )
+
+        def fabric_resolve(e: FabricResolveEvent) -> None:
+            if e.loader_version is None:
+                logger.debug("Resolving %s loader for %s", e.api.name, e.vanilla_version)
+            else:
+                logger.debug("Resolved %s loader for %s", e.api.name, e.vanilla_version)
+
+        def forge_resolve(e: ForgeResolveEvent) -> None:
+            api = "forge"
+            if e.alias:
+                logger.debug("Resolving %s alias %s", api, e.forge_version)
+            else:
+                logger.debug("Resolved %s %s", api, e.forge_version)
+
+        super().__init__({
+            VersionLoadingEvent: lambda e: progress_task(
+                "start.version.loading", version=e.version
+            ),
+            VersionFetchingEvent: lambda e: progress_task(
+                "start.version.fetching", version=e.version
+            ),
+            VersionLoadedEvent: lambda e: finish_task(
+                "start.version.loaded.fetched" if e.fetched else "start.version.loaded",
+                version=e.version
+            ),
+            JvmLoadingEvent: lambda e: progress_task("start.jvm.loading"),
+            JvmLoadedEvent: lambda e: finish_task(
+                f"start.jvm.loaded.{e.kind}", version=e.version or ""
+            ),
+            JarFoundEvent: lambda e: finish_task("start.jar.found"),
+            AssetsResolveEvent: assets_resolve,
+            LibrariesResolvingEvent: lambda e: progress_task("start.libraries.resolving"),
+            LibrariesResolvedEvent: libraries_resolved,
+            LoggerFoundEvent: lambda e: finish_task("start.logger.found", version=e.version),
+            FabricResolveEvent: fabric_resolve,
+            ForgeResolveEvent: forge_resolve,
+            ForgePostProcessingEvent: lambda e: progress_task(
+                "start.forge.post_processing", task=e.task
+            ),
+            ForgePostProcessedEvent: lambda e: finish_task("start.forge.post_processed"),
+            DownloadStartEvent: self.download_start,
+            DownloadProgressEvent: self.download_progress,
+            DownloadCompleteEvent: self.download_complete,
+        })
+
+        self.app = app
+
+        self.entries_count: int
+        self.total_size: int
+        self.speeds: List[float]
+        self.sizes: List[int]
+        self.size = 0
+
+    def download_start(self, e: DownloadStartEvent):
+        """
+        Called when download starts.
+
+        Sets up attributes and updates the title and progress bar.
+        """
+        self.entries_count = e.entries_count
+        self.total_size = e.size
+        self.speeds = [0.0] * e.threads_count
+        self.sizes = [0] * e.threads_count
+        self.size = 0
+
+        self.app.update_title("Provisioning Environment")
+        self.app.reset_progress()
+        self.entries_count = self.entries_count
+
+    def download_progress(self, e: DownloadProgressEvent) -> None:
+        """
+        Called when the threads have a progress event.
+        
+        Updates the progress bar and the item message with install info.
+        """
+        self.speeds[e.thread_id] = e.speed  # Store speed for later
+        self.sizes[e.thread_id] = e.size  # Store size for later
+
+        speed = sum(self.speeds)  # Sum speeds to get total speed
+        total_count = str(self.entries_count)  # Total count of entries
+        count = f"{e.count:{len(total_count)}}"  # Pad count with zeros
+        size = f"{utils.format_number(self.size + sum(self.sizes))}B"  # Sum sizes to get total size
+        speed = f"{utils.format_number(speed)}B/s"  # Format speed
+
+        if e.done:
+            logger.debug("File Downloaded: %s", e.entry)
+            self.size += e.size
+
+        item_msg = f"Total Downloaded: {size:>8} - {speed}"
+        self.app.update_item(item_msg)
+        self.app.update_progress(int(count) / int(total_count))
+
+    def download_complete(self, _: DownloadCompleteEvent) -> None:
+        """
+        Called when all threads are done downloading.
+
+        Updates the item message and sets the progress bar to indeterminate.
+        """
+        logger.info("Download complete")
+        self.app.update_item("Download Complete")
+        self.app.progress_indeterminate()
+
+
+# class InstallMonitor:
+#     """
+#     Monitors the install process and restarts if it gets idle.
+    
+#     Parameters:
+#     - version (Version | FabricVersion | ForgeVersion): The version to install.
+#     - watcher (Watcher): The watcher for PortableMC. Defaults to None.
+#     - timeout (int): The timeout for the install process. Defaults to 30.
+#     - check_interval (int): The interval to check for idleness. Defaults to 5.
+#     """
+#     def __init__(
+#         self,
+#         version: Version | FabricVersion | ForgeVersion,
+#         watcher: Watcher=None,
+#         timeout=30,
+#         check_interval=5,
+#         ):
+#         self.version = version
+#         self.watcher = watcher
+#         self.timeout = timeout
+#         self.check_interval = check_interval
+
+#         self.restart_count = 0
+#         self.result = None
+#         self.completion_event = threading.Event()
+
+#     def _is_process_idle(self, proc, threshold=1):
+#         # Check CPU usage of the process
+#         cpu_usage = proc.cpu_percent(interval=1)
+
+#         # Check IO usage of the process
+#         io_counters = proc.io_counters()
+#         read_count = io_counters.read_count
+#         write_count = io_counters.write_count
+#         time.sleep(1)
+#         new_io_counters = proc.io_counters()
+#         new_read_count = new_io_counters.read_count
+#         new_write_count = new_io_counters.write_count
+#         logger.debug(
+#             "Checked Idle: CPU: %s, Read: %s/%s, Write: %s/%s",
+#             cpu_usage, read_count, new_read_count, write_count, new_write_count
+#         )
+
+#         # Determine if process is idle based on CPU and IO usage
+#         is_idle = \
+#             cpu_usage < threshold\
+#             and read_count == new_read_count\
+#             and write_count == new_write_count
+#         return is_idle
+
+#     def _install(self):
+#         self.result = self.version.install(watcher=self.watcher)
+
+#     def _install_wrapper(self):
+#         while not self.completion_event.is_set():
+#             try:
+#                 if self.restart_count == 5:
+#                     raise exceptions.VersionInstallTimeout("Version failed to install too many times")
+#                 install_thread = threading.Thread(target=self._install)
+#                 proc = psutil.Process(os.getpid())
+#                 logger.debug("Process ID: %s", proc.pid)
+#                 start_time = time.time()
+
+#                 while True:
+#                     if self._is_process_idle(proc):
+#                         logger.debug("Process is idle")
+#                         if time.time() - start_time > self.timeout:
+#                             self.restart_count += 1
+#                             logger.warning("Detected idleness. Restarting install...")
+#                             install_thread.join(timeout=1)  # FIXME: This doesnt kill thread
+#                             break  # Break the while loop to restart the install
+#                     else:
+#                         start_time = time.time()  # Reset the timer if not idle
+
+#                     time.sleep(self.check_interval)  # Check interval
+
+#                     # Check for completion
+#                     if self.result:
+#                         self.completion_event.set()
+#                         logger.debug("Install completed successfully.")
+#                         return
+#             except Exception as e:
+#                 logger.error("Install process failed with error %s. Restarting...", e)
+
+#     def run(self):
+#         monitor_thread = threading.Thread(target=self._install_wrapper)
+#         monitor_thread.start()
+#         monitor_thread.join()
+
+#         return self.result
 
 
 class MCManager:
@@ -248,13 +508,21 @@ class MCManager:
         Provisions an environment for the version to run
 
         Parameters:
-        - version (FabricVersion): The version for PortableMC.
+        - version (Version | FabricVersion | ForgeVersion): The version.
         - watcher (Watcher): The watcher for PortableMC. Defaults to None.
 
         Returns:
         - Environment: The environment for PortableMC.
         """
-        return version.install(watcher=watcher)
+        # force install of normal game files
+        vanilla_mc = self._create_vanilla_version(
+            self.remote_config["games"][self.game_selected]["mc_version"]
+        )
+        vanilla_mc.install(watcher=watcher)
+        # Return actual environment requested
+        env = version.install(watcher=watcher)
+
+        return env
 
     def sync_dir(self, remote_dir: str) -> Generator[tuple, None, None]:
         """
