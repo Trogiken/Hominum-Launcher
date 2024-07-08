@@ -17,7 +17,7 @@ import logging
 import os
 import pathlib
 import sys
-from portablemc.standard import Context
+from source.portablemc.standard import Context
 
 logger = logging.getLogger(__name__)
 

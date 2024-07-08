@@ -13,9 +13,9 @@ import logging
 import os
 import threading
 import customtkinter
-from portablemc.standard import Version, Environment
-from portablemc.fabric import FabricVersion
-from portablemc.forge import ForgeVersion
+from source.portablemc.standard import Version, Environment
+from source.portablemc.fabric import FabricVersion
+from source.portablemc.forge import ForgeVersion
 from source.gui.popup_win import PopupWindow
 from source import path
 from source.utils import Settings

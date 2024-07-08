@@ -24,8 +24,8 @@ from cryptography.hazmat.backends import default_backend
 logger = logging.getLogger(__name__)
 
 # TODO: Find a better way to enter these values for development to prevent leak
-PASSWORD = r""
-SALT = r""
+PASSWORD = r"08b0e36e8384f6b4f0074ec3361de1aed13a808cd960d4481a7bc156213bdded"
+SALT = r"08b0e36e8384f6b4"
 
 
 def generate_key() -> bytes:

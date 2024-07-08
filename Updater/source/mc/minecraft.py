@@ -14,14 +14,14 @@ from typing import Generator, List, Optional
 import psutil
 from source import exceptions, utils
 from source.mc import remote
-from portablemc.auth import MicrosoftAuthSession
-from portablemc.standard import Watcher, Context, Version, SimpleWatcher, Environment, \
+from source.portablemc.auth import MicrosoftAuthSession
+from source.portablemc.standard import Watcher, Context, Version, SimpleWatcher, Environment, \
     DownloadStartEvent, DownloadProgressEvent, DownloadCompleteEvent, \
     VersionLoadingEvent, VersionFetchingEvent, VersionLoadedEvent, \
     JvmLoadingEvent, JvmLoadedEvent, JarFoundEvent, \
     AssetsResolveEvent, LibrariesResolvingEvent, LibrariesResolvedEvent, LoggerFoundEvent
-from portablemc.fabric import FabricVersion, FabricResolveEvent
-from portablemc.forge import ForgeVersion, ForgeResolveEvent, ForgePostProcessingEvent, \
+from source.portablemc.fabric import FabricVersion, FabricResolveEvent
+from source.portablemc.forge import ForgeVersion, ForgeResolveEvent, ForgePostProcessingEvent, \
     ForgePostProcessedEvent
 
 logger = logging.getLogger(__name__)
