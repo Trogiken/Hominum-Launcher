@@ -19,8 +19,8 @@ from source.mc.authentication import AuthenticationHandler
 from source import path
 from source.gui.login_win import LoginWindow
 from source.gui.app_settings_win import SettingsWindow
-from source.gui.app_rungame_win import RunGameWindow
-from source.utils import Settings, get_image
+from source.gui.app_install_win import InstallWindow
+from source.utils import Settings, GameSettings, get_image
 
 # TODO: Check if the splash screen works on all target OS's
 if '_PYIBoot_SPLASH' in os.environ and importlib.util.find_spec("pyi_splash"):
@@ -233,9 +233,13 @@ class RightFrame(customtkinter.CTkFrame):
         """Start Minecraft"""
         self.play_button.configure(state="disabled")
 
-        run_window = RunGameWindow(master=self.master)
-        self.wait_window(run_window)
+        # Install win
+        install_window = InstallWindow()
+        self.wait_window(install_window)
+        # Get env from settings
+        # Run win passing env
 
+        SETTINGS.set_game(environment=GameSettings().environment)
         self.play_button.configure(state="normal")
 
 

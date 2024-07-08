@@ -7,26 +7,26 @@ Classes:
 """
 
 import logging
-import threading
-import time
+# import threading
+# import time
 import os
-from typing import Generator, List, Optional
-import psutil
-from source import exceptions, utils
+from typing import Generator, List
+# import psutil
+from source import exceptions, utils, path
 from source.mc import remote
-from source.portablemc.auth import MicrosoftAuthSession
-from source.portablemc.standard import Watcher, Context, Version, SimpleWatcher, Environment, \
+from portablemc.auth import MicrosoftAuthSession
+from portablemc.standard import Context, Version, SimpleWatcher, Environment, \
     DownloadStartEvent, DownloadProgressEvent, DownloadCompleteEvent, \
     VersionLoadingEvent, VersionFetchingEvent, VersionLoadedEvent, \
     JvmLoadingEvent, JvmLoadedEvent, JarFoundEvent, \
     AssetsResolveEvent, LibrariesResolvingEvent, LibrariesResolvedEvent, LoggerFoundEvent
-from source.portablemc.fabric import FabricVersion, FabricResolveEvent
-from source.portablemc.forge import ForgeVersion, ForgeResolveEvent, ForgePostProcessingEvent, \
+from portablemc.fabric import FabricVersion, FabricResolveEvent
+from portablemc.forge import ForgeVersion, ForgeResolveEvent, ForgePostProcessingEvent, \
     ForgePostProcessedEvent
 
 logger = logging.getLogger(__name__)
 
-# FIXME: Incorporate a thread watcher here that kills thread if they pause or if the program closes
+SETTINGS = utils.Settings()
 
 
 class InstallWatcher(SimpleWatcher):
@@ -38,6 +38,8 @@ class InstallWatcher(SimpleWatcher):
     app: A class, particurely the install frame that has methods to update the gui info.
     """
     def __init__(self, app) -> None:  # pylint: disable=too-many-statements
+        self.app = app
+
         def progress_task(key: str, **kwargs) -> None:
             if key == "start.version.loading":
                 logger.debug("Loading version %s...", kwargs["version"])
@@ -97,35 +99,51 @@ class InstallWatcher(SimpleWatcher):
             else:
                 logger.debug("Resolved %s %s", api, e.forge_version)
 
+        def func_resolve(func, *args, **kwargs) -> None:
+            """Alias for calling a function with args and kwargs."""
+            if os.path.exists(path.GLOBAL_KILL):
+                raise exceptions.GlobalKill()
+            func(*args, **kwargs)
+            app.update_gui()
+
         super().__init__({
-            VersionLoadingEvent: lambda e: progress_task(
-                "start.version.loading", version=e.version
+            VersionLoadingEvent: lambda e: func_resolve(
+                progress_task, "start.version.loading", version=e.version
             ),
-            VersionFetchingEvent: lambda e: progress_task(
-                "start.version.fetching", version=e.version
+            VersionFetchingEvent: lambda e: func_resolve(
+                progress_task, "start.version.fetching", version=e.version
             ),
-            VersionLoadedEvent: lambda e: finish_task(
+            VersionLoadedEvent: lambda e: func_resolve(
+                finish_task,
                 "start.version.loaded.fetched" if e.fetched else "start.version.loaded",
                 version=e.version
             ),
-            JvmLoadingEvent: lambda e: progress_task("start.jvm.loading"),
-            JvmLoadedEvent: lambda e: finish_task(
-                f"start.jvm.loaded.{e.kind}", version=e.version or ""
+            JvmLoadingEvent: lambda e: func_resolve(progress_task, "start.jvm.loading"),
+            JvmLoadedEvent: lambda e: func_resolve(
+                finish_task, f"start.jvm.loaded.{e.kind}", version=e.version or ""
             ),
-            JarFoundEvent: lambda e: finish_task("start.jar.found"),
-            AssetsResolveEvent: assets_resolve,
-            LibrariesResolvingEvent: lambda e: progress_task("start.libraries.resolving"),
-            LibrariesResolvedEvent: libraries_resolved,
-            LoggerFoundEvent: lambda e: finish_task("start.logger.found", version=e.version),
-            FabricResolveEvent: fabric_resolve,
-            ForgeResolveEvent: forge_resolve,
-            ForgePostProcessingEvent: lambda e: progress_task(
-                "start.forge.post_processing", task=e.task
+            JarFoundEvent: lambda e: func_resolve(
+                finish_task, "start.jar.found"
             ),
-            ForgePostProcessedEvent: lambda e: finish_task("start.forge.post_processed"),
-            DownloadStartEvent: self.download_start,
-            DownloadProgressEvent: self.download_progress,
-            DownloadCompleteEvent: self.download_complete,
+            AssetsResolveEvent: lambda e: func_resolve(assets_resolve, e),
+            LibrariesResolvingEvent: lambda e: func_resolve(
+                progress_task, "start.libraries.resolving"
+            ),
+            LibrariesResolvedEvent: lambda e: func_resolve(libraries_resolved, e),
+            LoggerFoundEvent: lambda e: func_resolve(
+                finish_task, "start.logger.found", version=e.version
+            ),
+            FabricResolveEvent: lambda e: func_resolve(fabric_resolve, e),
+            ForgeResolveEvent: lambda e: func_resolve(forge_resolve, e),
+            ForgePostProcessingEvent: lambda e: func_resolve(
+                progress_task, "start.forge.post_processing", task=e.task
+            ),
+            ForgePostProcessedEvent: lambda e: func_resolve(
+                finish_task, "start.forge.post_processed"
+            ),
+            DownloadStartEvent: lambda e: self.object_func_resolve(self.download_start, e),
+            DownloadProgressEvent: lambda e: self.object_func_resolve(self.download_progress, e),
+            DownloadCompleteEvent: lambda e: self.object_func_resolve(self.download_complete, e),
         })
 
         self.app = app
@@ -135,6 +153,12 @@ class InstallWatcher(SimpleWatcher):
         self.speeds: List[float]
         self.sizes: List[int]
         self.size = 0
+
+    def object_func_resolve(self, func, *args, **kwargs):
+        """Alias for calling a function with args and kwargs."""
+        if os.path.exists(path.GLOBAL_KILL):
+            raise exceptions.GlobalKill()
+        func(*args, **kwargs)
 
     def download_start(self, e: DownloadStartEvent):
         """
@@ -186,87 +210,87 @@ class InstallWatcher(SimpleWatcher):
         self.app.progress_indeterminate()
 
 
-class Installation:
-    def __init__(
-            self, version: Version | FabricVersion | ForgeVersion, watcher: InstallWatcher
-        ):
-        self.version = version
-        self.watcher = watcher
+# class Installation:
+#     def __init__(
+#             self, version: Version | FabricVersion | ForgeVersion, watcher: InstallWatcher
+#         ):
+#         self.version = version
+#         self.watcher = watcher
 
-    def _is_process_idle(self, proc, threshold=1):
-        # Check CPU usage of the process
-        cpu_usage = proc.cpu_percent(interval=1)
+#     def _is_process_idle(self, proc, threshold=1):
+#         # Check CPU usage of the process
+#         cpu_usage = proc.cpu_percent(interval=1)
 
-        # Check IO usage of the process
-        io_counters = proc.io_counters()
-        read_count = io_counters.read_count
-        write_count = io_counters.write_count
-        time.sleep(1)
-        new_io_counters = proc.io_counters()
-        new_read_count = new_io_counters.read_count
-        new_write_count = new_io_counters.write_count
-        logger.debug(
-            "Checked Idle: CPU: %s, Read: %s/%s, Write: %s/%s",
-            cpu_usage, read_count, new_read_count, write_count, new_write_count
-        )
+#         # Check IO usage of the process
+#         io_counters = proc.io_counters()
+#         read_count = io_counters.read_count
+#         write_count = io_counters.write_count
+#         time.sleep(1)
+#         new_io_counters = proc.io_counters()
+#         new_read_count = new_io_counters.read_count
+#         new_write_count = new_io_counters.write_count
+#         logger.debug(
+#             "Checked Idle: CPU: %s, Read: %s/%s, Write: %s/%s",
+#             cpu_usage, read_count, new_read_count, write_count, new_write_count
+#         )
 
-        # Determine if process is idle based on CPU and IO usage
-        is_idle = \
-            cpu_usage < threshold\
-            and read_count == new_read_count\
-            and write_count == new_write_count
-        return is_idle
+#         # Determine if process is idle based on CPU and IO usage
+#         is_idle = \
+#             cpu_usage < threshold\
+#             and read_count == new_read_count\
+#             and write_count == new_write_count
+#         return is_idle
 
-    def download(self) -> None:
-        """
-        This is a rewrite of the install function in the PortableMC Version class
-        """
-        watcher = self.watcher
+#     def download(self) -> None:
+#         """
+#         This is a rewrite of the install function in the PortableMC Version class
+#         """
+#         watcher = self.watcher
 
-        # pylint: disable=protected-access
-        self.version._dl.clear()
-        self.version._applied_fixes.clear()
+#         # pylint: disable=protected-access
+#         self.version._dl.clear()
+#         self.version._applied_fixes.clear()
 
-        self.version._resolve_version(watcher)
-        self.version._resolve_metadata(watcher)
-        self.version._resolve_features(watcher)
-        self.version._resolve_jvm(watcher)
-        self.version._resolve_jar(watcher)
-        self.version._resolve_assets(watcher)
-        self.version._resolve_libraries(watcher)
-        self.version._resolve_logger(watcher)
-        self.version._download(watcher)
-        self.version._finalize_assets(watcher)
-        # pylint: enable=protected-access
+#         self.version._resolve_version(watcher)
+#         self.version._resolve_metadata(watcher)
+#         self.version._resolve_features(watcher)
+#         self.version._resolve_jvm(watcher)
+#         self.version._resolve_jar(watcher)
+#         self.version._resolve_assets(watcher)
+#         self.version._resolve_libraries(watcher)
+#         self.version._resolve_logger(watcher)
+#         self.version._download(watcher)
+#         self.version._finalize_assets(watcher)
+#         # pylint: enable=protected-access
 
-    def install(self) -> Environment:
-        """
-        Run and monitor install for idleness
+#     def install(self) -> Environment:
+#         """
+#         Run and monitor install for idleness
         
-        Exceptions:
-        - VersionInstallTimeout: If the installation times out.
+#         Exceptions:
+#         - VersionInstallTimeout: If the installation times out.
 
-        Returns:
-        - Environment: The environment for the version.
-        """
-        download_thread = threading.Thread(target=self.download)
-        download_thread.start()
+#         Returns:
+#         - Environment: The environment for the version.
+#         """
+#         download_thread = threading.Thread(target=self.download)
+#         download_thread.start()
 
-        start_time = time.time()
-        process = psutil.Process(os.getpid())  # The current process
-        check_interval = 5  # Seconds until next check
-        timeout = 30  # Seconds until exception is raised while idle
+#         start_time = time.time()
+#         process = psutil.Process(os.getpid())  # The current process
+#         check_interval = 5  # Seconds until next check
+#         timeout = 30  # Seconds until exception is raised while idle
 
-        while download_thread.is_alive():
-            if self._is_process_idle(process):
-                logger.debug("Process is idle")
-                if time.time() - start_time > timeout:
-                    raise exceptions.VersionInstallTimeout("Install timed out")
-            else:
-                start_time = time.time()  # Reset the timer if not idle
-            time.sleep(check_interval)
+#         while download_thread.is_alive() and not os.path.exists(path.GLOBAL_KILL):
+#             if self._is_process_idle(process):
+#                 logger.debug("Process is idle")
+#                 if time.time() - start_time > timeout:
+#                     raise exceptions.VersionInstallTimeout("Install timed out")
+#             else:
+#                 start_time = time.time()  # Reset the timer if not idle
+#             time.sleep(check_interval)
 
-        return self.version._resolve_env(self.watcher)  # pylint: disable=protected-access
+#         return self.version._resolve_env(self.watcher)  # pylint: disable=protected-access
 
 
 class MCManager:
@@ -367,7 +391,7 @@ class MCManager:
 
         return local_filepath, remote_file_url
 
-    def _create_vanilla_version(self, mc_version: str=None) -> Version:
+    def create_vanilla_version(self, mc_version: str=None) -> Version:
         """
         Create vanilla root.
 
@@ -380,7 +404,7 @@ class MCManager:
         logger.debug("mc_version: %s", mc_version)
         return Version(version=mc_version, context=self.context)
 
-    def _create_fabric_version(
+    def create_fabric_version(
             self, mc_version: str=None, loader_version: str=None
         ) -> FabricVersion:
         """
@@ -401,7 +425,7 @@ class MCManager:
             vanilla_version=mc_version, loader_version=loader_version, context=self.context
         )
 
-    def _create_quilt_version(
+    def create_quilt_version(
             self, mc_version: str=None, loader_version: str=None
         ) -> FabricVersion:
         """
@@ -422,7 +446,7 @@ class MCManager:
             vanilla_version=mc_version, loader_version=loader_version, context=self.context
         )
 
-    def _create_forge_version(self, mc_version: str=None, forge_version: str=None) -> ForgeVersion:
+    def create_forge_version(self, mc_version: str=None, forge_version: str=None) -> ForgeVersion:
         """
         Create forge root.
         
@@ -444,9 +468,7 @@ class MCManager:
             logger.warning("Forge MC version set to None, ignoring forge version")
         return ForgeVersion(forge_version=forge, context=self.context)
 
-    def provision_version(
-            self, auth_session: MicrosoftAuthSession, autojoin: bool
-        ) -> Version | FabricVersion | ForgeVersion:
+    def provision_version(self, autojoin: bool) -> Version | FabricVersion | ForgeVersion:
         """
         Provisions a version based on server
 
@@ -457,7 +479,6 @@ class MCManager:
         Returns:
         Version | FabricVersion | ForgeVersion: The version set by the server
         """
-        logger.debug("auth_session: %s", auth_session)
         logger.debug("autojoin: %s", autojoin)
         if self.remote_config is None:
             raise ValueError("Remote config is not set")
@@ -468,25 +489,24 @@ class MCManager:
         game_config = games[self.game_selected]
 
         if self.game_selected == "vanilla":
-            version = self._create_vanilla_version(
+            version = self.create_vanilla_version(
                 mc_version=game_config["mc_version"]
             )
         elif self.game_selected == "fabric":
-            version = self._create_fabric_version(
+            version = self.create_fabric_version(
                 mc_version=game_config["mc_version"], loader_version=game_config["loader_version"]
             )
         elif self.game_selected == "quilt":
-            version = self._create_quilt_version(
+            version = self.create_quilt_version(
                 mc_version=game_config["mc_version"], loader_version=game_config["loader_version"]
             )
         elif self.game_selected == "forge":
-            version = self._create_forge_version(
+            version = self.create_forge_version(
                 mc_version=game_config["mc_version"], forge_version=game_config["forge_version"]
             )
         else:
             raise ValueError(f"Unknown valid game selected: {self.game_selected}")
 
-        version.auth_session = auth_session
         if autojoin:
             version.set_quick_play_multiplayer(self.server_ip)
         logger.debug("Version: %s", version)
@@ -494,7 +514,10 @@ class MCManager:
         return version
 
     def provision_environment(
-            self, version: Version | FabricVersion | ForgeVersion, watcher: Watcher=None
+            self,
+            version: Version | FabricVersion | ForgeVersion,
+            auth_session: MicrosoftAuthSession,
+            watcher: InstallWatcher=None
         )-> Environment:
         """
         Provisions an environment for the version to run.
@@ -506,26 +529,20 @@ class MCManager:
         Returns:
         - Environment: The environment for PortableMC.
         """
-        # FIXME: Installation() still doesn't solve the issue of thread remaining after program close
-        timeout_count = 0
-        while True:
-            try:
-                # force install of normal game files
-                vanilla_mc_version = self._create_vanilla_version(
-                    self.remote_config["games"][self.game_selected]["mc_version"]
-                )
-                vanilla_mc = Installation(vanilla_mc_version, watcher)
-                vanilla_mc.install()
-                # Return actual environment requested
-                version_install = Installation(version, watcher)
-                return version_install.install()
-            except exceptions.VersionInstallTimeout as timeout_error:
-                if timeout_count > 3:
-                    raise timeout_error
-                timeout_count += 1
-                continue
-            except Exception as install_error:
-                raise install_error
+        logger.debug("version: %s", version)
+        logger.debug("auth_session: %s", auth_session)
+        logger.debug("watcher: %s", watcher)
+        # force install of normal game files
+        vanilla_mc_version = self.create_vanilla_version(
+            self.remote_config["games"][self.game_selected]["mc_version"]
+        )
+        vanilla_mc_version.install(watcher=watcher)
+
+        version.auth_session = auth_session
+        env = version.install(watcher=watcher)
+        args = SETTINGS.get_game("ram_jvm_args") + SETTINGS.get_game("additional_jvm_args")
+        env.jvm_args.extend(args)
+        return env
 
     def sync_dir(self, remote_dir: str) -> Generator[tuple, None, None]:
         """

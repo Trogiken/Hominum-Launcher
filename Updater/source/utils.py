@@ -25,6 +25,7 @@ import platform
 import pickle
 import pathlib
 from dataclasses import dataclass, field
+from portablemc.standard import Environment
 from PIL import Image
 from source import path
 
@@ -69,6 +70,7 @@ class GameSettings:
         "-XX:MaxGCPauseMillis=50",
         "-XX:G1HeapRegionSize=32M"
     ])
+    environment: Environment = None
 
 
 class Settings:

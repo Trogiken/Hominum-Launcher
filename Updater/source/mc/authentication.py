@@ -22,9 +22,9 @@ import webbrowser
 from typing import cast
 from uuid import uuid4
 from http.server import HTTPServer, BaseHTTPRequestHandler
-from source.portablemc.http import HttpError
-from source.portablemc.auth import MicrosoftAuthSession, AuthDatabase, AuthError
-from source.portablemc.standard import Context
+from portablemc.http import HttpError
+from portablemc.auth import MicrosoftAuthSession, AuthDatabase, AuthError
+from portablemc.standard import Context
 from source import utils, path
 
 logger = logging.getLogger(__name__)

@@ -7,3 +7,5 @@ customtkinter
 pillow
 pygetwindow
 psutil
+portablemc
+certifi
