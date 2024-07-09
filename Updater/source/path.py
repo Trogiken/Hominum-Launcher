@@ -11,6 +11,7 @@ Constants:
 - MAIN_DIR (pathlib.Path): The directory of the main data.
 - WORK_DIR (pathlib.Path): The directory of the working data.
 - CONTEXT (Context): The context of the program.
+- GLOBAL_KILL (pathlib.Path): The global kill switch.
 """
 
 import logging
@@ -23,7 +24,7 @@ logger = logging.getLogger(__name__)
 
 PROGRAM_NAME = "Hominum"
 PROGRAM_NAME_LONG = "Hominum Launcher"
-VERSION = "4.9.3.4"
+VERSION = "4.9.4.4 Beta"
 
 if getattr(sys, 'frozen', False):
     APPLICATION_DIR = pathlib.Path(sys.executable).parent

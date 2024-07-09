@@ -141,9 +141,9 @@ class InstallWindow(customtkinter.CTkToplevel):
             logger.warning("Environment was not provisioned properly, stopping installation")
         else:
             # Sync Mods
-            #self._sync_items("Mods", "mods") # FIXME: Add this back
+            self._sync_items("Mods", "mods")
 
-            if SETTINGS.get_game("first_start"):
+            if SETTINGS.get_misc("first_start"):
                 # Sync Configurations
                 self._sync_items("Configurations", "servers", is_dir=False)
                 self._sync_items("Configurations", "options", is_dir=False)
@@ -157,7 +157,7 @@ class InstallWindow(customtkinter.CTkToplevel):
 
         # Only set the user if no errors occurred
         if not self.errors_occurred:
-            SETTINGS.set_game(first_start=False)
+            SETTINGS.set_misc(first_start=False)
             SETTINGS.set_game(environment=self.environment)
             logger.info("Installation finished successfully")
         else:

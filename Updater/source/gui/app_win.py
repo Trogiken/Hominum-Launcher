@@ -162,13 +162,13 @@ class RightFrame(customtkinter.CTkFrame):
         self.autojoin_switch.grid(row=1, column=0, padx=20, pady=0, sticky="s")
 
         self.play_button_photo = customtkinter.CTkImage(
-            get_image("play.png").resize(SETTINGS.get_gui("image_large"))
+            get_image("rocket.png").resize(SETTINGS.get_gui("image_large"))
         )
         self.play_button = customtkinter.CTkButton(
             self,
             image=self.play_button_photo,
             text="Play",
-            font=SETTINGS.get_gui("font_large"),
+            font=SETTINGS.get_gui("font_title"),
             fg_color="green",
             command=self.run_game
         )
