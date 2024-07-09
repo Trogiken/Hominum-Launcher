@@ -25,11 +25,11 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 from portablemc.http import HttpError
 from portablemc.auth import MicrosoftAuthSession, AuthDatabase, AuthError
 from portablemc.standard import Context
-from source import utils
+from source import utils, path
 
 logger = logging.getLogger(__name__)
 
-AUTH_DATABASE_FILE_NAME = "portablemc_auth.json"  # Authentication database file name
+AUTH_DATABASE_FILE_NAME = "hominum_auth.json"  # Authentication database file name
 CLIENT_ID = "2b4ca0d5-a2f0-42bf-aed1-eeafa1139f26"  # Same as APP_ID
 APP_ID = "2b4ca0d5-a2f0-42bf-aed1-eeafa1139f26"  # Application ID registered in Entra
 AUTH_SERVER_PORT = 8690  # Port of the authentication server
@@ -55,7 +55,7 @@ class AuthenticationHandler:
 
         self.email = email
         self.context = context
-        self.auth_database = AuthDatabase(self.context.work_dir / AUTH_DATABASE_FILE_NAME)
+        self.auth_database = AuthDatabase(path.STORE_DIR / AUTH_DATABASE_FILE_NAME)
 
         logger.debug("Email: %s", self.email)
         logger.debug("Context: %s", self.context)

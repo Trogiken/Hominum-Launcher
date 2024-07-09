@@ -3,8 +3,9 @@ pyinstaller_versionfile
 cryptography
 auto-py-to-exe
 pylint
-portablemc[certifi]
 customtkinter
 pillow
 pygetwindow
 psutil
+portablemc
+certifi

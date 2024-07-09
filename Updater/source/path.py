@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 PROGRAM_NAME = "Hominum"
 PROGRAM_NAME_LONG = "Hominum Launcher"
-VERSION = "4.8.3.4"
+VERSION = "4.9.3.4"
 
 if getattr(sys, 'frozen', False):
     APPLICATION_DIR = pathlib.Path(sys.executable).parent
@@ -41,6 +41,9 @@ STORE_DIR = pathlib.Path(STORE_DIR)
 MAIN_DIR = pathlib.Path(os.path.join(STORE_DIR, "minecraft"))
 WORK_DIR = pathlib.Path(os.path.join(STORE_DIR, "mcdata"))
 CONTEXT = Context(MAIN_DIR, WORK_DIR)
+GLOBAL_KILL = pathlib.Path(os.path.join(STORE_DIR, "GLOBAL_KILL"))
+if GLOBAL_KILL.exists():
+    GLOBAL_KILL.unlink()
 
 os.makedirs(STORE_DIR, exist_ok=True)
 os.makedirs(MAIN_DIR, exist_ok=True)

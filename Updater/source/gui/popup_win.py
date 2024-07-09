@@ -21,24 +21,29 @@ class PopupWindow(customtkinter.CTkToplevel):
         logger.debug("Popup window message: %s", message)
 
         self.title(title)
-        self.geometry("400x150")
-        self.resizable(True, True)
+        self.attributes("-topmost", True)
+        self.geometry("500x200")
+        self.resizable(False, False)
         self.grid_columnconfigure(0, weight=1)
+        self.grid_rowconfigure(0, weight=1)
 
         # Make the window modal
         self.transient(master)  # Set to be a transient window of the master window
-        self.grab_set()  # Direct all events to this window
 
-        self.protocol("WM_DELETE_WINDOW", self.destroy)  # Handle the close event
+        # Scrollable frame
+        self.message_frame = customtkinter.CTkScrollableFrame(self)
+        self.message_frame.grid(row=0, column=0, padx=20, pady=20, sticky="new")
 
         self.label = customtkinter.CTkLabel(
-            self, text=message, font=SETTINGS.get_gui("font_large")
+            self.message_frame, text=message, font=SETTINGS.get_gui("font_large"), wraplength=400
         )
-        self.label.grid(row=0, column=0, pady=(20, 0))
+        self.label.grid(row=0, column=0, padx=20, pady=20)
 
         self.button = customtkinter.CTkButton(
             self, text="OK", command=self.destroy, font=SETTINGS.get_gui("font_normal")
         )
-        self.button.grid(row=1, column=0, pady=20)
+        self.button.grid(row=1, column=0, padx=20, pady=(0, 20), sticky="s")
 
         logger.debug("Popup window created")
+
+        self.wait_window()  # Wait for the window to be destroyed

@@ -14,7 +14,7 @@ import psutil
 from source.gui.app_win import App
 from source import path
 
-IS_DEVELOPMENT = False  # This should be set to False before release
+IS_DEVELOPMENT = True  # This should be set to False before release
 
 
 class ErrorTrackingHandler(logging.Handler):
@@ -98,13 +98,18 @@ def is_process_running():
     return False
 
 
+def exit_application(code: int=0):
+    """Exit the application."""
+    sys.exit(code)
+
+
 if __name__ == "__main__":
     application_errors = configure_logging()
     logger = logging.getLogger(__name__)
 
     if not IS_DEVELOPMENT and is_process_running():
         logger.critical("Another instance of the updater is already running. Exiting...")
-        sys.exit(1)
+        exit_application(1)
 
     # log constants
     logger.info("PROGRAM_NAME: %s", path.PROGRAM_NAME)
@@ -124,8 +129,10 @@ if __name__ == "__main__":
             logger.warning("Application finished with errors")
             for error in application_errors.errors:
                 logger.warning(error)
+            exit_application(1)
         else:
             logger.info("Application finished successfully")
+            exit_application(0)
     except Exception as e:
         logger.exception("An unhandled exception occurred")
-        raise
+        exit_application(1)
