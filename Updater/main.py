@@ -14,7 +14,7 @@ import psutil
 from source.gui.app_win import App
 from source import path
 
-IS_DEVELOPMENT = True  # This should be set to False before release
+IS_DEVELOPMENT = False  # This should be set to False before release
 
 
 class ErrorTrackingHandler(logging.Handler):
