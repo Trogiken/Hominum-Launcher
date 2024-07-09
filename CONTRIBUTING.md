@@ -17,7 +17,7 @@ Replace `<feature-name>`, `<bugfix-name>`, `<hotfix-name>`, `<general-name>`, `<
 
 ## Protected Branches
 
-- `master` - Used as the production branch
+- `master` - Used as the production branch **When merging into master DO NOT use squash and merge**
 - `staging` - Used as the pre-production branch
 
 ### Here are some rules to follow about protected branches
