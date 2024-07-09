@@ -468,6 +468,7 @@ class MCManager:
 
         Parameters:
         - version (Version | FabricVersion | ForgeVersion): The version.
+        - auth_session (MicrosoftAuthSession): The auth session to add to the version.
         - watcher (Watcher): The watcher for PortableMC. Defaults to None.
 
         Returns:

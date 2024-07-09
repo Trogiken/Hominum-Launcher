@@ -37,12 +37,23 @@ class InstallWindow(customtkinter.CTkToplevel):
         self.auth_handler = AuthenticationHandler(
             email=SETTINGS.get_user("email"), context=path.CONTEXT
         )
-        self.version = self.mc.provision_version(autojoin=SETTINGS.get_game("autojoin"))
+        try:
+            self.version = self.mc.provision_version(autojoin=SETTINGS.get_game("autojoin"))
+        except Exception as version_error:
+            logger.error("Error getting version: %s", version_error)
+            PopupWindow(
+                self,
+                title="Version Error",
+                message="An error occurred while getting the version. Please try again.",
+            )
+            self.after(100, self.destroy)
+
         self.environment = None
         self.errors_occurred = False
 
         self.session = self.auth_handler.get_session()
         if self.session is None:
+            logger.warning("No authentication session found during installation")
             PopupWindow(
                 self,
                 title="Authentication Error",
