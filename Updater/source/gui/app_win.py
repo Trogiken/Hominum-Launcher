@@ -21,7 +21,7 @@ from source.gui.login_win import LoginWindow
 from source.gui.app_settings_win import SettingsWindow
 from source.gui.app_install_win import InstallWindow
 from source.gui.app_run_win import RunWindow
-from source.utils import Settings, get_image
+from source  import utils
 
 # TODO: Check if the splash screen works on all target OS's
 if '_PYIBoot_SPLASH' in os.environ and importlib.util.find_spec("pyi_splash"):
@@ -35,7 +35,7 @@ else:
 
 logger = logging.getLogger(__name__)
 
-SETTINGS = Settings()
+SETTINGS = utils.Settings()
 
 
 class LeftFrame(customtkinter.CTkFrame):
@@ -73,7 +73,7 @@ class LeftFrame(customtkinter.CTkFrame):
 
         # Settings Button
         self.settings_button_photo = customtkinter.CTkImage(
-            get_image("settings.png").resize(SETTINGS.get_gui("image_normal"))
+            utils.get_image("settings.png").resize(SETTINGS.get_gui("image_normal"))
         )
         self.settings_button = customtkinter.CTkButton(
             self,
@@ -162,7 +162,7 @@ class RightFrame(customtkinter.CTkFrame):
         self.autojoin_switch.grid(row=1, column=0, padx=20, pady=0, sticky="s")
 
         self.play_button_photo = customtkinter.CTkImage(
-            get_image("rocket.png").resize(SETTINGS.get_gui("image_large"))
+            utils.get_image("rocket.png").resize(SETTINGS.get_gui("image_large"))
         )
         self.play_button = customtkinter.CTkButton(
             self,
@@ -292,10 +292,10 @@ class ScrollableFrame(customtkinter.CTkScrollableFrame):
                 item_row = section_row
                 for i, item in enumerate(items):
                     pady = (10, 0) if i < len(items) - 1 else 10  # Add padding to the last item
-                    item_label = customtkinter.CTkLabel(
+                    item_label = utils.WrappingLabel(
                         section_frame, text=item, font=SETTINGS.get_gui("font_normal")
                     )
-                    item_label.grid(row=item_row, column=0, padx=10, pady=pady, sticky="w")
+                    item_label.grid(row=item_row, column=0, padx=10, pady=pady, sticky="we")
                     item_row += 1
 
         logger.debug("Scrollable frame created")

@@ -1,5 +1,5 @@
 """
-This module handles things related to the gui
+This module provides utility functions and classes for the application.
 
 Functions:
 - get_image: Get the image from the assets directory.
@@ -13,6 +13,7 @@ Classes:
 - GameSettings: Stores the settings for the game.
 - MiscSettings: Stores the settings for miscellaneous things.
 - Settings: Stores the settings for the program.
+- WrappingLabel: A custom label that wraps text.
 
 Constants:
 - SETTINGS_FILENAME: The name of the settings file.
@@ -26,6 +27,7 @@ import platform
 import pickle
 import pathlib
 from dataclasses import dataclass, field
+import customtkinter
 from portablemc.standard import Environment
 from PIL import Image
 from source import path
@@ -283,6 +285,14 @@ class Settings:
             setattr(self._misc, key, value)
             logger.debug("Misc setting '%s' updated to value '%s'", key, value)
         self.save()
+
+
+
+class  WrappingLabel(customtkinter.CTkLabel):
+    """A custom label that wraps text."""
+    def __init__(self, master=None, **kwargs):
+        super().__init__(master, **kwargs)
+        self.bind("<Configure>", lambda _: self.configure(wraplength=self.winfo_width()))
 
 
 def get_image(image_name: str) -> Image.Image:
