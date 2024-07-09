@@ -9,11 +9,14 @@ Classes:
 - SettingsWindow: A window for the settings of the application.
 """
 
+import logging
 import customtkinter
 from source import path
 from source.utils import Settings, open_directory
 from source.gui.popup_win import PopupWindow
 from source.mc.authentication import AuthenticationHandler
+
+logger = logging.getLogger(__name__)
 
 SETTINGS = Settings()
 
@@ -22,6 +25,8 @@ class GUISettingsFrame(customtkinter.CTkFrame):
     """A frame for the GUI settings."""
     def __init__(self, master):
         super().__init__(master)
+        logger.debug("Creating GUI settings frame")
+
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(2, weight=1)
 
@@ -40,6 +45,8 @@ class GUISettingsFrame(customtkinter.CTkFrame):
         )
         self.reset_gui_settings_button.grid(row=1, column=0, padx=20, pady=(0, 20), sticky="s")
 
+        logger.debug("GUI settings frame created")
+
     def reset_gui_settings(self):
         """Reset the GUI settings to the default values."""
         SETTINGS.reset_gui()
@@ -54,6 +61,8 @@ class UserSettingsFrame(customtkinter.CTkFrame):
     """A frame for the User settings."""
     def __init__(self, master):
         super().__init__(master)
+        logger.debug("Creating user settings frame")
+
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(2, weight=1)
 
@@ -72,6 +81,8 @@ class UserSettingsFrame(customtkinter.CTkFrame):
         )
         self.reset_user_settings_button.grid(row=1, column=0, padx=20, pady=(0, 20), sticky="s")
 
+        logger.debug("User settings frame created")
+
     def reset_user_settings(self):
         """Reset the User settings to the default values."""
         auth_handler = AuthenticationHandler(SETTINGS.get_user("email"), path.CONTEXT)
@@ -88,6 +99,8 @@ class JVMArgsWindow(customtkinter.CTkToplevel):
     """A window for the JVM Arguments."""
     def __init__(self, master, **kwargs):
         super().__init__(master, **kwargs)
+        logger.debug("Creating JVM Arguments window")
+
         self.title("JVM Arguments")
         self.geometry("600x300")
         self.grid_columnconfigure(0, weight=1)
@@ -103,7 +116,7 @@ class JVMArgsWindow(customtkinter.CTkToplevel):
         if initial_heap == max_heap:
             self.current_ram_allocation = initial_heap
         else:
-            # TODO: Log that these values arent matching
+            logger.warning("Initial and Max heap sizes are not equal. Using Max heap size.")
             self.current_ram_allocation = max_heap
 
         # Ram Slider Label
@@ -151,6 +164,8 @@ class JVMArgsWindow(customtkinter.CTkToplevel):
         )
         self.save_button.grid(row=5, column=0, padx=20, pady=(0, 20), sticky="s")
 
+        logger.debug("JVM Arguments window created")
+
     def slider_event(self, value):
         """Update the value label when the slider is moved."""
         self.ram_value_var.set(int(value))
@@ -169,6 +184,8 @@ class GameSettingsFrame(customtkinter.CTkFrame):
     """A frame for the Game settings."""
     def __init__(self, master):
         super().__init__(master)
+        logger.debug("Creating game settings frame")
+
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(0, weight=1)
         self.jvm_args_window = None
@@ -206,6 +223,8 @@ class GameSettingsFrame(customtkinter.CTkFrame):
         )
         self.reset_game_settings_button.grid(row=3, column=0, padx=20, pady=(5, 20), sticky="s")
 
+        logger.debug("Game settings frame created")
+
     def open_data_folder(self):
         """Open the data folder"""
         open_directory(path.WORK_DIR)
@@ -234,12 +253,15 @@ class SettingsWindow(customtkinter.CTkToplevel):
     """A window for the settings of the application."""
     def __init__(self, master, **kwargs):
         super().__init__(master, **kwargs)
+        logger.debug("Creating settings window")
+
         self.title("Settings")
-        self.geometry("600x250")
+        self.geometry("600x300")
         self.grid_columnconfigure(0, weight=1)
         self.grid_columnconfigure(1, weight=1)
         self.grid_columnconfigure(2, weight=1)
         self.grid_rowconfigure(0, weight=1)
+        self.grid_rowconfigure(1, weight=1)
 
         # GUI Settings Frame
         self.gui_settings_frame = GUISettingsFrame(self)
@@ -252,3 +274,26 @@ class SettingsWindow(customtkinter.CTkToplevel):
         # Game Settings Frame
         self.game_settings_frame = GameSettingsFrame(self)
         self.game_settings_frame.grid(row=0, column=2, padx=(0, 20), pady=20)
+
+        # Reset all button
+        self.reset_all_button = customtkinter.CTkButton(
+            self,
+            text="Reset All Settings",
+            font=SETTINGS.get_gui("font_large"),
+            command=self.reset_all_settings
+        )
+        self.reset_all_button.grid(
+            row=1, column=0, columnspan=3, padx=20, pady=(0, 20), sticky="wes"
+        )
+
+        logger.debug("Settings window created")
+
+    def reset_all_settings(self):
+        """Reset all settings to the default values."""
+        SETTINGS.reset()
+        PopupWindow(
+            master=self.master,
+            title="Settings Reset",
+            message="All settings have been reset to default."
+        )
+        self.destroy()
