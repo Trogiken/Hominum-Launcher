@@ -7,14 +7,12 @@ Functions:
 - open_directory: Open a folder on the users computer.
 - format_number: Format a float into correct measurement
 
-
 Classes:
 - GUISettings: Stores the settings for the GUI.
 - UserSettings: Stores the settings for the user.
 - GameSettings: Stores the settings for the game.
 - MiscSettings: Stores the settings for miscellaneous things.
 - Settings: Stores the settings for the program.
-
 
 Constants:
 - SETTINGS_FILENAME: The name of the settings file.
