@@ -292,7 +292,7 @@ class  WrappingLabel(customtkinter.CTkLabel):
     """A custom label that wraps text."""
     def __init__(self, master=None, **kwargs):
         super().__init__(master, **kwargs)
-        self.bind("<Configure>", lambda e: self.configure(wraplength=self.winfo_width()))
+        self.bind("<Configure>", lambda _: self.configure(wraplength=self.winfo_width()))
 
 
 def get_image(image_name: str) -> Image.Image:
