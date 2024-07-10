@@ -1,5 +1,11 @@
-requests
-pyinstaller_versionfile
-cryptography
 auto-py-to-exe
+certifi
+cryptography
+customtkinter
+pillow
+portablemc
+psutil
+pygetwindow
 pylint
+pyinstaller_versionfile
+requests
