@@ -8,17 +8,18 @@ Please follow this naming convention for your branches:
 
 - Feature branches: `feature/<feature-name>`
 - Bugfix branches: `bugfix/<bugfix-name>`
+- Patch branches: `patch/<patch-name>`
 - Hotfix branches: `hotfix/<hotfix-name>`
 - General branches: `general/<general-name>`
 - Documentation branches: `doc/<documentation-name>`
 - Test branches: `test/<test-name>`
 
-Replace `<feature-name>`, `<bugfix-name>`, `<hotfix-name>`, `<general-name>`, `<documentation-name>`, or `<test-name>` with a short description.
+Replace `<feature-name>`, `<bugfix-name>`, `patch/<patch-name>`, `<hotfix-name>`, `<general-name>`, `<documentation-name>`, or `<test-name>` with a short description.
 
 ## Protected Branches
 
 - `master` - Used as the production branch **When merging into master DO NOT use squash and merge**
-- `staging` - Used as the pre-production branch
+- `staging` - Used as the pre-production branch  **When merging into staging DO USE squash and merge**
 
 ### Here are some rules to follow about protected branches
 
@@ -42,19 +43,16 @@ Please follow these steps for creating a pull request:
 
 Here are the steps to compiling a release:
 
-**Increment build version**
-
-1. Make sure that you've checked out the `master` branch.
-2. Make sure that all PRs are merged, tests are passing, and versions are updated.
-3. Access and download the security program.
-4. Within the security program, enter the API_KEY.
-5. Run the module, selecting the `./Updater` directory in the repo.
-6. Once finished, copy and store **locally** the password and salt.
+1. Increment build version
+2. Make sure that you've checked out the `master` branch.
+3. Make sure that all PRs are merged, tests are passing, and versions are updated.
+4. Access and download the security program.
+5. Within the security program, enter the API_KEY.
+6. Run the module, selecting the `./Launcher` directory in the repo.
 7. Move the created `creds` file into `./Compile Info/include`.
 8. In `./Updater/source/creds.py`, enter the local password and salt.
-9. Run `auto-py-to-exe`, selecting the information in `./Compile Info`.
-10. Double check all fields and then compile as a directory.
-11. Store the resulting build directory somewhere other than the repo directory.
-12. Delete all current changes in the local checked out `master` branch **(Nothing should be committed here)**.
-13. Run `install creator`, using the resulting build directory as the source files.
-14. Create a release on GitHub and upload the resulting installer.
+9. Run pyinstaller on the spec file in Compile Info.
+10. Store the resulting build directory somewhere other than the repo directory.
+11. Delete all current changes in the local checked out `master` branch **(Nothing should be committed here)**.
+12. Run `install creator`, using the resulting build directory as the source files.
+13. Create a release on GitHub and upload the resulting installer.
