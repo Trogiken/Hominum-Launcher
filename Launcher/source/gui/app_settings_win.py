@@ -133,9 +133,9 @@ class JVMArgsWindow(customtkinter.CTkToplevel):
         # Ram Slider
         self.ram_slider = customtkinter.CTkSlider(
             self,
-            from_=512,
+            from_=1024,
             to=16384,
-            number_of_steps=512,
+            number_of_steps=30,
             variable=self.ram_value_var,
             command=self.slider_event
         )
