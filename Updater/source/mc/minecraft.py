@@ -51,6 +51,7 @@ class InstallWatcher(SimpleWatcher):
                 logging.debug("Checking libraries...")
             elif key == "start.forge.post_processing":
                 logger.debug("Forge post processing %s...", kwargs["task"])
+                self.app.update_item(f"Post Processing: {kwargs['task']}")
             else:
                 logger.debug("Progress task: %s", key)
 
@@ -71,6 +72,7 @@ class InstallWatcher(SimpleWatcher):
                 logger.info("Using logger %s", kwargs["version"])
             elif key == "start.forge.post_processed":
                 logger.info("Forge post processing done")
+                self.app.update_item("Post Processing Done")
             else:
                 logger.info("Finished task: %s", key)
 
@@ -193,8 +195,6 @@ class InstallWatcher(SimpleWatcher):
 
         if e.done:
             logger.debug("File Downloaded: %s", e.entry)
-            if str(e.entry) == "<DownloadEntry modules>":  # Janky way to stop install from hanging
-                raise exceptions.VersionInstallTimeout("Modules install detected")
             self.size += e.size
 
         item_msg = f"Total Downloaded: {size:>8} - {speed}"

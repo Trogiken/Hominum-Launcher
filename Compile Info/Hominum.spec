@@ -2,10 +2,10 @@
 
 
 a = Analysis(
-    ['C:\\Users\\Owner\\VScode\\Hominum-Updater\\Updater\\main.py'],
+    ['C:\\Users\\noah\\Documents\\VSCode\\Hominum-Updater\\Updater\\main.py'],
     pathex=[],
     binaries=[],
-    datas=[('C:\\Users\\Owner\\VScode\\Hominum-Updater\\Updater\\assets', 'assets/'), ('C:\\Users\\Owner\\VScode\\Hominum-Updater\\Updater\\creds', '.')],
+    datas=[('C:\\Users\\noah\\Documents\\VSCode\\Hominum-Updater\\Updater\\assets', 'assets/'), ('C:\\Users\\noah\\Documents\\VSCode\\Hominum-Updater\\Updater\\creds', '.')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
@@ -16,7 +16,7 @@ a = Analysis(
 )
 pyz = PYZ(a.pure)
 splash = Splash(
-    'C:\\Users\\Owner\\VScode\\Hominum-Updater\\Compile Info\\splash.jpeg',
+    'C:\\Users\\noah\\Documents\\VSCode\\Hominum-Updater\\Compile Info\\splash.jpeg',
     binaries=a.binaries,
     datas=a.datas,
     text_pos=(75,35),
@@ -43,8 +43,8 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    version='C:\\Users\\Owner\\VScode\\Hominum-Updater\\Compile Info\\versionfile.txt',
-    icon=['C:\\Users\\Owner\\VScode\\Hominum-Updater\\Compile Info\\ctk.ico'],
+    version='C:\\Users\\noah\\Documents\\VSCode\\Hominum-Updater\\Compile Info\\versionfile.txt',
+    icon=['C:\\Users\\noah\\Documents\\VSCode\\Hominum-Updater\\Compile Info\\ctk.ico'],
     contents_directory='.',
 )
 coll = COLLECT(
