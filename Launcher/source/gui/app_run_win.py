@@ -11,7 +11,7 @@ import customtkinter
 from portablemc.standard import Environment
 from source.mc.minecraft import EnvironmentRunner
 from source.gui.popup_win import PopupWindow
-from source import utils
+from source import utils, path
 
 if os.name != "posix":
     import pygetwindow as pygw
@@ -31,7 +31,7 @@ class RunWindow(customtkinter.CTkToplevel):
         # Used to minimize the main window after the game starts
         self.main_window = None
         if os.name != "posix":
-            self.main_window: pygw.Win32Window = pygw.getWindowsWithTitle("Hominum")[0]
+            self.main_window: pygw.Win32Window = pygw.getWindowsWithTitle(path.PROGRAM_NAME)[0]
 
         self.kill_process = False  # Used by EnvironmentRunner
 
