@@ -338,7 +338,7 @@ class App(customtkinter.CTk):
 
         logger.debug("Creating main window")
 
-        self.title(path.PROGRAM_NAME)
+        self.title(path.PROGRAM_NAME)  # Minimize/Maximize functionality relies on this name
         geom_length, geom_height = SETTINGS.get_gui("main_window_geometry")
         min_length, min_height = SETTINGS.get_gui("main_window_min_size")
         self.geometry(f"{geom_length}x{geom_height}")
