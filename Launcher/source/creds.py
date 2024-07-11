@@ -23,7 +23,7 @@ from cryptography.hazmat.backends import default_backend
 
 logger = logging.getLogger(__name__)
 
-IS_DEVELOPMENT = False  # Set to True if in development mode
+IS_DEVELOPMENT = True  # Set to True if in development mode
 
 # NEVER COMMIT THE PASSWORD AND SALT TO THE REPOSITORY
 if IS_DEVELOPMENT:
