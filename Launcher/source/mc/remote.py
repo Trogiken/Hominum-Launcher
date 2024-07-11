@@ -19,14 +19,17 @@ Constants:
 import logging
 from typing import Generator
 import os
+import base64
+import json
 import requests
 import yaml
 from source import creds, exceptions
 
 logger = logging.getLogger(__name__)
 
-GITHUB_CONTENTS_BASE = r"https://api.github.com/repos/Trogiken/Hominum-Updates/contents"
-CONFIG_NAME = "config.yaml"
+GITHUB_CONTENTS_BASE = \
+    r"https://api.github.com/repos/Trogiken/Hominum-Updates/git/trees/master?recursive=1"
+CONFIG_PATH = "config.yaml"
 
 
 def get_request(url: str, timeout=5, headers=None, **kwargs) -> requests.models.Response:
@@ -60,29 +63,40 @@ def get_request(url: str, timeout=5, headers=None, **kwargs) -> requests.models.
     return resp
 
 
-def download(url: str, save_path: str, chunk_size=8192) -> str:
+def download(url: str = None, save_path: str = None, chunk_size=8192) -> str | None:
     """
     Downloads a stream of bytes from the given URL and saves it to the specified path.
 
     Parameters:
-    - url (str): The URL to download the file from.
+    - url (str): The URL to download the file from. (This has to be a blob URL.)
     - save_path (str): The path to save the downloaded file.
+        If not specified, the content will be returned as a string.
     - chunk_size (int): The size of the chunks to download. Defaults to 8192.
 
     Returns:
-    - str: The path where the file was saved.
+    - str: The path where the file was saved. Or the content if save_path is not specified.
+    - None: If the url is not specified or an error occurs during download.
     """
+    if not url:
+        return None
     try:
         resp = get_request(url, stream=True)
+        message = ""  # Used to store the content if save_path is not specified
         with open(save_path, "wb") as f:
             for chunk in resp.iter_content(chunk_size=chunk_size):
                 if chunk:
-                    f.write(chunk)
+                    base64_bytes = json.loads(chunk.decode('utf-8'))["content"]
+                    message_bytes = base64.b64decode(base64_bytes)
+                    message_chunk = message_bytes.decode('utf-8')
+                    if save_path:
+                        f.write(message_chunk)
+                    else:
+                        message += message_chunk
         logger.info("Downloaded '%s' to '%s'", url, save_path)
     except Exception as error:
         raise exceptions.DownloadError(f"Failed to download '{url}': {error}")
 
-    return save_path
+    return save_path if save_path else message
 
 
 def download_files(urls: list, save_directory: str) -> Generator[tuple, None, None]:
@@ -134,58 +148,101 @@ def download_files(urls: list, save_directory: str) -> Generator[tuple, None, No
                 logger.warning("Failed to download '%s', trying again", url)
 
 
-def get_file_download(file_path: str) -> str:
+# def get_file_download(file_path: str) -> str:
+#     """
+#     Retrieves the download URL for the specified file from the server.
+
+#     Parameters:
+#     - file_path (str): The path to the file on the server.
+
+#     Returns:
+#     - str: The download URL for the file.
+#     - None: If the response is empty.
+#     - FileNotFoundError: If the file is not found on the server.
+#     """
+#     path, name = os.path.split(file_path)
+#     download_path_url = ""
+#     resp = get_request(f"{GITHUB_CONTENTS_BASE}/{path}")
+#     if not resp:
+#         logger.warning("Failed to get download url from server")
+#         return None
+#     for file in resp.json():
+#         if file["name"] == name:
+#             download_path_url = file["download_url"]
+#             break
+#     if not download_path_url:
+#         logger.error("'%s' not found on the server", name)
+#         return None
+#     logger.debug("Download URL: %s", download_path_url)
+
+#     return download_path_url
+
+
+# def get_file_downloads(directory: str) -> list:
+#     """
+#     Retrieves a list of download URLs from the server.
+
+#     Parameters:
+#     - directory (str): The directory to retrieve the download URLs from.
+
+#     Returns:
+#     - list: A list of download URLs.
+#     - None: If the response is empty.
+#     - exceptions.NoResponseError: If no response is received from the server.
+#     """
+#     resp = get_request(f"{GITHUB_CONTENTS_BASE}/{directory}")
+#     if not resp:
+#         logger.warning("Failed to get download urls from server")
+#         return None
+#     download_urls = []
+#     for file in resp.json():
+#         download_urls.append(file["download_url"])
+#     logger.debug("Download URLs: %s", download_urls)
+
+#     return download_urls
+
+
+def get_repo_tree() -> dict:
+    """
+    Retrieves the repository tree from the server.
+
+    Returns:
+    - dict: The repository tree.
+    """
+    resp = get_request(GITHUB_CONTENTS_BASE)
+    if not resp:
+        logger.warning("Failed to get repository tree from server")
+        return {}
+    tree = resp.json()
+    if not tree:
+        logger.warning("No repository tree found")
+        return {}
+    logger.debug("Repository tree found")
+
+    return tree
+
+
+def get_file_url(path: str) -> dict:
     """
     Retrieves the download URL for the specified file from the server.
 
     Parameters:
-    - file_path (str): The path to the file on the server.
+    - path (str): The path to the file on the server.
 
     Returns:
-    - str: The download URL for the file.
+    - dict: The download URL for the file.
     - None: If the response is empty.
     - FileNotFoundError: If the file is not found on the server.
     """
-    path, name = os.path.split(file_path)
-    download_path_url = ""
-    resp = get_request(f"{GITHUB_CONTENTS_BASE}/{path}")
-    if not resp:
-        logger.warning("Failed to get download url from server")
+    tree = get_repo_tree()
+    if not tree:
         return None
-    for file in resp.json():
-        if file["name"] == name:
-            download_path_url = file["download_url"]
-            break
-    if not download_path_url:
-        logger.error("'%s' not found on the server", name)
-        return None
-    logger.debug("Download URL: %s", download_path_url)
+    for file in tree["tree"]:
+        if file["path"] == path:
+            return file["url"]
+    logger.error("'%s' not found on the server", path)
 
-    return download_path_url
-
-
-def get_file_downloads(directory: str) -> list:
-    """
-    Retrieves a list of download URLs from the server.
-
-    Parameters:
-    - directory (str): The directory to retrieve the download URLs from.
-
-    Returns:
-    - list: A list of download URLs.
-    - None: If the response is empty.
-    - exceptions.NoResponseError: If no response is received from the server.
-    """
-    resp = get_request(f"{GITHUB_CONTENTS_BASE}/{directory}")
-    if not resp:
-        logger.warning("Failed to get download urls from server")
-        return None
-    download_urls = []
-    for file in resp.json():
-        download_urls.append(file["download_url"])
-    logger.debug("Download URLs: %s", download_urls)
-
-    return download_urls
+    return None
 
 
 def get_config() -> dict:
@@ -195,34 +252,34 @@ def get_config() -> dict:
     Returns:
     - dict: The contents of the config file.
     """
-    resp = get_request(get_file_download(CONFIG_NAME))
-    if not resp:
+    config_content = download(get_file_url(CONFIG_PATH))
+    if not config_content:
         logger.warning("Failed to get config from server")
         return {}
-    config = yaml.safe_load(resp.text)
+    config = yaml.safe_load(config_content)
     logger.debug("Config: %s", config)
 
     return config
 
 
-def get_filenames(directory: str) -> list:
-    """
-    Retrieves a list of filenames from the server.
+# def get_filenames(directory: str) -> list:
+#     """
+#     Retrieves a list of filenames from the server.
 
-    Parameters:
-    - directory (str): The directory to retrieve the filenames from.
+#     Parameters:
+#     - directory (str): The directory to retrieve the filenames from.
 
-    Returns:
-    - list: A list of mod names.
-    - None: If the response is empty.
-    """
-    resp = get_request(f"{GITHUB_CONTENTS_BASE}/{directory}")
-    if not resp:
-        logger.warning("Failed to get filenames from server")
-        return None
-    names = []
-    for file in resp.json():
-        names.append(file["name"])
-    logger.debug("Filenames: %s", names)
+#     Returns:
+#     - list: A list of mod names.
+#     - None: If the response is empty.
+#     """
+#     resp = get_request(f"{GITHUB_CONTENTS_BASE}/{directory}")
+#     if not resp:
+#         logger.warning("Failed to get filenames from server")
+#         return None
+#     names = []
+#     for file in resp.json():
+#         names.append(file["name"])
+#     logger.debug("Filenames: %s", names)
 
-    return names
+#     return names
