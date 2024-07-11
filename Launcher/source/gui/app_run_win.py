@@ -77,6 +77,7 @@ class RunWindow(customtkinter.CTkToplevel):
                 message="Environment could not be found in settings. "\
                 "Make sure the installation completed successfully."
             )
+            self.on_run_complete()
             return
 
         if os.name != "posix" and self.main_window:
