@@ -5,6 +5,7 @@ which represents the settings window of the application.
 Classes:
 - GUISettingsFrame: A frame for the GUI settings.
 - UserSettingsFrame: A frame for the User settings.
+- JVMArgsWindow: A window for the JVM Arguments.
 - GameSettingsFrame: A frame for the Game settings.
 - SettingsWindow: A window for the settings of the application.
 """
@@ -124,12 +125,14 @@ class JVMArgsWindow(customtkinter.CTkToplevel):
             self, text="Memory Allocation", font=SETTINGS.get_gui("font_large")
         )
         self.ram_slider_label.grid(row=0, column=0, padx=20, pady=(20, 0))
+
         # Ram Slider Value Label
         self.ram_value_var = customtkinter.IntVar(value=self.current_ram_allocation)
         self.ram_slider_value_label = customtkinter.CTkLabel(
             self, text=f"RAM: {self.ram_value_var.get()} MB", font=SETTINGS.get_gui("font_normal")
         )
         self.ram_slider_value_label.grid(row=1, column=0, padx=20, pady=10, sticky="w")
+
         # Ram Slider
         self.ram_slider = customtkinter.CTkSlider(
             self,
@@ -146,6 +149,7 @@ class JVMArgsWindow(customtkinter.CTkToplevel):
             self, text="Additional JVM Arguments", font=SETTINGS.get_gui("font_large")
         )
         self.jvm_args_label.grid(row=3, column=0, padx=20, pady=(0, 10))
+
         # JVM Arguments Entry
         self.jvm_args_entry = customtkinter.CTkEntry(
             self, font=SETTINGS.get_gui("font_normal"), width=300
