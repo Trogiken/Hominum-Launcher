@@ -80,42 +80,55 @@ def download(url: str = None, save_path: str = None, chunk_size=8192) -> str | N
     if not url:
         return None
 
-    raw_temp_file = tempfile.NamedTemporaryFile(delete=False)  # pylint: disable=consider-using-with
-    temp_file = tempfile.NamedTemporaryFile(delete=False)  # pylint: disable=consider-using-with
-
     def _download_chunks():
         resp = get_request(url, stream=True)
-        resp.raise_for_status()
+        if not resp:
+            raise exceptions.DownloadError(f"Failed to get '{url}'")
 
         # write raw content to file
-        for chunk in resp.iter_content(chunk_size=chunk_size):
-            if chunk:
-                raw_temp_file.write(chunk)
-        raw_temp_file.close()
-
-        # read file in chunks and decode base64
-        with open(raw_temp_file.name, "rb") as file:
-            for chunk in file.read().splitlines():
+        with tempfile.NamedTemporaryFile(delete=False) as raw_temp_file:
+            for chunk in resp.iter_content(chunk_size=chunk_size):
                 if chunk:
-                    base64_bytes = json.loads(chunk.decode('utf-8'))["content"]
-                    message_bytes = base64.b64decode(base64_bytes)
-                    message_chunk = message_bytes.decode('utf-8')
-                    temp_file.write(message_chunk.encode('utf-8'))
+                    raw_temp_file.write(chunk)
 
-        temp_file.close()
-        os.unlink(raw_temp_file.name)
+            raw_temp_path = raw_temp_file.name
+
         logger.debug("Downloaded '%s' to '%s'", url, save_path)
+        return raw_temp_path
+
+    def _decode_base64(raw_file_path):
+        # read file in chunks and decode base64
+        with open(raw_file_path, "rb") as raw_file, \
+        tempfile.NamedTemporaryFile(delete=False) as temp_file:
+            for chunk in raw_file.read().splitlines():
+                if chunk:
+                    try:
+                        base64_bytes = json.loads(chunk.decode('utf-8'))["content"]
+                    except UnicodeDecodeError:
+                        return None
+                    message_bytes = base64.b64decode(base64_bytes)
+                    temp_file.write(message_bytes)
+            temp_file_path = temp_file.name
+
+        return temp_file_path
 
     try:
-        _download_chunks()
-        if not save_path:
-            with open(temp_file.name, "r", encoding="utf-8") as file:
-                message = file.read()
-            os.unlink(temp_file.name)  # Remove temp file after reading
-            return message
-        os.rename(temp_file.name, save_path)  # Move temp file to save path
+        raw_temp_path = _download_chunks()
+        temp_file_path = _decode_base64(raw_temp_path)
+        if not temp_file_path:  # If can't decode base64
+            file_path = raw_temp_path
+        else:
+            file_path = temp_file_path
+
+        if not save_path:  # Return content
+            with open(file_path, "r", encoding="utf-8") as file:
+                content = file.read()
+            os.remove(file_path)
+            return content
+        os.rename(file_path, save_path)  # Move temp file to save path
         return save_path
     except Exception as error:
+        os.unlink(file_path)  # Remove the file if an error occurs
         raise exceptions.DownloadError(f"Failed to download '{url}': {error}")
 
 

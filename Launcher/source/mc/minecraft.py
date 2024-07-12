@@ -441,12 +441,14 @@ class MCManager:
 
         for remote_path in self.remote_config["paths"]:
             # Bool to determine if path is only for startup
-            firstrun_only: bool = self.remote_config["paths"][remote_path][1]
+            firstrun_only: bool = self.remote_config["paths"][remote_path]["first_start_only"]
             # Local path relative to data folder
-            local_path_root: str = self.remote_config["paths"][remote_path][0]
+            local_path_root: str = self.remote_config["paths"][remote_path]["root"]
+            # Whether or not to overwrite existing files
+            overwrite: bool = self.remote_config["paths"][remote_path]["overwrite_existing"]
 
-            logger.debug("Remote Path: %s, Local Path: %s, First Run Only: %s",
-                         remote_path, local_path_root, firstrun_only
+            logger.debug("Firstrun Only: %s, Local Path Root: %s, Overwrite: %s",
+                         firstrun_only, local_path_root, overwrite
             )
 
             if not SETTINGS.get_misc("first_start") and firstrun_only:
@@ -454,6 +456,7 @@ class MCManager:
                 continue
 
             app.update_title(remote_path)
+            app.reset_progress()
 
             # if its a file, download it
             if not remote_path.endswith("/"):
@@ -471,10 +474,15 @@ class MCManager:
                 local_path.parent.mkdir(parents=True, exist_ok=True)
 
                 # Delete the file if it exists
-                if local_path.exists() and firstrun_only is True:
+                if overwrite and local_path.exists():
                     local_path.unlink()
+                    logger.debug("Deleted existing file: %s", local_path)
 
-                remote.download(file_url, local_path)
+                if not local_path.exists():
+                    remote.download(file_url, local_path)
+                    app.update_progress(1)
+                else:
+                    logger.debug("Skipping '%s' because it already exists", remote_path)
                 continue
 
             # if its a directory, download all files and sub folders in it
@@ -484,10 +492,8 @@ class MCManager:
                 logger.warning("No files found in '%s'", remote_path)
                 continue
             total_downloaded = 0
-            app.reset_progress()
             for remote_path_item in dir_paths:
-                app.update_item(f"Downloading: {remote_path_item}")
-                app.update_progress(total_downloaded / len_all_paths)
+                app.update_item(f"Preparing: {remote_path_item[len(remote_path):]}")
 
                 work_dir = self.context.work_dir
                 root = work_dir / local_path_root
@@ -507,12 +513,16 @@ class MCManager:
                     continue
 
                 # Delete the file if it exists and is only for first start
-                if local_path.exists() and firstrun_only is True:
+                if overwrite and local_path.exists():
                     local_path.unlink()
                     logger.debug("Deleted existing file: %s", local_path)
 
                 # FIXME: Invalid files are not being removed yet
-                # FIXME: Add another index remotely that means if it should overwrite existing files
-                # FIXME: Zip downloads don't work!
 
-                remote.download(file_url, local_path)
+                if not local_path.exists():
+                    app.update_item(f"Downloading: {remote_path_item[len(remote_path):]}")
+                    remote.download(file_url, local_path)
+                    total_downloaded += 1
+                    app.update_progress(total_downloaded / len_all_paths)
+                else:
+                    logger.debug("Skipping '%s' because it already exists", remote_path_item)
