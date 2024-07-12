@@ -10,6 +10,7 @@ Classes:
 import logging
 import time
 import os
+from pathlib import Path
 from subprocess import Popen
 from typing import Generator, List
 from source import exceptions, utils, path
@@ -257,7 +258,13 @@ class MCManager:
         logger.debug("Initializing MCManager")
 
         self.context = context
-        self.remote_config = remote.get_config()
+        self.remote_tree = remote.get_repo_tree()
+        self.remote_config = remote.get_config(self.remote_tree)
+
+        if self.remote_config is None:
+            raise exceptions.RemoteError("Remote config not found")
+        if self.remote_tree is None:
+            raise exceptions.RemoteError("Remote tree not found")
 
         self.server_ip: str = self.remote_config.get("startup", {}).get("server_ip", "")
         self.game_selected: str = self.remote_config.get("startup", {}).get("game", "")
@@ -268,72 +275,6 @@ class MCManager:
         logger.debug("Game Selected: %s", self.game_selected)
 
         logger.debug("MCManager initialized")
-
-    def _create_dir_path(self, remote_dir: str) -> tuple:
-        """
-        Creates the local and remote directory paths.
-
-        Parameters:
-        - remote_dir (str): The remote directory to sync.
-            Options: "config", "mods", "resourcepacks", "shaderpacks"
-
-        Exceptions:
-        - ValueError: If the remote directory is invalid.
-        - ValueError: If the remote directory URL is not set.
-
-        Returns:
-        - tuple: The local directory path and the remote directory URL.
-        """
-        if self.remote_config is None:
-            raise ValueError("Remote config is not set")
-        if remote_dir not in self.remote_config["urls"]:
-            raise ValueError(f"Invalid remote directory: {remote}")
-        if remote_dir == "config":
-            local_dir = self.context.work_dir / "config"
-        elif remote_dir == "mods":
-            local_dir = self.context.work_dir / "mods"
-        elif remote_dir == "resourcepacks":
-            local_dir = self.context.work_dir / "resourcepacks"
-        elif remote_dir == "shaderpacks":
-            local_dir = self.context.work_dir / "shaderpacks"
-        else:
-            raise ValueError(f"Unknown valid remote directory: {remote}")
-
-        local_dir.mkdir(parents=True, exist_ok=True)
-        remote_dir_url = self.remote_config["urls"][remote_dir]
-        logger.debug("Remote directory URL: %s", remote_dir_url)
-
-        return local_dir, remote_dir_url
-
-    def _create_file_path(self, remote_file: str) -> tuple:
-        """
-        Creates the local and remote file paths.
-        
-        Parameters:
-        - remote_file (str): The remote file to sync.
-            Options: "options", "servers"
-
-        Exceptions:
-        - ValueError: If the remote file is invalid.
-        - ValueError: If the remote file URL is not set.
-
-        Returns:
-        - tuple: The local file path and the remote file URL.
-        """
-        if remote_file not in self.remote_config["urls"]:
-            raise ValueError(f"Invalid remote file: {remote_file}")
-        if remote_file == "options":
-            local_filepath = self.context.work_dir / "options.txt"
-        elif remote_file == "servers":
-            local_filepath = self.context.work_dir / "servers.dat"
-        else:
-            raise ValueError(f"Unknown valid remote file: {remote_file}")
-
-        os.makedirs(os.path.dirname(local_filepath), exist_ok=True)
-        remote_file_url = self.remote_config["urls"][remote_file]
-        logger.debug("Remote file URL: %s", remote_file_url)
-
-        return local_filepath, remote_file_url
 
     def create_vanilla_version(self, mc_version: str=None) -> Version:
         """
@@ -424,9 +365,6 @@ class MCManager:
         Version | FabricVersion | ForgeVersion: The version set by the server
         """
         logger.debug("autojoin: %s", autojoin)
-        if self.remote_config is None:
-            raise ValueError("Remote config is not set")
-
         games = self.remote_config["games"]
         if self.game_selected not in games:
             raise ValueError(f"Invalid game selected: {self.game_selected}")
@@ -489,66 +427,88 @@ class MCManager:
         env.jvm_args.extend(args)
         return env
 
-    def sync_dir(self, remote_dir: str) -> Generator[tuple, None, None]:
+    def sync(self, app) -> Generator[tuple, None, None]:
         """
-        Syncs mods with the server.
+        Syncs the local data folder with the server.
 
         Parameters:
-        - remote_dir (str): The remote directory to sync.
-            Options: "config", "mods", "resourcepacks", "shaderpacks"
-
-        Exceptions:
-        - Exception: If any other error occurs.
-
-        Returns:
-        - Generator[tuple, None, None]: A generator that yields the progress of the sync.
+        - app: The app to update the GUI.
         """
-        local_dir, remote_dir_url = self._create_dir_path(remote_dir)
-        if remote_dir_url is None:
-            logger.warning("Remote directory '%s' is not set", remote_dir)
-            return
-        server_mods = remote.get_filenames(remote_dir_url)
-        if server_mods is None:
-            raise ValueError("Server filenames are not set")
-        # Remove invalid mods
-        for file in os.listdir(local_dir):
-            if file not in server_mods:
-                file_path = os.path.join(local_dir, file)
-                os.remove(file_path)
-                logger.info("Invalid mod '%s' removed", file_path)
+        logger.debug("app: %s", app)
 
-        # Download mods
-        urls_to_download = remote.get_file_downloads(remote_dir_url)
-        if urls_to_download is None:
-            raise ValueError("URLs to download are not set")
-        for count, total, filename, error_occured in remote.download_files(
-            urls_to_download, local_dir
-        ):
-            yield (count, total, filename, error_occured)
+        app.update_title("Beginning Sync")
+        app.progress_indeterminate()
 
-    def sync_file(self, remote_file) -> None:
-        """
-        Syncs the specified file with the server.
+        for remote_path in self.remote_config["paths"]:
+            # Bool to determine if path is only for startup
+            firstrun_only: bool = self.remote_config["paths"][remote_path][1]
+            # Local path relative to data folder
+            local_path_root: str = self.remote_config["paths"][remote_path][0]
 
-        Parameters:
-        - remote_file (str): The remote file to sync.
-            Options: "options", "servers"
+            logger.debug("Remote Path: %s, Local Path: %s, First Run Only: %s",
+                         remote_path, local_path_root, firstrun_only
+            )
 
-        Returns:
-        - None
-        """
-        local_filepath, remote_file_url = self._create_file_path(remote_file)
-        if remote_file_url is None:
-            logger.warning("Remote file '%s' is not set", remote_file)
-            return
-        server_file = remote.get_file_download(remote_file_url)
-        if server_file is None:
-            raise ValueError("Server file is not set")
+            if not SETTINGS.get_misc("first_start") and firstrun_only:
+                logger.debug("Skipping '%s' because it is only for first start", remote_path)
+                continue
 
-        # Remove the local file if it exists
-        if os.path.exists(local_filepath):
-            os.remove(local_filepath)
-            logger.info("Removed existing local file '%s'", local_filepath)
+            app.update_title(remote_path)
 
-        # Download the file from the server
-        remote.download(server_file, local_filepath)
+            # if its a file, download it
+            if not remote_path.endswith("/"):
+                app.update_item(f"Downloading: {remote_path}")
+
+                file_url = remote.get_file_url(self.remote_tree, remote_path)
+                if file_url is None:
+                    logger.warning("'%s' not found on the server", remote_path)
+                    continue
+
+                # Local path relative to data folder
+                local_path = self.context.work_dir / local_path_root
+
+                # Form directory path
+                local_path.parent.mkdir(parents=True, exist_ok=True)
+
+                # Delete the file if it exists
+                if local_path.exists():
+                    local_path.unlink()
+
+                remote.download(file_url, local_path)
+                continue
+
+            # if its a directory, download all files and sub folders in it
+            dir_paths = remote.get_dir_paths(self.remote_tree, remote_path)
+            len_all_paths = len(dir_paths)
+            if len_all_paths == 0:
+                logger.warning("No files found in '%s'", remote_path)
+                continue
+            total_downloaded = 0
+            app.reset_progress()
+            for remote_path_item in dir_paths:
+                app.update_item(f"Downloading: {remote_path_item}")
+                app.update_progress(total_downloaded / len_all_paths)
+
+                work_dir = self.context.work_dir
+                root = work_dir / local_path_root
+                root.mkdir(parents=True, exist_ok=True)
+                file_url = remote.get_file_url(self.remote_tree, remote_path_item)
+                if file_url is None:
+                    logger.warning("'%s' not found on the server", remote_path_item)
+                    continue
+
+                # Local path relative to data folder
+                local_path: Path = root / remote_path_item[len(remote_path):]
+
+                # If there is no file extension, it is a directory
+                if not local_path.suffix:
+                    local_path.mkdir(parents=True, exist_ok=True)
+                    logger.debug("Created directory: %s", local_path)
+                    continue
+
+                # Delete the file if it exists
+                if local_path.exists():
+                    local_path.unlink()
+                    logger.debug("Deleted existing file: %s", local_path)
+
+                remote.download(file_url, local_path)
