@@ -471,7 +471,7 @@ class MCManager:
                 local_path.parent.mkdir(parents=True, exist_ok=True)
 
                 # Delete the file if it exists
-                if local_path.exists():
+                if local_path.exists() and firstrun_only is True:
                     local_path.unlink()
 
                 remote.download(file_url, local_path)
@@ -506,9 +506,13 @@ class MCManager:
                     logger.debug("Created directory: %s", local_path)
                     continue
 
-                # Delete the file if it exists
-                if local_path.exists():
+                # Delete the file if it exists and is only for first start
+                if local_path.exists() and firstrun_only is True:
                     local_path.unlink()
                     logger.debug("Deleted existing file: %s", local_path)
+
+                # FIXME: Invalid files are not being removed yet
+                # FIXME: Add another index remotely that means if it should overwrite existing files
+                # FIXME: Zip downloads don't work!
 
                 remote.download(file_url, local_path)

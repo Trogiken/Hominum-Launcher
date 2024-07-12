@@ -20,6 +20,8 @@ import logging
 import base64
 import json
 import requests
+import os
+import tempfile
 import yaml
 from source import creds, exceptions
 
@@ -78,26 +80,44 @@ def download(url: str = None, save_path: str = None, chunk_size=8192) -> str | N
     if not url:
         return None
 
+    raw_temp_file = tempfile.NamedTemporaryFile(delete=False)  # pylint: disable=consider-using-with
+    temp_file = tempfile.NamedTemporaryFile(delete=False)  # pylint: disable=consider-using-with
+
     def _download_chunks():
         resp = get_request(url, stream=True)
+        resp.raise_for_status()
+
+        # write raw content to file
         for chunk in resp.iter_content(chunk_size=chunk_size):
             if chunk:
-                base64_bytes = json.loads(chunk.decode('utf-8'))["content"]
-                message_bytes = base64.b64decode(base64_bytes)
-                message_chunk = message_bytes.decode('utf-8')
-                yield message_chunk
+                raw_temp_file.write(chunk)
+        raw_temp_file.close()
+
+        # read file in chunks and decode base64
+        with open(raw_temp_file.name, "rb") as file:
+            for chunk in file.read().splitlines():
+                if chunk:
+                    base64_bytes = json.loads(chunk.decode('utf-8'))["content"]
+                    message_bytes = base64.b64decode(base64_bytes)
+                    message_chunk = message_bytes.decode('utf-8')
+                    temp_file.write(message_chunk.encode('utf-8'))
+
+        temp_file.close()
+        os.unlink(raw_temp_file.name)
+        logger.debug("Downloaded '%s' to '%s'", url, save_path)
+
     try:
-        message = ""
+        _download_chunks()
         if not save_path:
-            for chunk in _download_chunks():
-                message += chunk
+            with open(temp_file.name, "r", encoding="utf-8") as file:
+                message = file.read()
+            os.unlink(temp_file.name)  # Remove temp file after reading
             return message
-        with open(save_path, "wb") as file:
-            for chunk in _download_chunks():
-                file.write(chunk.encode('utf-8'))
-        logger.info("Downloaded '%s' to '%s'", url, save_path)
+        os.rename(temp_file.name, save_path)  # Move temp file to save path
+        return save_path
     except Exception as error:
         raise exceptions.DownloadError(f"Failed to download '{url}': {error}")
+
 
 def get_repo_tree() -> dict:
     """
