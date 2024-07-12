@@ -460,7 +460,7 @@ class MCManager:
 
             # if its a file, download it
             if not remote_path.endswith("/"):
-                app.update_item(f"Downloading: {remote_path}")
+                app.update_item(f"Preparing: {remote_path}")
 
                 file_url = remote.get_file_url(self.remote_tree, remote_path)
                 if file_url is None:
@@ -479,6 +479,7 @@ class MCManager:
                     logger.debug("Deleted existing file: %s", local_path)
 
                 if not local_path.exists():
+                    app.update_item(f"Downloading: {remote_path}")
                     remote.download(file_url, local_path)
                     app.update_progress(1)
                 else:
