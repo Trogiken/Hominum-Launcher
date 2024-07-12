@@ -518,6 +518,7 @@ class MCManager:
                     logger.debug("Deleted existing file: %s", local_path)
 
                 # FIXME: Invalid files are not being removed yet
+                # FIXME: Zip files are corrupted (They cannot be raw base64)
 
                 if not local_path.exists():
                     app.update_item(f"Downloading: {remote_path_item[len(remote_path):]}")
