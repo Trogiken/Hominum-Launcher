@@ -536,6 +536,7 @@ class MCManager:
 
                 if not local_save_path.exists():
                     app.update_item(remote_dir_item[len(remote_path):])
+                    logger.debug("Downloading '%s' to '%s'", remote_dir_item, local_save_path)  # FIXME: local save path is not correct
                     remote.download(file_url, local_save_path)
                     total_downloaded += 1
                     app.update_progress(total_downloaded / len_all_paths)
