@@ -104,26 +104,21 @@ def download(url: str = None, save_path: str = None, chunk_size=8192) -> str | N
                 if chunk:
                     try:
                         base64_bytes = json.loads(chunk.decode('utf-8'))["content"]
-                    except UnicodeDecodeError:
-                        return None
+                    except UnicodeDecodeError:  # Binary data
+                        base64_bytes = json.loads(chunk)["content"]
                     message_bytes = base64.b64decode(base64_bytes)
                     temp_file.write(message_bytes)
             temp_file_path = temp_file.name
-
         return temp_file_path
 
     try:
         raw_temp_path = _download_chunks()
-        temp_file_path = _decode_base64(raw_temp_path)
-        if not temp_file_path:  # If can't decode base64
-            file_path = raw_temp_path
-        else:
-            file_path = temp_file_path
+        file_path = _decode_base64(raw_temp_path)
 
         if not save_path:  # Return content
             with open(file_path, "r", encoding="utf-8") as file:
                 content = file.read()
-            os.remove(file_path)
+            os.unlink(file_path)
             return content
         os.rename(file_path, save_path)  # Move temp file to save path
         return save_path

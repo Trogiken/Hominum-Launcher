@@ -479,7 +479,7 @@ class MCManager:
                     logger.debug("Deleted existing file: %s", local_path)
 
                 if not local_path.exists():
-                    app.update_item(f"Downloading: {remote_path}")
+                    app.update_item("remote_path")
                     remote.download(file_url, local_path)
                     app.update_progress(1)
                 else:
@@ -519,10 +519,9 @@ class MCManager:
                     logger.debug("Deleted existing file: %s", local_path)
 
                 # FIXME: Invalid files are not being removed yet
-                # FIXME: Zip files are corrupted (They cannot be raw base64)
 
                 if not local_path.exists():
-                    app.update_item(f"Downloading: {remote_path_item[len(remote_path):]}")
+                    app.update_item(remote_path_item[len(remote_path):])
                     remote.download(file_url, local_path)
                     total_downloaded += 1
                     app.update_progress(total_downloaded / len_all_paths)
