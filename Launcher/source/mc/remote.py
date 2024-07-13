@@ -170,7 +170,7 @@ def get_file_url(tree: dict, path: str) -> dict:
 
 def get_dir_paths(tree: dict, dir_path: str) -> list:
     """
-    Retrieves a list of directory paths from the server.
+    Retrieves a list of all paths in the specified directory.
 
     Returns:
     - list: A list of directory paths.

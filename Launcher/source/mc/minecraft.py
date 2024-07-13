@@ -407,7 +407,7 @@ class MCManager:
         Parameters:
         - version (Version | FabricVersion | ForgeVersion): The version.
         - auth_session (MicrosoftAuthSession): The auth session to add to the version.
-        - watcher (Watcher): The watcher for PortableMC. Defaults to None.
+        - watcher (InstallWatcher): The watcher for PortableMC. Defaults to None.
 
         Returns:
         - Environment: The environment for PortableMC.
@@ -436,30 +436,28 @@ class MCManager:
         """
         logger.debug("app: %s", app)
 
+        # TODO: Test; removing files, adding files, excluding files/dirs, etc
+
         app.update_title("Beginning Sync")
         app.progress_indeterminate()
 
         for remote_path in self.remote_config["paths"]:
-            # Bool to determine if path is only for startup
-            firstrun_only: bool = self.remote_config["paths"][remote_path]["first_start_only"]
+            # Bool to determine if path is a directory
+            is_dir: bool = self.remote_config["paths"][remote_path]["is_dir"]
             # Local path relative to data folder
             local_path_root: str = self.remote_config["paths"][remote_path]["root"]
             # Whether or not to overwrite existing files
-            overwrite: bool = self.remote_config["paths"][remote_path]["overwrite_existing"]
+            overwrite: bool = self.remote_config["paths"][remote_path]["overwrite"]
 
-            logger.debug("Firstrun Only: %s, Local Path Root: %s, Overwrite: %s",
-                         firstrun_only, local_path_root, overwrite
+            logger.debug("Is Dir: %s, Local Path Root: %s, Overwrite: %s",
+                         is_dir, local_path_root, overwrite
             )
-
-            if not SETTINGS.get_misc("first_start") and firstrun_only:
-                logger.debug("Skipping '%s' because it is only for first start", remote_path)
-                continue
 
             app.update_title(remote_path)
             app.reset_progress()
 
-            # if its a file, download it
-            if not remote_path.endswith("/"):
+            # If its a file, download it
+            if not is_dir:
                 app.update_item(f"Preparing: {remote_path}")
 
                 file_url = remote.get_file_url(self.remote_tree, remote_path)
@@ -478,6 +476,7 @@ class MCManager:
                     local_path.unlink()
                     logger.debug("Deleted existing file: %s", local_path)
 
+                # Download the file if it doesn't exist
                 if not local_path.exists():
                     app.update_item("remote_path")
                     remote.download(file_url, local_path)
@@ -492,38 +491,53 @@ class MCManager:
             if len_all_paths == 0:
                 logger.warning("No files found in '%s'", remote_path)
                 continue
-            total_downloaded = 0
-            for remote_path_item in dir_paths:
-                app.update_item(f"Preparing: {remote_path_item[len(remote_path):]}")
 
-                work_dir = self.context.work_dir
-                root = work_dir / local_path_root
+            total_downloaded = 0
+            for remote_dir_item in dir_paths:
+                app.update_item(f"Preparing: {remote_dir_item[len(remote_path):]}")
+
+                exclude_list: None | list = self.remote_config["paths"][remote_path]["exclude"]
+                delete_others: bool = self.remote_config["paths"][remote_path]["delete_others"]
+
+                # Skip if path is in exclude list
+                if exclude_list:
+                    for item in exclude_list:
+                        if remote_path.startswith(item):
+                            logger.debug("Skipping '%s' because it is excluded", remote_path)
+                            continue
+
+                root = self.context.work_dir / local_path_root
                 root.mkdir(parents=True, exist_ok=True)
-                file_url = remote.get_file_url(self.remote_tree, remote_path_item)
+                file_url = remote.get_file_url(self.remote_tree, remote_dir_item)
                 if file_url is None:
-                    logger.warning("'%s' not found on the server", remote_path_item)
+                    logger.warning("'%s' not found on the server", remote_dir_item)
                     continue
 
                 # Local path relative to data folder
-                local_path: Path = root / remote_path_item[len(remote_path):]
+                local_save_path: Path = root / remote_dir_item[len(remote_path):]
 
                 # If there is no file extension, it is a directory
-                if not local_path.suffix:
-                    local_path.mkdir(parents=True, exist_ok=True)
-                    logger.debug("Created directory: %s", local_path)
+                if not local_save_path.suffix:
+                    local_save_path.mkdir(parents=True, exist_ok=True)
+                    logger.debug("Created directory: %s", local_save_path)
                     continue
 
+                # Delete other files in directory not on server
+                if delete_others:
+                    for local_file in root.iterdir():
+                        if local_file.is_file() and local_file.name not in dir_paths:
+                            local_file.unlink()
+                            logger.debug("Deleted file: %s", local_file)
+
                 # Delete the file if it exists and is only for first start
-                if overwrite and local_path.exists():
-                    local_path.unlink()
-                    logger.debug("Deleted existing file: %s", local_path)
+                if overwrite and local_save_path.exists():
+                    local_save_path.unlink()
+                    logger.debug("Deleted existing file: %s", local_save_path)
 
-                # FIXME: Invalid files are not being removed yet
-
-                if not local_path.exists():
-                    app.update_item(remote_path_item[len(remote_path):])
-                    remote.download(file_url, local_path)
+                if not local_save_path.exists():
+                    app.update_item(remote_dir_item[len(remote_path):])
+                    remote.download(file_url, local_save_path)
                     total_downloaded += 1
                     app.update_progress(total_downloaded / len_all_paths)
                 else:
-                    logger.debug("Skipping '%s' because it already exists", remote_path_item)
+                    logger.debug("Skipping '%s' because it already exists", remote_dir_item)

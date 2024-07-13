@@ -124,7 +124,6 @@ class InstallWindow(customtkinter.CTkToplevel):
 
         # Only set the user if no errors occurred
         if not self.errors_occurred:
-            SETTINGS.set_misc(first_start=False)
             SETTINGS.set_game(environment=self.environment)
             logger.info("Installation finished successfully")
         else:
