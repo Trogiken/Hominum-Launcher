@@ -19,9 +19,9 @@ Constants:
 import logging
 import base64
 import json
-import requests
-import os
 import tempfile
+import os
+import requests
 import yaml
 from source import creds, exceptions
 
