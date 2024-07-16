@@ -428,23 +428,28 @@ class MCManager:
         env.jvm_args.extend(args)
         return env
 
-    def _sync_file(self, app, remote_path: str, root_path: Path, overwrite: bool) -> None:
+    def _sync_file(self, remote_path: str, root_path: Path, overwrite: bool, app=None) -> bool:
         """
         Syncs the specified file with the server.
 
         Parameters:
-        - app: The app to update the GUI.
+        - app: The app to update the GUI. Defaults to None.
         - remote_path (str): The remote path.
         - root_path (Path): The root path to place the file.
         - overwrite (bool): Whether or not to overwrite existing files.
+
+        Returns:
+        - bool: Whether or not the file was downloaded.
         """
-        app.update_title(remote_path)
-        app.reset_progress()
+        if app:
+            app.update_title(remote_path)
+            app.reset_progress()
+            app.update_item(remote_path)
 
         file_url = remote.get_file_url(self.remote_tree, remote_path)
         if file_url is None:
             logger.warning("'%s' not found on the server", remote_path)
-            return
+            return False
 
         # Form directory path
         root_path.parent.mkdir(parents=True, exist_ok=True)
@@ -456,13 +461,14 @@ class MCManager:
 
         # Download the file if it doesn't exist
         if not root_path.exists():
-            app.update_item(remote_path)
             remote.download(file_url, root_path)
-            app.update_progress(1)
-        else:
-            logger.debug("Skipping '%s' because it already exists", remote_path)
+            if app:
+                app.update_progress(1)
+            return True
+        logger.debug("Skipping '%s' because it already exists", remote_path)
+        return False
 
-    def _sync_dir(self, app, remote_path: str, root_path: Path, overwrite: bool) -> None:
+    def _sync_dir(self, remote_path: str, root_path: Path, overwrite: bool, app) -> None:
         """
         Syncs the specified directory with the server.
 
@@ -513,29 +519,17 @@ class MCManager:
                     logger.debug("Skipping '%s' because it is in the exclude list", remote_dir_item)
                     continue
 
-            file_url = remote.get_file_url(self.remote_tree, remote_dir_item)
-            if file_url is None:
-                logger.warning("'%s' not found on the server", remote_dir_item)
-                continue
-
             # If there is no file extension, it is a directory
             if not local_save_path.suffix:
                 local_save_path.mkdir(parents=True, exist_ok=True)
                 logger.debug("Created directory: %s", local_save_path)
                 continue
 
-            # Delete the file if it exists and overwrite is True
-            if overwrite and local_save_path.exists():
-                local_save_path.unlink()
-                logger.debug("Deleted existing file: %s", local_save_path)
-
-            # Download the file if it doesn't exist
-            if not local_save_path.exists():
-                remote.download(file_url, local_save_path)
+            # Download the file
+            downloaded = self._sync_file(remote_dir_item, local_save_path, overwrite)
+            if downloaded:
                 total_downloaded += 1
-                app.update_progress(total_downloaded / len_all_paths)
-            else:
-                logger.debug("Skipping '%s' because it already exists", item_name)
+            app.update_progress(total_downloaded / len_all_paths)
 
     def sync(self, app) -> Generator[tuple, None, None]:
         """
@@ -565,7 +559,7 @@ class MCManager:
             )
 
             if not is_dir:  # If remote path is a file
-                self._sync_file(app, remote_path, local_path_root, overwrite)
+                self._sync_file(remote_path, local_path_root, overwrite, app=app)
                 continue
 
-            self._sync_dir(app, remote_path, local_path_root, overwrite)
+            self._sync_dir(remote_path, local_path_root, overwrite, app=app)
