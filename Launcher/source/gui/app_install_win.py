@@ -46,7 +46,7 @@ class InstallWindow(customtkinter.CTkToplevel):
                 title="Version Error",
                 message="An error occurred while getting the version. Please try again.",
             )
-            self.after(100, self.destroy)
+            self.version = None
 
         self.environment = None
         self.errors_occurred = False
@@ -59,7 +59,6 @@ class InstallWindow(customtkinter.CTkToplevel):
                 title="Authentication Error",
                 message="No authentication session found. Please login."
             )
-            self.after(100, self.destroy)
 
         # Title label
         self.title_label = customtkinter.CTkLabel(
@@ -78,7 +77,10 @@ class InstallWindow(customtkinter.CTkToplevel):
         self.progress_bar.grid(row=2, column=0, columnspan=2, padx=20, pady=(0, 20), sticky="ew")
         self.progress_bar.start()
 
-        self.after(100, self._install)
+        if self.version and self.session:
+            self.after(100, self._install)
+        else:
+            self.after(100, self.destroy)
 
         logger.debug("Install window created")
 
