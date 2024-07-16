@@ -513,7 +513,6 @@ class MCManager:
                     logger.debug("Skipping '%s' because it is in the exclude list", remote_dir_item)
                     continue
 
-            root_path.mkdir(parents=True, exist_ok=True)
             file_url = remote.get_file_url(self.remote_tree, remote_dir_item)
             if file_url is None:
                 logger.warning("'%s' not found on the server", remote_dir_item)
@@ -546,8 +545,6 @@ class MCManager:
         - app: The app to update the GUI.
         """
         logger.debug("app: %s", app)
-
-        # TODO: Test; removing files, adding files, excluding files/dirs, etc
 
         app.update_title("Beginning Sync")
         app.progress_indeterminate()
