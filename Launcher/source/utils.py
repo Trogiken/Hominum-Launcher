@@ -75,12 +75,6 @@ class GameSettings:
     environment: Environment = None
 
 
-@dataclass
-class MiscSettings:
-    """Stores the settings for miscellaneous things."""
-    first_start: bool = True
-
-
 class Settings:
     """
     A class that represents the settings for the application.
@@ -95,11 +89,9 @@ class Settings:
     - get_gui: Retrieves a specific GUI setting.
     - get_user: Retrieves a specific user setting.
     - get_game: Retrieves a specific game setting.
-    - get_misc: Retrieves a specific misc setting.
     - set_gui: Updates the GUI settings.
     - set_user: Updates the user settings.
     - set_game: Updates the game settings.
-    - set_misc: Updates the misc settings.
     """
 
     def __init__(self):
@@ -120,12 +112,10 @@ class Settings:
                 self._gui = data.get('gui', GUISettings())
                 self._user = data.get('user', UserSettings())
                 self._game = data.get('game', GameSettings())
-                self._misc = data.get('misc', MiscSettings())
         except FileNotFoundError:
             self._gui = GUISettings()
             self._user = UserSettings()
             self._game = GameSettings()
-            self._misc = MiscSettings()
             self.save()
             logger.warning("Settings file not found. Default settings used.")
 
@@ -150,7 +140,6 @@ class Settings:
         self._gui = GUISettings()
         self._user = UserSettings()
         self._game = GameSettings()
-        self._misc = MiscSettings()
         self.save()
         logger.debug("Settings reset to default values.")
 
@@ -223,21 +212,6 @@ class Settings:
         logger.debug("Game setting '%s' retrieved value '%s'", key, value)
         return value
 
-    def get_misc(self, key: str) -> any:
-        """
-        Retrieves a specific misc setting.
-
-        Parameters:
-        - key (str): The key of the setting to retrieve.
-
-        Returns:
-        - Any: The value of the setting.
-        """
-        self.load()
-        value = getattr(self._misc, key)
-        logger.debug("Misc setting '%s' retrieved value '%s'", key, value)
-        return value
-
     def set_gui(self, **kwargs) -> None:
         """
         Updates the GUI settings.
@@ -273,19 +247,6 @@ class Settings:
             setattr(self._game, key, value)
             logger.debug("Game setting '%s' updated to value '%s'", key, value)
         self.save()
-
-    def set_misc(self, **kwargs) -> None:
-        """
-        Updates the misc settings.
-
-        Parameters:
-        - **kwargs: Keyword arguments representing the settings to update.
-        """
-        for key, value in kwargs.items():
-            setattr(self._misc, key, value)
-            logger.debug("Misc setting '%s' updated to value '%s'", key, value)
-        self.save()
-
 
 
 class  WrappingLabel(customtkinter.CTkLabel):

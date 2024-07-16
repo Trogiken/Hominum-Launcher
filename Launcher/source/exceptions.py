@@ -15,6 +15,10 @@ class VersionInstallTimeout(Exception):
     """Raised when a version failed to install"""
 
 
+class RemoteError(Exception):
+    """Raised when an error occurs with the remote server."""
+
+
 class GlobalKill(Exception):
     """Raised when a global kill is requested."""
     def __init__(self, message: str = "Global kill requested"):

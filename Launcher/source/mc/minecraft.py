@@ -10,6 +10,8 @@ Classes:
 import logging
 import time
 import os
+import shutil
+from pathlib import Path
 from subprocess import Popen
 from typing import Generator, List
 from source import exceptions, utils, path
@@ -257,7 +259,13 @@ class MCManager:
         logger.debug("Initializing MCManager")
 
         self.context = context
-        self.remote_config = remote.get_config()
+        self.remote_tree = remote.get_repo_tree()
+        self.remote_config = remote.get_config(self.remote_tree)
+
+        if self.remote_config is None:
+            raise exceptions.RemoteError("Remote config not found")
+        if self.remote_tree is None:
+            raise exceptions.RemoteError("Remote tree not found")
 
         self.server_ip: str = self.remote_config.get("startup", {}).get("server_ip", "")
         self.game_selected: str = self.remote_config.get("startup", {}).get("game", "")
@@ -268,72 +276,6 @@ class MCManager:
         logger.debug("Game Selected: %s", self.game_selected)
 
         logger.debug("MCManager initialized")
-
-    def _create_dir_path(self, remote_dir: str) -> tuple:
-        """
-        Creates the local and remote directory paths.
-
-        Parameters:
-        - remote_dir (str): The remote directory to sync.
-            Options: "config", "mods", "resourcepacks", "shaderpacks"
-
-        Exceptions:
-        - ValueError: If the remote directory is invalid.
-        - ValueError: If the remote directory URL is not set.
-
-        Returns:
-        - tuple: The local directory path and the remote directory URL.
-        """
-        if self.remote_config is None:
-            raise ValueError("Remote config is not set")
-        if remote_dir not in self.remote_config["urls"]:
-            raise ValueError(f"Invalid remote directory: {remote}")
-        if remote_dir == "config":
-            local_dir = self.context.work_dir / "config"
-        elif remote_dir == "mods":
-            local_dir = self.context.work_dir / "mods"
-        elif remote_dir == "resourcepacks":
-            local_dir = self.context.work_dir / "resourcepacks"
-        elif remote_dir == "shaderpacks":
-            local_dir = self.context.work_dir / "shaderpacks"
-        else:
-            raise ValueError(f"Unknown valid remote directory: {remote}")
-
-        local_dir.mkdir(parents=True, exist_ok=True)
-        remote_dir_url = self.remote_config["urls"][remote_dir]
-        logger.debug("Remote directory URL: %s", remote_dir_url)
-
-        return local_dir, remote_dir_url
-
-    def _create_file_path(self, remote_file: str) -> tuple:
-        """
-        Creates the local and remote file paths.
-        
-        Parameters:
-        - remote_file (str): The remote file to sync.
-            Options: "options", "servers"
-
-        Exceptions:
-        - ValueError: If the remote file is invalid.
-        - ValueError: If the remote file URL is not set.
-
-        Returns:
-        - tuple: The local file path and the remote file URL.
-        """
-        if remote_file not in self.remote_config["urls"]:
-            raise ValueError(f"Invalid remote file: {remote_file}")
-        if remote_file == "options":
-            local_filepath = self.context.work_dir / "options.txt"
-        elif remote_file == "servers":
-            local_filepath = self.context.work_dir / "servers.dat"
-        else:
-            raise ValueError(f"Unknown valid remote file: {remote_file}")
-
-        os.makedirs(os.path.dirname(local_filepath), exist_ok=True)
-        remote_file_url = self.remote_config["urls"][remote_file]
-        logger.debug("Remote file URL: %s", remote_file_url)
-
-        return local_filepath, remote_file_url
 
     def create_vanilla_version(self, mc_version: str=None) -> Version:
         """
@@ -424,9 +366,6 @@ class MCManager:
         Version | FabricVersion | ForgeVersion: The version set by the server
         """
         logger.debug("autojoin: %s", autojoin)
-        if self.remote_config is None:
-            raise ValueError("Remote config is not set")
-
         games = self.remote_config["games"]
         if self.game_selected not in games:
             raise ValueError(f"Invalid game selected: {self.game_selected}")
@@ -469,7 +408,7 @@ class MCManager:
         Parameters:
         - version (Version | FabricVersion | ForgeVersion): The version.
         - auth_session (MicrosoftAuthSession): The auth session to add to the version.
-        - watcher (Watcher): The watcher for PortableMC. Defaults to None.
+        - watcher (InstallWatcher): The watcher for PortableMC. Defaults to None.
 
         Returns:
         - Environment: The environment for PortableMC.
@@ -489,66 +428,138 @@ class MCManager:
         env.jvm_args.extend(args)
         return env
 
-    def sync_dir(self, remote_dir: str) -> Generator[tuple, None, None]:
-        """
-        Syncs mods with the server.
-
-        Parameters:
-        - remote_dir (str): The remote directory to sync.
-            Options: "config", "mods", "resourcepacks", "shaderpacks"
-
-        Exceptions:
-        - Exception: If any other error occurs.
-
-        Returns:
-        - Generator[tuple, None, None]: A generator that yields the progress of the sync.
-        """
-        local_dir, remote_dir_url = self._create_dir_path(remote_dir)
-        if remote_dir_url is None:
-            logger.warning("Remote directory '%s' is not set", remote_dir)
-            return
-        server_mods = remote.get_filenames(remote_dir_url)
-        if server_mods is None:
-            raise ValueError("Server filenames are not set")
-        # Remove invalid mods
-        for file in os.listdir(local_dir):
-            if file not in server_mods:
-                file_path = os.path.join(local_dir, file)
-                os.remove(file_path)
-                logger.info("Invalid mod '%s' removed", file_path)
-
-        # Download mods
-        urls_to_download = remote.get_file_downloads(remote_dir_url)
-        if urls_to_download is None:
-            raise ValueError("URLs to download are not set")
-        for count, total, filename, error_occured in remote.download_files(
-            urls_to_download, local_dir
-        ):
-            yield (count, total, filename, error_occured)
-
-    def sync_file(self, remote_file) -> None:
+    def _sync_file(self, remote_path: str, root_path: Path, overwrite: bool, app=None) -> bool:
         """
         Syncs the specified file with the server.
 
         Parameters:
-        - remote_file (str): The remote file to sync.
-            Options: "options", "servers"
+        - app: The app to update the GUI. Defaults to None.
+        - remote_path (str): The remote path.
+        - root_path (Path): The root path to place the file.
+        - overwrite (bool): Whether or not to overwrite existing files.
 
         Returns:
-        - None
+        - bool: Whether or not the file was downloaded.
         """
-        local_filepath, remote_file_url = self._create_file_path(remote_file)
-        if remote_file_url is None:
-            logger.warning("Remote file '%s' is not set", remote_file)
-            return
-        server_file = remote.get_file_download(remote_file_url)
-        if server_file is None:
-            raise ValueError("Server file is not set")
+        if app:
+            app.update_title(remote_path)
+            app.reset_progress()
+            app.update_item(remote_path)
 
-        # Remove the local file if it exists
-        if os.path.exists(local_filepath):
-            os.remove(local_filepath)
-            logger.info("Removed existing local file '%s'", local_filepath)
+        file_url = remote.get_file_url(self.remote_tree, remote_path)
+        if file_url is None:
+            logger.warning("'%s' not found on the server", remote_path)
+            return False
 
-        # Download the file from the server
-        remote.download(server_file, local_filepath)
+        # Form directory path
+        root_path.parent.mkdir(parents=True, exist_ok=True)
+
+        # Delete the file if it exists and overwrite is True
+        if overwrite and root_path.exists():
+            root_path.unlink()
+            logger.debug("Deleted existing file: %s", root_path)
+
+        # Download the file if it doesn't exist
+        if not root_path.exists():
+            remote.download(file_url, root_path)
+            if app:
+                app.update_progress(1)
+            return True
+        logger.debug("Skipping '%s' because it already exists", remote_path)
+        return False
+
+    def _sync_dir(self, remote_path: str, root_path: Path, overwrite: bool, app) -> None:
+        """
+        Syncs the specified directory with the server.
+
+        Parameters:
+        - app: The app to update the GUI.
+        - remote_path (str): The remote path.
+        - root_path (Path): The root path to place files.
+        - overwrite (bool): Whether or not to overwrite existing files.
+        """
+        app.update_title(remote_path)
+        app.reset_progress()
+
+        dir_paths = remote.get_dir_paths(self.remote_tree, remote_path)
+        len_all_paths = len(dir_paths)
+
+        exclude_list: None | list = self.remote_config["paths"][remote_path]["exclude"]
+        delete_others: bool = self.remote_config["paths"][remote_path]["delete_others"]
+        logger.debug("Exclude List: %s, Delete Others: %s", exclude_list, delete_others)
+
+        # Delete other files
+        if delete_others:
+            for local_file in root_path.rglob("*"):  # Recursively iterate over all files
+                # If the file name is not in any of the remote paths, delete it
+                if local_file.is_file() and all(
+                    local_file.name not in remote_dir_item for remote_dir_item in dir_paths
+                    ):
+                    local_file.unlink()
+                    logger.debug("Deleted unknown file: %s", local_file.name)
+
+        total_downloaded = 0
+        for remote_dir_item in dir_paths:
+            # Remove the remote path from the item
+            item_name = remote_dir_item[len(remote_path):].lstrip("/")
+            # Local path relative to data folder
+            local_save_path: Path = root_path / item_name
+            logger.debug("Local Save Path: %s", local_save_path)
+            app.update_item(item_name)
+
+            # Skip if path is in exclude list
+            if exclude_list:
+                if any(exclude_item in remote_dir_item for exclude_item in exclude_list):
+                    if local_save_path.exists():
+                        if local_save_path.is_dir():
+                            shutil.rmtree(local_save_path)
+                        else:
+                            local_save_path.unlink()
+                        logger.debug("Deleted excluded file: %s", local_save_path)
+                    logger.debug("Skipping '%s' because it is in the exclude list", remote_dir_item)
+                    continue
+
+            # If there is no file extension, it is a directory
+            if not local_save_path.suffix:
+                local_save_path.mkdir(parents=True, exist_ok=True)
+                logger.debug("Created directory: %s", local_save_path)
+                continue
+
+            # Download the file
+            downloaded = self._sync_file(remote_dir_item, local_save_path, overwrite)
+            if downloaded:
+                total_downloaded += 1
+            app.update_progress(total_downloaded / len_all_paths)
+
+    def sync(self, app) -> Generator[tuple, None, None]:
+        """
+        Syncs the local data folder with the server.
+
+        Parameters:
+        - app: The app to update the GUI.
+        """
+        logger.debug("app: %s", app)
+
+        app.update_title("Beginning Sync")
+        app.progress_indeterminate()
+
+        for remote_path in self.remote_config["paths"]:
+            # Bool to determine if path is a directory
+            is_dir: bool = self.remote_config["paths"][remote_path]["is_dir"]
+            # Local path relative to data folder
+            root: str = self.remote_config["paths"][remote_path]["root"]
+            # Whether or not to overwrite existing files
+            overwrite: bool = self.remote_config["paths"][remote_path]["overwrite"]
+
+            local_path_root = self.context.work_dir / root
+
+            logger.debug(
+                "Remote Path: %s, Is Dir: %s, Root: %s, Local Path Root: %s, Overwrite: %s",
+                remote_path, is_dir, root, local_path_root, overwrite
+            )
+
+            if not is_dir:  # If remote path is a file
+                self._sync_file(remote_path, local_path_root, overwrite, app=app)
+                continue
+
+            self._sync_dir(remote_path, local_path_root, overwrite, app=app)

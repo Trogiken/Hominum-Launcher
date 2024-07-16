@@ -23,7 +23,6 @@ from source.gui.app_install_win import InstallWindow
 from source.gui.app_run_win import RunWindow
 from source  import utils
 
-# TODO: Check if the splash screen works on all target OS's
 if '_PYIBoot_SPLASH' in os.environ and importlib.util.find_spec("pyi_splash"):
     try:
         import pyi_splash  # type: ignore
@@ -116,9 +115,12 @@ class LeftFrame(customtkinter.CTkFrame):
 
 class RightFrame(customtkinter.CTkFrame):
     """This frame contains the user dropdown and functions."""
-    def __init__(self, master):
+    def __init__(self, master, mcmanager: MCManager=None):
         super().__init__(master)
         logger.debug("Creating right frame")
+
+        if mcmanager is None:
+            raise ValueError("MCManager object is required")
 
         self.login_window = None
         self.grid_columnconfigure(0, weight=1)
@@ -131,6 +133,9 @@ class RightFrame(customtkinter.CTkFrame):
             )
             username = self.auth_handler.get_username()
             if username:
+                altnames: dict = mcmanager.remote_config.get("altnames", {})
+                if username in altnames:
+                    username = altnames[username]
                 self.user_menu_var = customtkinter.StringVar(value=username)
                 user_menu_values = ["Logout"]
             else:
@@ -246,14 +251,15 @@ class RightFrame(customtkinter.CTkFrame):
 
 class ScrollableFrame(customtkinter.CTkScrollableFrame):
     """A frame that contains the bulletin."""
-    def __init__(self, master):
+    def __init__(self, master, mcmanager: MCManager=None):
         super().__init__(master)
         logger.debug("Creating scrollable frame")
 
-        self.mc = MCManager(context=path.CONTEXT)
+        if mcmanager is None:
+            raise ValueError("MCManager object is required")
 
         # Parse the bulletin config and create the bulletin
-        bulletin_config: dict = self.mc.remote_config.get("bulletin", None)
+        bulletin_config: dict = mcmanager.remote_config.get("bulletin", None)
         if not bulletin_config:
             self.columnconfigure(0, weight=1)
             self.rowconfigure(0, weight=1)
@@ -303,7 +309,7 @@ class ScrollableFrame(customtkinter.CTkScrollableFrame):
 
 class CenterFrame(customtkinter.CTkFrame):
     """This frame contains the bulletin."""
-    def __init__(self, master):
+    def __init__(self, master, mcmanager: MCManager=None):
         super().__init__(master)
         logger.debug("Creating center frame")
 
@@ -317,7 +323,7 @@ class CenterFrame(customtkinter.CTkFrame):
         self.title_label.grid(row=0, column=0, padx=20, pady=(20, 0), sticky="n")
 
         # Scrollable Frame
-        self.scrollable_frame = ScrollableFrame(self)
+        self.scrollable_frame = ScrollableFrame(self, mcmanager=mcmanager)
         self.scrollable_frame.grid(row=1, column=0, padx=20, pady=20, sticky="nsew")
 
         logger.debug("Center frame created")
@@ -338,7 +344,9 @@ class App(customtkinter.CTk):
 
         logger.debug("Creating main window")
 
-        self.title(path.PROGRAM_NAME)  # Minimize/Maximize functionality relies on this name
+        self.mc = MCManager(context=path.CONTEXT)
+
+        self.title(path.PROGRAM_NAME)
         geom_length, geom_height = SETTINGS.get_gui("main_window_geometry")
         min_length, min_height = SETTINGS.get_gui("main_window_min_size")
         self.geometry(f"{geom_length}x{geom_height}")
@@ -361,14 +369,14 @@ class App(customtkinter.CTk):
             pyi_splash.update_text("Loading Right Frame")
             logger.debug("Updated splash text")
             sleep(.25)
-        self.right_frame = RightFrame(self)
+        self.right_frame = RightFrame(self, mcmanager=self.mc)
         self.right_frame.grid(row=0, column=2, padx=(0, 10), pady=10, sticky="nse")
 
         if SPLASH_FOUND:
             pyi_splash.update_text("Loading Center Frame")
             logger.debug("Updated splash text")
             sleep(.25)
-        self.center_frame = CenterFrame(self)
+        self.center_frame = CenterFrame(self, mcmanager=self.mc)
         self.center_frame.grid(row=0, column=1, padx=10, pady=10, sticky="nsew")
 
         logger.debug("Main window created")
