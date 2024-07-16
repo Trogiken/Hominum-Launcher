@@ -10,6 +10,7 @@ Classes:
 import logging
 import time
 import os
+import shutil
 from pathlib import Path
 from subprocess import Popen
 from typing import Generator, List
@@ -477,7 +478,6 @@ class MCManager:
         dir_paths = remote.get_dir_paths(self.remote_tree, remote_path)
         len_all_paths = len(dir_paths)
 
-        # TODO: Make sure exclude lists delete the excluded files/dirs if they already exist
         exclude_list: None | list = self.remote_config["paths"][remote_path]["exclude"]
         delete_others: bool = self.remote_config["paths"][remote_path]["delete_others"]
         logger.debug("Exclude List: %s, Delete Others: %s", exclude_list, delete_others)
@@ -496,24 +496,28 @@ class MCManager:
         for remote_dir_item in dir_paths:
             # Remove the remote path from the item
             item_name = remote_dir_item[len(remote_path):].lstrip("/")
+            # Local path relative to data folder
+            local_save_path: Path = root_path / item_name
+            logger.debug("Local Save Path: %s", local_save_path)
             app.update_item(item_name)
 
             # Skip if path is in exclude list
             if exclude_list:
-                for item in exclude_list:  # FIXME: This only checks remote path, not remote_dir_item, making this whole block useless
-                    if remote_path.startswith(item):
-                        logger.debug("Skipping '%s' because it is excluded", remote_path)
-                        continue
+                if any(exclude_item in remote_dir_item for exclude_item in exclude_list):
+                    if local_save_path.exists():
+                        if local_save_path.is_dir():
+                            shutil.rmtree(local_save_path)
+                        else:
+                            local_save_path.unlink()
+                        logger.debug("Deleted excluded file: %s", local_save_path)
+                    logger.debug("Skipping '%s' because it is in the exclude list", remote_dir_item)
+                    continue
 
             root_path.mkdir(parents=True, exist_ok=True)
             file_url = remote.get_file_url(self.remote_tree, remote_dir_item)
             if file_url is None:
                 logger.warning("'%s' not found on the server", remote_dir_item)
                 continue
-
-            # Local path relative to data folder
-            local_save_path: Path = root_path / item_name
-            logger.debug("Local Save Path: %s", local_save_path)
 
             # If there is no file extension, it is a directory
             if not local_save_path.suffix:
