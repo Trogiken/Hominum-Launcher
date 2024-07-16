@@ -448,7 +448,7 @@ class MCManager:
         # Form directory path
         root_path.parent.mkdir(parents=True, exist_ok=True)
 
-        # Delete the file if it exists
+        # Delete the file if it exists and overwrite is True
         if overwrite and root_path.exists():
             root_path.unlink()
             logger.debug("Deleted existing file: %s", root_path)
@@ -484,9 +484,21 @@ class MCManager:
         delete_others: bool = self.remote_config["paths"][remote_path]["delete_others"]
         logger.debug("Exclude List: %s, Delete Others: %s", exclude_list, delete_others)
 
+        # Delete other files
+        if delete_others:
+            for local_file in root_path.rglob("*"):  # Recursively iterate over all files
+                # If the file name is not in any of the remote paths, delete it
+                if local_file.is_file() and all(
+                    local_file.name not in remote_dir_item for remote_dir_item in dir_paths
+                    ):
+                    local_file.unlink()
+                    logger.debug("Deleted unknown file: %s", local_file.name)
+
         total_downloaded = 0
         for remote_dir_item in dir_paths:
-            app.update_item(f"Preparing: {remote_dir_item[len(remote_path):]}")
+            # Remove the remote path from the item
+            item_name = remote_dir_item[len(remote_path):].lstrip("/")
+            app.update_item(item_name)
 
             # Skip if path is in exclude list
             if exclude_list:
@@ -502,7 +514,8 @@ class MCManager:
                 continue
 
             # Local path relative to data folder
-            local_save_path: Path = root_path / remote_dir_item[len(remote_path):]
+            local_save_path: Path = root_path / item_name
+            logger.debug("Local Save Path: %s", local_save_path)
 
             # If there is no file extension, it is a directory
             if not local_save_path.suffix:
@@ -510,26 +523,18 @@ class MCManager:
                 logger.debug("Created directory: %s", local_save_path)
                 continue
 
-            # Delete other files in directory not on server
-            if delete_others:
-                for local_file in root_path.iterdir():  # FIXME: This doesn't check in sub directories
-                    if local_file.is_file() and local_file.name not in dir_paths:
-                        local_file.unlink()
-                        logger.debug("Deleted file: %s", local_file)
-
-            # Delete the file if it exists
+            # Delete the file if it exists and overwrite is True
             if overwrite and local_save_path.exists():
                 local_save_path.unlink()
                 logger.debug("Deleted existing file: %s", local_save_path)
 
             # Download the file if it doesn't exist
             if not local_save_path.exists():
-                app.update_item(remote_dir_item)
                 remote.download(file_url, local_save_path)
                 total_downloaded += 1
                 app.update_progress(total_downloaded / len_all_paths)
             else:
-                logger.debug("Skipping '%s' because it already exists", remote_dir_item)
+                logger.debug("Skipping '%s' because it already exists", item_name)
 
     def sync(self, app) -> Generator[tuple, None, None]:
         """
