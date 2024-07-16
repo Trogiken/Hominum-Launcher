@@ -476,10 +476,8 @@ class MCManager:
 
         dir_paths = remote.get_dir_paths(self.remote_tree, remote_path)
         len_all_paths = len(dir_paths)
-        if len_all_paths == 0:
-            logger.warning("No files found in '%s'", remote_path)
-            return
 
+        # TODO: Make sure exlude lists delete the excluded files/dirs if they already exist
         exclude_list: None | list = self.remote_config["paths"][remote_path]["exclude"]
         delete_others: bool = self.remote_config["paths"][remote_path]["delete_others"]
         logger.debug("Exclude List: %s, Delete Others: %s", exclude_list, delete_others)
