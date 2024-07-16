@@ -427,6 +427,110 @@ class MCManager:
         env.jvm_args.extend(args)
         return env
 
+    def _sync_file(self, app, remote_path: str, root_path: Path, overwrite: bool) -> None:
+        """
+        Syncs the specified file with the server.
+
+        Parameters:
+        - app: The app to update the GUI.
+        - remote_path (str): The remote path.
+        - root_path (Path): The root path to place the file.
+        - overwrite (bool): Whether or not to overwrite existing files.
+        """
+        app.update_title(remote_path)
+        app.reset_progress()
+
+        file_url = remote.get_file_url(self.remote_tree, remote_path)
+        if file_url is None:
+            logger.warning("'%s' not found on the server", remote_path)
+            return
+
+        # Form directory path
+        root_path.parent.mkdir(parents=True, exist_ok=True)
+
+        # Delete the file if it exists
+        if overwrite and root_path.exists():
+            root_path.unlink()
+            logger.debug("Deleted existing file: %s", root_path)
+
+        # Download the file if it doesn't exist
+        if not root_path.exists():
+            app.update_item(remote_path)
+            remote.download(file_url, root_path)
+            app.update_progress(1)
+        else:
+            logger.debug("Skipping '%s' because it already exists", remote_path)
+
+    def _sync_dir(self, app, remote_path: str, root_path: Path, overwrite: bool) -> None:
+        """
+        Syncs the specified directory with the server.
+
+        Parameters:
+        - app: The app to update the GUI.
+        - remote_path (str): The remote path.
+        - root_path (Path): The root path to place files.
+        - overwrite (bool): Whether or not to overwrite existing files.
+        """
+        app.update_title(remote_path)
+        app.reset_progress()
+
+        dir_paths = remote.get_dir_paths(self.remote_tree, remote_path)
+        len_all_paths = len(dir_paths)
+        if len_all_paths == 0:
+            logger.warning("No files found in '%s'", remote_path)
+            return
+
+        exclude_list: None | list = self.remote_config["paths"][remote_path]["exclude"]
+        delete_others: bool = self.remote_config["paths"][remote_path]["delete_others"]
+        logger.debug("Exclude List: %s, Delete Others: %s", exclude_list, delete_others)
+
+        total_downloaded = 0
+        for remote_dir_item in dir_paths:
+            app.update_item(f"Preparing: {remote_dir_item[len(remote_path):]}")
+
+            # Skip if path is in exclude list
+            if exclude_list:
+                for item in exclude_list:
+                    if remote_path.startswith(item):
+                        logger.debug("Skipping '%s' because it is excluded", remote_path)
+                        continue
+
+            root_path.mkdir(parents=True, exist_ok=True)
+            file_url = remote.get_file_url(self.remote_tree, remote_dir_item)
+            if file_url is None:
+                logger.warning("'%s' not found on the server", remote_dir_item)
+                continue
+
+            # Local path relative to data folder
+            local_save_path: Path = root_path / remote_dir_item[len(remote_path):]
+
+            # If there is no file extension, it is a directory
+            if not local_save_path.suffix:
+                local_save_path.mkdir(parents=True, exist_ok=True)
+                logger.debug("Created directory: %s", local_save_path)
+                continue
+
+            # Delete other files in directory not on server
+            if delete_others:
+                for local_file in root_path.iterdir():  # FIXME: This doesn't check in sub directories
+                    if local_file.is_file() and local_file.name not in dir_paths:
+                        local_file.unlink()
+                        logger.debug("Deleted file: %s", local_file)
+
+            # Delete the file if it exists
+            if overwrite and local_save_path.exists():
+                local_save_path.unlink()
+                logger.debug("Deleted existing file: %s", local_save_path)
+
+            # Download the file if it doesn't exist
+            if not local_save_path.exists():
+                app.update_item(remote_dir_item)
+                remote.download(file_url, local_save_path)
+                total_downloaded += 1
+                app.update_progress(total_downloaded / len_all_paths)
+            else:
+                logger.debug("Skipping '%s' because it already exists", remote_dir_item)
+
     def sync(self, app) -> Generator[tuple, None, None]:
         """
         Syncs the local data folder with the server.
@@ -445,100 +549,19 @@ class MCManager:
             # Bool to determine if path is a directory
             is_dir: bool = self.remote_config["paths"][remote_path]["is_dir"]
             # Local path relative to data folder
-            local_path_root: str = self.remote_config["paths"][remote_path]["root"]
+            root: str = self.remote_config["paths"][remote_path]["root"]
             # Whether or not to overwrite existing files
             overwrite: bool = self.remote_config["paths"][remote_path]["overwrite"]
 
-            logger.debug("Is Dir: %s, Local Path Root: %s, Overwrite: %s",
-                         is_dir, local_path_root, overwrite
+            local_path_root = self.context.work_dir / root
+
+            logger.debug(
+                "Remote Path: %s, Is Dir: %s, Root: %s, Local Path Root: %s, Overwrite: %s",
+                remote_path, is_dir, root, local_path_root, overwrite
             )
 
-            app.update_title(remote_path)
-            app.reset_progress()
-
-            # If its a file, download it
-            if not is_dir:
-                app.update_item(f"Preparing: {remote_path}")
-
-                file_url = remote.get_file_url(self.remote_tree, remote_path)
-                if file_url is None:
-                    logger.warning("'%s' not found on the server", remote_path)
-                    continue
-
-                # Local path relative to data folder
-                local_path = self.context.work_dir / local_path_root
-
-                # Form directory path
-                local_path.parent.mkdir(parents=True, exist_ok=True)
-
-                # Delete the file if it exists
-                if overwrite and local_path.exists():
-                    local_path.unlink()
-                    logger.debug("Deleted existing file: %s", local_path)
-
-                # Download the file if it doesn't exist
-                if not local_path.exists():
-                    app.update_item("remote_path")
-                    remote.download(file_url, local_path)
-                    app.update_progress(1)
-                else:
-                    logger.debug("Skipping '%s' because it already exists", remote_path)
+            if not is_dir:  # If remote path is a file
+                self._sync_file(app, remote_path, local_path_root, overwrite)
                 continue
 
-            # if its a directory, download all files and sub folders in it
-            dir_paths = remote.get_dir_paths(self.remote_tree, remote_path)
-            len_all_paths = len(dir_paths)
-            if len_all_paths == 0:
-                logger.warning("No files found in '%s'", remote_path)
-                continue
-
-            total_downloaded = 0
-            for remote_dir_item in dir_paths:
-                app.update_item(f"Preparing: {remote_dir_item[len(remote_path):]}")
-
-                exclude_list: None | list = self.remote_config["paths"][remote_path]["exclude"]
-                delete_others: bool = self.remote_config["paths"][remote_path]["delete_others"]
-
-                # Skip if path is in exclude list
-                if exclude_list:
-                    for item in exclude_list:
-                        if remote_path.startswith(item):
-                            logger.debug("Skipping '%s' because it is excluded", remote_path)
-                            continue
-
-                root = self.context.work_dir / local_path_root
-                root.mkdir(parents=True, exist_ok=True)
-                file_url = remote.get_file_url(self.remote_tree, remote_dir_item)
-                if file_url is None:
-                    logger.warning("'%s' not found on the server", remote_dir_item)
-                    continue
-
-                # Local path relative to data folder
-                local_save_path: Path = root / remote_dir_item[len(remote_path):]
-
-                # If there is no file extension, it is a directory
-                if not local_save_path.suffix:
-                    local_save_path.mkdir(parents=True, exist_ok=True)
-                    logger.debug("Created directory: %s", local_save_path)
-                    continue
-
-                # Delete other files in directory not on server
-                if delete_others:
-                    for local_file in root.iterdir():
-                        if local_file.is_file() and local_file.name not in dir_paths:
-                            local_file.unlink()
-                            logger.debug("Deleted file: %s", local_file)
-
-                # Delete the file if it exists and is only for first start
-                if overwrite and local_save_path.exists():
-                    local_save_path.unlink()
-                    logger.debug("Deleted existing file: %s", local_save_path)
-
-                if not local_save_path.exists():
-                    app.update_item(remote_dir_item[len(remote_path):])
-                    logger.debug("Downloading '%s' to '%s'", remote_dir_item, local_save_path)  # FIXME: local save path is not correct
-                    remote.download(file_url, local_save_path)
-                    total_downloaded += 1
-                    app.update_progress(total_downloaded / len_all_paths)
-                else:
-                    logger.debug("Skipping '%s' because it already exists", remote_dir_item)
+            self._sync_dir(app, remote_path, local_path_root, overwrite)
