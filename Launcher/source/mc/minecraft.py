@@ -477,7 +477,7 @@ class MCManager:
         dir_paths = remote.get_dir_paths(self.remote_tree, remote_path)
         len_all_paths = len(dir_paths)
 
-        # TODO: Make sure exlude lists delete the excluded files/dirs if they already exist
+        # TODO: Make sure exclude lists delete the excluded files/dirs if they already exist
         exclude_list: None | list = self.remote_config["paths"][remote_path]["exclude"]
         delete_others: bool = self.remote_config["paths"][remote_path]["delete_others"]
         logger.debug("Exclude List: %s, Delete Others: %s", exclude_list, delete_others)
@@ -500,7 +500,7 @@ class MCManager:
 
             # Skip if path is in exclude list
             if exclude_list:
-                for item in exclude_list:
+                for item in exclude_list:  # FIXME: This only checks remote path, not remote_dir_item, making this whole block useless
                     if remote_path.startswith(item):
                         logger.debug("Skipping '%s' because it is excluded", remote_path)
                         continue
