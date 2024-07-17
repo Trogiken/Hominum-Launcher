@@ -24,55 +24,48 @@ import logging
 import os
 import subprocess
 import platform
-import pickle
+import json
 import pathlib
-from dataclasses import dataclass, field
 import customtkinter
-from portablemc.standard import Environment
 from PIL import Image
 from source import path
 
 logger = logging.getLogger(__name__)
 
-SETTINGS_FILENAME = "settings.pkl"
+SETTINGS_FILENAME = "settings.json"
 SETTINGS_PATH = pathlib.Path(os.path.join(path.STORE_DIR, SETTINGS_FILENAME))
 
+# FIXME: Handle environment differently, reference private project
 
-@dataclass
-class GUISettings:
-    """Stores the settings for the GUI."""
-    main_window_geometry: tuple = (1200, 500)
-    main_window_min_size: tuple = (1000, 400)
-    font_small: tuple = ("Helvetica", 12)
-    font_normal: tuple = ("Helvetica", 14)
-    font_large: tuple = ("Helvetica", 16)
-    font_title: tuple = ("Helvetica", 16, "bold")
-    appearance: str = "system"
-    image_small: tuple = (14, 14)
-    image_normal: tuple = (18, 18)
-    image_large: tuple = (24, 24)
+gui_settings = {
+        "main_window_geometry": [1200, 500],
+        "main_window_min_size": [1000, 400],
+        "font_small": ["Helvetica", 12],
+        "font_normal": ["Helvetica", 14],
+        "font_large": ["Helvetica", 16],
+        "font_title": ["Helvetica", 16, "bold"],
+        "appearance": "system",
+        "image_small": [14, 14],
+        "image_normal": [18, 18],
+        "image_large": [24, 24]
+}
 
+user_settings =  {
+        "email": ""
+}
 
-@dataclass
-class UserSettings:
-    """Stores the settings for the user."""
-    email: str = ""
-
-
-@dataclass
-class GameSettings:
-    """Stores the settings for the game."""
-    autojoin: bool = True
-    ram_jvm_args: list = field(default_factory=lambda: ["-Xms2048M", "-Xmx2048M"])
-    additional_jvm_args: list = field(default_factory=lambda: [
-        "-XX:+UnlockExperimentalVMOptions",
-        "-XX:+UseG1GC",
-        "-XX:G1NewSizePercent=20",
-        "-XX:G1ReservePercent=20",
-        "-XX:MaxGCPauseMillis=50",
-        "-XX:G1HeapRegionSize=32M"
-    ])
-    environment: Environment = None
+game_settings = {
+    "autojoin": True,
+    "ram_jvm_args": ["-Xms2048M", "-Xmx2048M"],
+    "additional_jvm_args": [
+    "-XX:+UnlockExperimentalVMOptions",
+    "-XX:+UseG1GC",
+    "-XX:G1NewSizePercent=20",
+    "-XX:G1ReservePercent=20",
+    "-XX:MaxGCPauseMillis=50",
+    "-XX:G1HeapRegionSize=32M"
+    ],
+}
 
 
 class Settings:
@@ -93,14 +86,14 @@ class Settings:
     - set_user: Updates the user settings.
     - set_game: Updates the game settings.
     """
+    _first_run = True
 
     def __init__(self):
         self._gui = None
         self._user = None
         self._game = None
-        self.load()
 
-    def _validate_settings(self) -> bool:
+    def validate_settings(self) -> bool:
         """
         Validate the settings.
         Checks all attributes of classes.
@@ -109,18 +102,18 @@ class Settings:
         - bool: True if the settings are valid, False otherwise.
         """
         valid = True
-        for key, value in self._gui.__dict__.items():
-            if not isinstance(value, type(getattr(GUISettings(), key))):
+        for key, _ in gui_settings.items():
+            if not hasattr(self._gui, key):
+                logger.error("GUI setting '%s' not found", key)
                 valid = False
-                logger.error("GUI setting '%s' is invalid", key)
-        for key, value in self._user.__dict__.items():
-            if not isinstance(value, type(getattr(UserSettings(), key))):
+        for key, _ in user_settings.items():
+            if not hasattr(self._user, key):
+                logger.error("User setting '%s' not found", key)
                 valid = False
-                logger.error("User setting '%s' is invalid", key)
-        for key, value in self._game.__dict__.items():
-            if not isinstance(value, type(getattr(GameSettings(), key))):
+        for key, _ in game_settings.items():
+            if not hasattr(self._game, key):
+                logger.error("Game setting '%s' not found", key)
                 valid = False
-                logger.error("Game setting '%s' is invalid", key)
         return valid
 
     def load(self):
@@ -129,41 +122,41 @@ class Settings:
         If the file doesn't exist, default settings are used.
         """
         try:
-            with open(SETTINGS_PATH, 'rb') as f:
-                data = pickle.load(f)
-                self._gui = data.get('gui', GUISettings())
-                self._user = data.get('user', UserSettings())
-                self._game = data.get('game', GameSettings())
+            with open(SETTINGS_PATH, 'r', encoding="utf-8") as f:
+                data = json.load(f)
+                self._gui = data['GUISettings']
+                self._user = data['UserSettings']
+                self._game = data['GameSettings']
 
-            if not self._validate_settings():
-                raise ValueError("Settings are invalid")
+            if Settings._first_run:
+                if not self.validate_settings():
+                    logger.warning("Settings file is corrupted.")
+                    self.reset()
+                Settings._first_run = False
         except Exception:
-            self._gui = GUISettings()
-            self._user = UserSettings()
-            self._game = GameSettings()
-            self.save()
-            logger.warning("Settings file not found or damaged. Default settings used.")
+            logger.warning("Settings file not found or damaged.")
+            self.reset()
 
     def save(self):
         """
         Writes the settings to a file.
         """
         data = {
-            'gui': self._gui,
-            'user': self._user,
-            'game': self._game,
+            "GUISettings": self._gui,
+            "UserSettings": self._user,
+            "GameSettings": self._game
         }
-        with open(SETTINGS_PATH, 'wb') as f:
-            pickle.dump(data, f)
+        with open(SETTINGS_PATH, 'w', encoding="utf-8") as f:
+            json.dump(data, f, indent=4)
         self.load()
 
     def reset(self):
         """
         Reset the settings to the default values.
         """
-        self._gui = GUISettings()
-        self._user = UserSettings()
-        self._game = GameSettings()
+        self._gui = gui_settings
+        self._user = user_settings
+        self._game = game_settings
         self.save()
         logger.debug("Settings reset to default values.")
 
@@ -171,7 +164,7 @@ class Settings:
         """
         Reset the GUI settings to the default values.
         """
-        self._gui = GUISettings()
+        self._gui = gui_settings
         self.save()
         logger.info("GUI settings reset to default values.")
 
@@ -179,7 +172,7 @@ class Settings:
         """
         Reset the user settings to the default values.
         """
-        self._user = UserSettings()
+        self._user = user_settings
         self.save()
         logger.info("User settings reset to default values.")
 
@@ -187,10 +180,10 @@ class Settings:
         """
         Reset the game settings to the default values.
         """
-        self._game = GameSettings()
+        self._game = game_settings
         self.save()
         logger.info("Game settings reset to default values.")
-
+# FIXME: Make sure getters and setters handle new dictionary structure _______________________________________________________
     def get_gui(self, key: str) -> any:
         """
         Retrieves a specific GUI setting.
