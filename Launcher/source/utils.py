@@ -8,16 +8,17 @@ Functions:
 - format_number: Format a float into correct measurement
 
 Classes:
-- GUISettings: Stores the settings for the GUI.
-- UserSettings: Stores the settings for the user.
-- GameSettings: Stores the settings for the game.
-- MiscSettings: Stores the settings for miscellaneous things.
 - Settings: Stores the settings for the program.
 - WrappingLabel: A custom label that wraps text.
 
 Constants:
 - SETTINGS_FILENAME: The name of the settings file.
 - SETTINGS_PATH: The path to the settings file.
+
+Variables:
+- gui_settings: The default GUI settings.
+- user_settings: The default user settings.
+- game_settings: The default game settings.
 """
 
 import logging
@@ -38,13 +39,13 @@ SETTINGS_PATH = pathlib.Path(os.path.join(path.STORE_DIR, SETTINGS_FILENAME))
 # FIXME: Handle environment differently, reference private project
 
 gui_settings = {
+        "appearance": "system",
         "main_window_geometry": [1200, 500],
         "main_window_min_size": [1000, 400],
         "font_small": ["Helvetica", 12],
         "font_normal": ["Helvetica", 14],
         "font_large": ["Helvetica", 16],
         "font_title": ["Helvetica", 16, "bold"],
-        "appearance": "system",
         "image_small": [14, 14],
         "image_normal": [18, 18],
         "image_large": [24, 24],
