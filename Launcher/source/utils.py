@@ -98,8 +98,30 @@ class Settings:
         self._gui = None
         self._user = None
         self._game = None
-        self._misc = None
         self.load()
+
+    def _validate_settings(self) -> bool:
+        """
+        Validate the settings.
+        Checks all attributes of classes.
+
+        Returns:
+        - bool: True if the settings are valid, False otherwise.
+        """
+        valid = True
+        for key, value in self._gui.__dict__.items():
+            if not isinstance(value, type(getattr(GUISettings(), key))):
+                valid = False
+                logger.error("GUI setting '%s' is invalid", key)
+        for key, value in self._user.__dict__.items():
+            if not isinstance(value, type(getattr(UserSettings(), key))):
+                valid = False
+                logger.error("User setting '%s' is invalid", key)
+        for key, value in self._game.__dict__.items():
+            if not isinstance(value, type(getattr(GameSettings(), key))):
+                valid = False
+                logger.error("Game setting '%s' is invalid", key)
+        return valid
 
     def load(self):
         """
@@ -112,12 +134,15 @@ class Settings:
                 self._gui = data.get('gui', GUISettings())
                 self._user = data.get('user', UserSettings())
                 self._game = data.get('game', GameSettings())
-        except FileNotFoundError:
+
+            if not self._validate_settings():
+                raise ValueError("Settings are invalid")
+        except Exception:
             self._gui = GUISettings()
             self._user = UserSettings()
             self._game = GameSettings()
             self.save()
-            logger.warning("Settings file not found. Default settings used.")
+            logger.warning("Settings file not found or damaged. Default settings used.")
 
     def save(self):
         """
@@ -127,7 +152,6 @@ class Settings:
             'gui': self._gui,
             'user': self._user,
             'game': self._game,
-            'misc': self._misc
         }
         with open(SETTINGS_PATH, 'wb') as f:
             pickle.dump(data, f)
