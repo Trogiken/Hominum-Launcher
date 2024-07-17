@@ -47,11 +47,11 @@ gui_settings = {
         "appearance": "system",
         "image_small": [14, 14],
         "image_normal": [18, 18],
-        "image_large": [24, 24]
+        "image_large": [24, 24],
 }
 
 user_settings =  {
-        "email": ""
+        "email": "",
 }
 
 game_settings = {
@@ -102,18 +102,18 @@ class Settings:
         - bool: True if the settings are valid, False otherwise.
         """
         valid = True
-        for key, _ in gui_settings.items():
-            if not hasattr(self._gui, key):
-                logger.error("GUI setting '%s' not found", key)
+        for key, value in self._gui.items():
+            if key not in gui_settings or not isinstance(value, type(gui_settings[key])):
                 valid = False
-        for key, _ in user_settings.items():
-            if not hasattr(self._user, key):
-                logger.error("User setting '%s' not found", key)
+                break
+        for key, value in self._user.items():
+            if key not in user_settings or not isinstance(value, type(user_settings[key])):
                 valid = False
-        for key, _ in game_settings.items():
-            if not hasattr(self._game, key):
-                logger.error("Game setting '%s' not found", key)
+                break
+        for key, value in self._game.items():
+            if key not in game_settings or not isinstance(value, type(game_settings[key])):
                 valid = False
+                break
         return valid
 
     def load(self):
@@ -183,7 +183,7 @@ class Settings:
         self._game = game_settings
         self.save()
         logger.info("Game settings reset to default values.")
-# FIXME: Make sure getters and setters handle new dictionary structure _______________________________________________________
+
     def get_gui(self, key: str) -> any:
         """
         Retrieves a specific GUI setting.
@@ -195,7 +195,8 @@ class Settings:
         - Any: The value of the setting.
         """
         self.load()
-        value = getattr(self._gui, key)
+        # If the value is a list, return a tuple
+        value = tuple(self._gui[key]) if isinstance(self._gui[key], list) else self._gui[key]
         logger.debug("GUI setting '%s' retrieved value '%s'", key, value)
         return value
 
@@ -210,7 +211,7 @@ class Settings:
         - Any: The value of the setting.
         """
         self.load()
-        value = getattr(self._user, key)
+        value = self._user[key]
         logger.debug("User setting '%s' retrieved value '%s'", key, value)
         return value
 
@@ -225,7 +226,7 @@ class Settings:
         - Any: The value of the setting.
         """
         self.load()
-        value = getattr(self._game, key)
+        value = self._game[key]
         logger.debug("Game setting '%s' retrieved value '%s'", key, value)
         return value
 
@@ -237,7 +238,8 @@ class Settings:
         - **kwargs: Keyword arguments representing the settings to update.
         """
         for key, value in kwargs.items():
-            setattr(self._gui, key, value)
+            # If the value is a tuple, convert it to a list
+            self._gui[key] = list(value) if isinstance(value, tuple) else value
             logger.debug("GUI setting '%s' updated to value '%s'", key, value)
         self.save()
 
@@ -249,7 +251,7 @@ class Settings:
         - **kwargs: Keyword arguments representing the settings to update.
         """
         for key, value in kwargs.items():
-            setattr(self._user, key, value)
+            self._user[key] = value
             logger.debug("User setting '%s' updated to value '%s'", key, value)
         self.save()
 
@@ -261,7 +263,7 @@ class Settings:
         - **kwargs: Keyword arguments representing the settings to update.
         """
         for key, value in kwargs.items():
-            setattr(self._game, key, value)
+            self._game[key] = value
             logger.debug("Game setting '%s' updated to value '%s'", key, value)
         self.save()
 
