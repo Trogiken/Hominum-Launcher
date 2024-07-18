@@ -11,7 +11,6 @@ import os
 import sys
 from datetime import datetime
 import psutil
-from source.gui.app_win import App
 from source import path
 
 IS_DEVELOPMENT = True  # This should be set to False before release
@@ -123,8 +122,11 @@ if __name__ == "__main__":
 
     try:
         logger.info("Starting application")
+        from source.gui.app_win import App
+
         app = App()
         app.mainloop()
+
         if application_errors.error_occurred:
             logger.warning("Application finished with errors")
             for error in application_errors.errors:

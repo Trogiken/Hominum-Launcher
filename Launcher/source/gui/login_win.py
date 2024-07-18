@@ -7,7 +7,7 @@ Classes:
 
 import logging
 import customtkinter
-from source.mc import AuthenticationHandler
+from source.mc.authentication import AuthenticationHandler
 from source.gui.auth_win import AuthWindow
 from source.utils import Settings
 from source import path

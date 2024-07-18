@@ -271,7 +271,6 @@ class MCManager:
         self.game_selected: str = self.remote_config.get("startup", {}).get("game", "")
 
         logger.debug("Context: %s", self.context)
-        logger.debug("Remote Config: %s", self.remote_config)
         logger.debug("Server IP: %s", self.server_ip)
         logger.debug("Game Selected: %s", self.game_selected)
 

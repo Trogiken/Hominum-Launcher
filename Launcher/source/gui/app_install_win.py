@@ -11,8 +11,7 @@ from source.gui.popup_win import PopupWindow
 from source import path, exceptions
 from source import utils
 from source.mc.authentication import AuthenticationHandler
-from source.mc import MCManager
-from source.mc.minecraft import InstallWatcher
+from source.mc.minecraft import MCManager, InstallWatcher
 
 logger = logging.getLogger(__name__)
 

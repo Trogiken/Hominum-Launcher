@@ -14,7 +14,7 @@ import logging
 import os
 import importlib.util
 import customtkinter
-from source.mc import MCManager
+from source.mc.minecraft import MCManager
 from source.mc.authentication import AuthenticationHandler
 from source import path
 from source.gui.login_win import LoginWindow

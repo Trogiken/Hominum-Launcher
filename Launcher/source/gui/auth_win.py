@@ -9,7 +9,7 @@ import logging
 import threading
 import customtkinter
 from source.utils import Settings
-from source.mc import AuthenticationHandler
+from source.mc.authentication import AuthenticationHandler
 from source import path
 
 logger = logging.getLogger(__name__)
