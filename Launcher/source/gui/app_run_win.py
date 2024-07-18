@@ -37,7 +37,7 @@ class RunWindow(customtkinter.CTkToplevel):
             PopupWindow(
                 self,
                 title="No Environment",
-                message="Environment could not be found in settings. "\
+                message="Environment could not be found. "\
                 "Make sure the installation completed successfully."
             )
             super().destroy()
