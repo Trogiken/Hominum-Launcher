@@ -14,14 +14,13 @@ import logging
 import os
 import importlib.util
 import customtkinter
+from source import path, utils
 from source.mc.minecraft import MCManager
 from source.mc.authentication import AuthenticationHandler
-from source import path
 from source.gui.login_win import LoginWindow
 from source.gui.app_settings_win import SettingsWindow
 from source.gui.app_install_win import InstallWindow
 from source.gui.app_run_win import RunWindow
-from source  import utils
 
 if '_PYIBoot_SPLASH' in os.environ and importlib.util.find_spec("pyi_splash"):
     try:
@@ -34,8 +33,6 @@ else:
 
 logger = logging.getLogger(__name__)
 
-SETTINGS = utils.Settings()
-
 
 class LeftFrame(customtkinter.CTkFrame):
     """This frame contains a settings icon and functions."""
@@ -43,28 +40,32 @@ class LeftFrame(customtkinter.CTkFrame):
         super().__init__(master)
         logger.debug("Creating left frame")
 
+        self.settings = utils.Settings()
+
         self.settings_window = None
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(2, weight=1)
 
         # Title
         self.title_label = customtkinter.CTkLabel(
-            self, text=path.PROGRAM_NAME_LONG, font=SETTINGS.get_gui("font_title")
+            self, text=path.PROGRAM_NAME_LONG, font=self.settings.get_gui("font_title")
         )
         self.title_label.grid(row=0, column=0, padx=20, pady=(20, 0), sticky="n")
 
         # Version
         self.version_label = customtkinter.CTkLabel(
-            self, text=f"v{path.VERSION}", font=SETTINGS.get_gui("font_small")
+            self, text=f"v{path.VERSION}", font=self.settings.get_gui("font_small")
         )
         self.version_label.grid(row=1, column=0, padx=24, pady=0, sticky="sw")
 
         # Theme Drop Down
-        self.theme_menu_var = customtkinter.StringVar(value=SETTINGS.get_gui("appearance").title())
+        self.theme_menu_var = customtkinter.StringVar(
+            value=self.settings.get_gui("appearance").title()
+        )
         self.theme_menu = customtkinter.CTkOptionMenu(
             self,
             values=["System", "Dark", "Light"],
-            font=SETTINGS.get_gui("font_normal"),
+            font=self.settings.get_gui("font_normal"),
             command=self.theme_menu_callback,
             variable=self.theme_menu_var
         )
@@ -72,13 +73,13 @@ class LeftFrame(customtkinter.CTkFrame):
 
         # Settings Button
         self.settings_button_photo = customtkinter.CTkImage(
-            utils.get_image("settings.png").resize(SETTINGS.get_gui("image_normal"))
+            utils.get_image("settings.png").resize(self.settings.get_gui("image_normal"))
         )
         self.settings_button = customtkinter.CTkButton(
             self,
             image=self.settings_button_photo,
             text="Settings",
-            font=SETTINGS.get_gui("font_normal"),
+            font=self.settings.get_gui("font_normal"),
             command=self.open_settings
         )
         self.settings_button.grid(row=3, column=0, padx=20, pady=(0, 20), sticky="s")
@@ -96,7 +97,7 @@ class LeftFrame(customtkinter.CTkFrame):
         - None
         """
         new_theme = theme.casefold()
-        SETTINGS.set_gui(appearance=new_theme)
+        self.settings.set_gui(appearance=new_theme)
         customtkinter.set_appearance_mode(new_theme)
 
     def open_settings(self):
@@ -115,21 +116,20 @@ class LeftFrame(customtkinter.CTkFrame):
 
 class RightFrame(customtkinter.CTkFrame):
     """This frame contains the user dropdown and functions."""
-    def __init__(self, master, mcmanager: MCManager=None):
+    def __init__(self, master, mcmanager: MCManager):
         super().__init__(master)
         logger.debug("Creating right frame")
 
-        if mcmanager is None:
-            raise ValueError("MCManager object is required")
+        self.settings = utils.Settings()
 
         self.login_window = None
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(0, weight=1)
 
         # User Dropdown
-        if SETTINGS.get_user("email"):
+        if self.settings.get_user("email"):
             self.auth_handler = AuthenticationHandler(
-                email=SETTINGS.get_user("email"), context=path.CONTEXT
+                email=self.settings.get_user("email"), context=path.CONTEXT
             )
             username = self.auth_handler.get_username()
             if username:
@@ -146,7 +146,7 @@ class RightFrame(customtkinter.CTkFrame):
             user_menu_values = ["Login"]
         self.user_menu = customtkinter.CTkOptionMenu(
             self,
-            font=SETTINGS.get_gui("font_normal"),
+            font=self.settings.get_gui("font_normal"),
             values=user_menu_values,
             command=self.user_menu_callback,
             variable=self.user_menu_var
@@ -154,11 +154,13 @@ class RightFrame(customtkinter.CTkFrame):
         self.user_menu.grid(row=0, column=0, padx=20, pady=20, sticky="n")
 
         # Auto-Join Switch
-        self.autojoin_switch_var = customtkinter.BooleanVar(value=SETTINGS.get_game("autojoin"))
+        self.autojoin_switch_var = customtkinter.BooleanVar(
+            value=self.settings.get_game("autojoin")
+        )
         self.autojoin_switch = customtkinter.CTkSwitch(
             self,
             text="Auto-Join",
-            font=SETTINGS.get_gui("font_normal"),
+            font=self.settings.get_gui("font_normal"),
             command=self.auto_join_callback,
             variable=self.autojoin_switch_var,
             onvalue=True,
@@ -167,13 +169,13 @@ class RightFrame(customtkinter.CTkFrame):
         self.autojoin_switch.grid(row=1, column=0, padx=20, pady=0, sticky="s")
 
         self.play_button_photo = customtkinter.CTkImage(
-            utils.get_image("rocket.png").resize(SETTINGS.get_gui("image_large"))
+            utils.get_image("rocket.png").resize(self.settings.get_gui("image_large"))
         )
         self.play_button = customtkinter.CTkButton(
             self,
             image=self.play_button_photo,
             text="Play",
-            font=SETTINGS.get_gui("font_title"),
+            font=self.settings.get_gui("font_title"),
             fg_color="green",
             command=self.run_game
         )
@@ -191,10 +193,10 @@ class RightFrame(customtkinter.CTkFrame):
         action = self.autojoin_switch_var.get()
         if action is True:
             self.autojoin_switch_var.set(True)
-            SETTINGS.set_game(autojoin=True)
+            self.settings.set_game(autojoin=True)
         elif action is False:
             self.autojoin_switch_var.set(False)
-            SETTINGS.set_game(autojoin=False)
+            self.settings.set_game(autojoin=False)
 
     def user_menu_callback(self, action: str):
         """
@@ -209,7 +211,7 @@ class RightFrame(customtkinter.CTkFrame):
         action = action.casefold()
         logger.debug("User menu callback action: %s", action)
         if action == "logout":
-            auth_handler = AuthenticationHandler(SETTINGS.get_user("email"), path.CONTEXT)
+            auth_handler = AuthenticationHandler(self.settings.get_user("email"), path.CONTEXT)
             auth_handler.remove_session()
             self.user_menu_var.set("Logged Out")
             self.user_menu.configure(values=["Login"])
@@ -223,7 +225,7 @@ class RightFrame(customtkinter.CTkFrame):
                 self.login_window = LoginWindow(master=self)
                 self.login_window.transient(self)
                 self.wait_window(self.login_window)
-                auth_handler = AuthenticationHandler(SETTINGS.get_user("email"), path.CONTEXT)
+                auth_handler = AuthenticationHandler(self.settings.get_user("email"), path.CONTEXT)
                 username = auth_handler.get_username()
                 if username:
                     self.user_menu_var.set(username)
@@ -257,12 +259,11 @@ class RightFrame(customtkinter.CTkFrame):
 
 class ScrollableFrame(customtkinter.CTkScrollableFrame):
     """A frame that contains the bulletin."""
-    def __init__(self, master, mcmanager: MCManager=None):
+    def __init__(self, master, mcmanager: MCManager):
         super().__init__(master)
         logger.debug("Creating scrollable frame")
 
-        if mcmanager is None:
-            raise ValueError("MCManager object is required")
+        self.settings = utils.Settings()
 
         # Parse the bulletin config and create the bulletin
         bulletin_config: dict = mcmanager.remote_config.get("bulletin", None)
@@ -278,7 +279,9 @@ class ScrollableFrame(customtkinter.CTkScrollableFrame):
 
             # Place the no_bulletin_label in the centering_frame
             no_bulletin_label = customtkinter.CTkLabel(
-                centering_frame, text="No Bulletin Available", font=SETTINGS.get_gui("font_large")
+                centering_frame,
+                text="No Bulletin Available",
+                font=self.settings.get_gui("font_large")
             )
             no_bulletin_label.place(relx=0.5, rely=0.5, anchor="center")
             return
@@ -297,7 +300,7 @@ class ScrollableFrame(customtkinter.CTkScrollableFrame):
                 )
                 section_frame.grid_columnconfigure(0, weight=1)
                 section_label = customtkinter.CTkLabel(
-                    section_frame, text=section, font=SETTINGS.get_gui("font_title")
+                    section_frame, text=section, font=self.settings.get_gui("font_title")
                 )
                 section_label.grid(row=section_row, column=0, padx=10, pady=10, sticky="n")
                 section_row += 1
@@ -305,7 +308,7 @@ class ScrollableFrame(customtkinter.CTkScrollableFrame):
                 for i, item in enumerate(items):
                     pady = (10, 0) if i < len(items) - 1 else 10  # Add padding to the last item
                     item_label = utils.WrappingLabel(
-                        section_frame, text=item, font=SETTINGS.get_gui("font_normal")
+                        section_frame, text=item, font=self.settings.get_gui("font_normal")
                     )
                     item_label.grid(row=item_row, column=0, padx=10, pady=pady, sticky="we")
                     item_row += 1
@@ -319,12 +322,17 @@ class CenterFrame(customtkinter.CTkFrame):
         super().__init__(master)
         logger.debug("Creating center frame")
 
+        self.settings = utils.Settings()
+
+        if mcmanager is None:
+            raise ValueError("MCManager object is required")
+
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(1, weight=2)
 
         # Title Label
         self.title_label = customtkinter.CTkLabel(
-            self, text="Server Bulletin", font=SETTINGS.get_gui("font_title")
+            self, text="Server Bulletin", font=self.settings.get_gui("font_title")
         )
         self.title_label.grid(row=0, column=0, padx=20, pady=(20, 0), sticky="n")
 
@@ -350,11 +358,12 @@ class App(customtkinter.CTk):
 
         logger.debug("Creating main window")
 
+        self.settings = utils.Settings()
         self.mc = MCManager(context=path.CONTEXT)
 
         self.title(path.PROGRAM_NAME)
-        geom_length, geom_height = SETTINGS.get_gui("main_window_geometry")
-        min_length, min_height = SETTINGS.get_gui("main_window_min_size")
+        geom_length, geom_height = self.settings.get_gui("main_window_geometry")
+        min_length, min_height = self.settings.get_gui("main_window_min_size")
         self.geometry(f"{geom_length}x{geom_height}")
         self.minsize(min_length, min_height)
         self.grid_rowconfigure(0, weight=1)  # configure grid system
@@ -362,7 +371,7 @@ class App(customtkinter.CTk):
         self.grid_columnconfigure(1, weight=1)
         self.grid_columnconfigure(2, weight=0)
 
-        customtkinter.set_appearance_mode(SETTINGS.get_gui("appearance"))
+        customtkinter.set_appearance_mode(self.settings.get_gui("appearance"))
 
         if SPLASH_FOUND:
             pyi_splash.update_text("Loading Left Frame")

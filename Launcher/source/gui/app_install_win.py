@@ -15,14 +15,14 @@ from source.mc.minecraft import MCManager, InstallWatcher
 
 logger = logging.getLogger(__name__)
 
-SETTINGS = utils.Settings()
-
 
 class InstallWindow(customtkinter.CTkToplevel):
     """A class that displays the installation progress accross operations."""
     def __init__(self):
         super().__init__()
         logger.debug("Creating install window")
+
+        self.settings = utils.Settings()
 
         self.title("Install")
         self.attributes("-topmost", True)  # Always on top
@@ -34,10 +34,10 @@ class InstallWindow(customtkinter.CTkToplevel):
 
         self.mc = MCManager(context=path.CONTEXT)
         self.auth_handler = AuthenticationHandler(
-            email=SETTINGS.get_user("email"), context=path.CONTEXT
+            email=self.settings.get_user("email"), context=path.CONTEXT
         )
         try:
-            self.version = self.mc.provision_version(autojoin=SETTINGS.get_game("autojoin"))
+            self.version = self.mc.provision_version(autojoin=self.settings.get_game("autojoin"))
         except Exception as version_error:
             logger.error("Error getting version: %s", version_error)
             PopupWindow(
@@ -61,13 +61,13 @@ class InstallWindow(customtkinter.CTkToplevel):
 
         # Title label
         self.title_label = customtkinter.CTkLabel(
-            self, text="Please Wait", font=SETTINGS.get_gui("font_large")
+            self, text="Please Wait", font=self.settings.get_gui("font_large")
         )
         self.title_label.grid(row=0, column=0, padx=20, pady=(20, 0))
 
         # Item Download Label
         self.download_item_label = customtkinter.CTkLabel(
-            self, text="Getting things ready", font=SETTINGS.get_gui("font_normal")
+            self, text="Getting things ready", font=self.settings.get_gui("font_normal")
         )
         self.download_item_label.grid(row=1, column=0, padx=20, pady=10)
 

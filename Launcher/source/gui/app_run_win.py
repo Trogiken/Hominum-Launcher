@@ -18,14 +18,14 @@ if os.name != "posix":
 
 logger = logging.getLogger(__name__)
 
-SETTINGS = utils.Settings()
-
 
 class RunWindow(customtkinter.CTkToplevel):
     """A class that is used to run the game."""
     def __init__(self, environment: Environment):
         super().__init__()
         logger.debug("Creating game window")
+
+        self.settings = utils.Settings()
 
         self.title("Run")
         # Used to minimize the main window after the game starts
@@ -53,14 +53,14 @@ class RunWindow(customtkinter.CTkToplevel):
         self.columnconfigure(0, weight=1)  # configure grid system
 
         self.title_label = customtkinter.CTkLabel(
-            self, text="Game Running", font=SETTINGS.get_gui("font_large")
+            self, text="Game Running", font=self.settings.get_gui("font_large")
         )
         self.title_label.grid(row=0, column=0, padx=20, pady=20)
 
         self.message_label = customtkinter.CTkLabel(
             self,
             text="Please wait until the Minecraft window opens",
-            font=SETTINGS.get_gui("font_normal")
+            font=self.settings.get_gui("font_normal")
         )
         self.message_label.grid(row=1, column=0, padx=20, pady=(0, 20))
 
@@ -98,7 +98,7 @@ class RunWindow(customtkinter.CTkToplevel):
             if self.main_window.isMinimized:
                 self.main_window.maximize()
                 logger.debug("Main window maximized")
-                min_length, min_height = SETTINGS.get_gui("main_window_min_size")
+                min_length, min_height = self.settings.get_gui("main_window_min_size")
                 self.main_window.resizeTo(min_length, min_height)
                 logger.debug("Main window resized to '%s'x'%s'", min_length, min_height)
         super().destroy()

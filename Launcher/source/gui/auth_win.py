@@ -8,20 +8,18 @@ Classes:
 import logging
 import threading
 import customtkinter
-from source.utils import Settings
+from source import path, utils
 from source.mc.authentication import AuthenticationHandler
-from source import path
 
 logger = logging.getLogger(__name__)
-
-SETTINGS = Settings()
-
 
 class AuthWindow(customtkinter.CTkToplevel):
     """Toplevel window for authenticating the user with a Minecraft account."""
     def __init__(self, master, email, **kwargs):
         super().__init__(master, **kwargs)
         logger.debug("Creating authentication window")
+
+        self.settings = utils.Settings()
 
         self.title("Authentication")
         self.email = email
@@ -36,7 +34,7 @@ class AuthWindow(customtkinter.CTkToplevel):
         self.protocol("WM_DELETE_WINDOW", self.destroy)  # Handle the close event
 
         self.label = customtkinter.CTkLabel(
-            self, text=f"Logging into {self.email}", font=SETTINGS.get_gui("font_large")
+            self, text=f"Logging into {self.email}", font=self.settings.get_gui("font_large")
         )
         self.label.grid(row=0, column=0, pady=(20, 0))
 
@@ -58,5 +56,7 @@ class AuthWindow(customtkinter.CTkToplevel):
 
     def auth(self):
         """Runs the authentication process."""
-        auth_handler = AuthenticationHandler(email=SETTINGS.get_user("email"), context=path.CONTEXT)
+        auth_handler = AuthenticationHandler(
+            email=self.settings.get_user("email"), context=path.CONTEXT
+        )
         auth_handler.authenticate()
