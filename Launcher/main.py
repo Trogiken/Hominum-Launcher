@@ -7,14 +7,14 @@ Logging is configured and the main application loop is started.
 import logging
 import logging.config
 import logging.handlers
+from datetime import datetime
 import os
 import sys
-from datetime import datetime
 import psutil
-from source.gui.app_win import App
 from source import path
+from source.gui.app_win import App
 
-IS_DEVELOPMENT = False  # This should be set to False before release
+IS_DEVELOPMENT = True  # This should be set to False before release
 
 
 class ErrorTrackingHandler(logging.Handler):
@@ -123,8 +123,10 @@ if __name__ == "__main__":
 
     try:
         logger.info("Starting application")
+
         app = App()
         app.mainloop()
+
         if application_errors.error_occurred:
             logger.warning("Application finished with errors")
             for error in application_errors.errors:

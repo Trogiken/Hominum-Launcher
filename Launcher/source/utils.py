@@ -8,71 +8,63 @@ Functions:
 - format_number: Format a float into correct measurement
 
 Classes:
-- GUISettings: Stores the settings for the GUI.
-- UserSettings: Stores the settings for the user.
-- GameSettings: Stores the settings for the game.
-- MiscSettings: Stores the settings for miscellaneous things.
 - Settings: Stores the settings for the program.
 - WrappingLabel: A custom label that wraps text.
 
 Constants:
 - SETTINGS_FILENAME: The name of the settings file.
 - SETTINGS_PATH: The path to the settings file.
+
+Variables:
+- gui_settings: The default GUI settings.
+- user_settings: The default user settings.
+- game_settings: The default game settings.
 """
 
 import logging
 import os
 import subprocess
 import platform
-import pickle
+import json
 import pathlib
-from dataclasses import dataclass, field
 import customtkinter
-from portablemc.standard import Environment
 from PIL import Image
 from source import path
 
 logger = logging.getLogger(__name__)
 
-SETTINGS_FILENAME = "settings.pkl"
+SETTINGS_FILENAME = "settings.json"
 SETTINGS_PATH = pathlib.Path(os.path.join(path.STORE_DIR, SETTINGS_FILENAME))
 
+gui_settings = {
+        "appearance": "system",
+        "main_window_geometry": [1200, 500],
+        "main_window_min_size": [1000, 400],
+        "font_small": ["Helvetica", 12],
+        "font_normal": ["Helvetica", 14],
+        "font_large": ["Helvetica", 16],
+        "font_title": ["Helvetica", 16, "bold"],
+        "image_small": [14, 14],
+        "image_normal": [18, 18],
+        "image_large": [24, 24],
+}
 
-@dataclass
-class GUISettings:
-    """Stores the settings for the GUI."""
-    main_window_geometry: tuple = (1200, 500)
-    main_window_min_size: tuple = (1000, 400)
-    font_small: tuple = ("Helvetica", 12)
-    font_normal: tuple = ("Helvetica", 14)
-    font_large: tuple = ("Helvetica", 16)
-    font_title: tuple = ("Helvetica", 16, "bold")
-    appearance: str = "system"
-    image_small: tuple = (14, 14)
-    image_normal: tuple = (18, 18)
-    image_large: tuple = (24, 24)
+user_settings =  {
+        "email": "",
+}
 
-
-@dataclass
-class UserSettings:
-    """Stores the settings for the user."""
-    email: str = ""
-
-
-@dataclass
-class GameSettings:
-    """Stores the settings for the game."""
-    autojoin: bool = True
-    ram_jvm_args: list = field(default_factory=lambda: ["-Xms2048M", "-Xmx2048M"])
-    additional_jvm_args: list = field(default_factory=lambda: [
-        "-XX:+UnlockExperimentalVMOptions",
-        "-XX:+UseG1GC",
-        "-XX:G1NewSizePercent=20",
-        "-XX:G1ReservePercent=20",
-        "-XX:MaxGCPauseMillis=50",
-        "-XX:G1HeapRegionSize=32M"
-    ])
-    environment: Environment = None
+game_settings = {
+    "autojoin": True,
+    "ram_jvm_args": ["-Xms2048M", "-Xmx2048M"],
+    "additional_jvm_args": [
+    "-XX:+UnlockExperimentalVMOptions",
+    "-XX:+UseG1GC",
+    "-XX:G1NewSizePercent=20",
+    "-XX:G1ReservePercent=20",
+    "-XX:MaxGCPauseMillis=50",
+    "-XX:G1HeapRegionSize=32M"
+    ],
+}
 
 
 class Settings:
@@ -93,13 +85,36 @@ class Settings:
     - set_user: Updates the user settings.
     - set_game: Updates the game settings.
     """
+    _first_run = True
 
     def __init__(self):
         self._gui = None
         self._user = None
         self._game = None
-        self._misc = None
         self.load()
+
+    def validate_settings(self) -> bool:
+        """
+        Validate the settings.
+        Checks all attributes of classes.
+
+        Returns:
+        - bool: True if the settings are valid, False otherwise.
+        """
+        valid = True
+        for key, value in gui_settings.items():
+            if key not in self._gui or not isinstance(self._gui[key], type(value)):
+                valid = False
+                logger.warning("GUI setting '%s' is missing or invalid", key)
+        for key, value in user_settings.items():
+            if key not in self._user or not isinstance(self._user[key], type(value)):
+                valid = False
+                logger.warning("User setting '%s' is missing or invalid", key)
+        for key, value in game_settings.items():
+            if key not in self._game or not isinstance(self._game[key], type(value)):
+                valid = False
+                logger.warning("Game setting '%s' is missing or invalid", key)
+        return valid
 
     def load(self):
         """
@@ -107,39 +122,41 @@ class Settings:
         If the file doesn't exist, default settings are used.
         """
         try:
-            with open(SETTINGS_PATH, 'rb') as f:
-                data = pickle.load(f)
-                self._gui = data.get('gui', GUISettings())
-                self._user = data.get('user', UserSettings())
-                self._game = data.get('game', GameSettings())
-        except FileNotFoundError:
-            self._gui = GUISettings()
-            self._user = UserSettings()
-            self._game = GameSettings()
-            self.save()
-            logger.warning("Settings file not found. Default settings used.")
+            with open(SETTINGS_PATH, 'r', encoding="utf-8") as f:
+                data = json.load(f)
+                self._gui = data['GUISettings']
+                self._user = data['UserSettings']
+                self._game = data['GameSettings']
+
+            if Settings._first_run:
+                if not self.validate_settings():
+                    logger.warning("Settings file is corrupted.")
+                    self.reset()
+                Settings._first_run = False
+        except Exception:
+            logger.warning("Settings file not found or damaged.")
+            self.reset()
 
     def save(self):
         """
         Writes the settings to a file.
         """
         data = {
-            'gui': self._gui,
-            'user': self._user,
-            'game': self._game,
-            'misc': self._misc
+            "GUISettings": self._gui,
+            "UserSettings": self._user,
+            "GameSettings": self._game
         }
-        with open(SETTINGS_PATH, 'wb') as f:
-            pickle.dump(data, f)
+        with open(SETTINGS_PATH, 'w', encoding="utf-8") as f:
+            json.dump(data, f, indent=4)
         self.load()
 
     def reset(self):
         """
         Reset the settings to the default values.
         """
-        self._gui = GUISettings()
-        self._user = UserSettings()
-        self._game = GameSettings()
+        self._gui = gui_settings
+        self._user = user_settings
+        self._game = game_settings
         self.save()
         logger.debug("Settings reset to default values.")
 
@@ -147,7 +164,7 @@ class Settings:
         """
         Reset the GUI settings to the default values.
         """
-        self._gui = GUISettings()
+        self._gui = gui_settings
         self.save()
         logger.info("GUI settings reset to default values.")
 
@@ -155,7 +172,7 @@ class Settings:
         """
         Reset the user settings to the default values.
         """
-        self._user = UserSettings()
+        self._user = user_settings
         self.save()
         logger.info("User settings reset to default values.")
 
@@ -163,7 +180,7 @@ class Settings:
         """
         Reset the game settings to the default values.
         """
-        self._game = GameSettings()
+        self._game = game_settings
         self.save()
         logger.info("Game settings reset to default values.")
 
@@ -178,7 +195,8 @@ class Settings:
         - Any: The value of the setting.
         """
         self.load()
-        value = getattr(self._gui, key)
+        # If the value is a list, return a tuple
+        value = tuple(self._gui[key]) if isinstance(self._gui[key], list) else self._gui[key]
         logger.debug("GUI setting '%s' retrieved value '%s'", key, value)
         return value
 
@@ -193,7 +211,7 @@ class Settings:
         - Any: The value of the setting.
         """
         self.load()
-        value = getattr(self._user, key)
+        value = self._user[key]
         logger.debug("User setting '%s' retrieved value '%s'", key, value)
         return value
 
@@ -208,7 +226,7 @@ class Settings:
         - Any: The value of the setting.
         """
         self.load()
-        value = getattr(self._game, key)
+        value = self._game[key]
         logger.debug("Game setting '%s' retrieved value '%s'", key, value)
         return value
 
@@ -220,7 +238,8 @@ class Settings:
         - **kwargs: Keyword arguments representing the settings to update.
         """
         for key, value in kwargs.items():
-            setattr(self._gui, key, value)
+            # If the value is a tuple, convert it to a list
+            self._gui[key] = list(value) if isinstance(value, tuple) else value
             logger.debug("GUI setting '%s' updated to value '%s'", key, value)
         self.save()
 
@@ -232,7 +251,7 @@ class Settings:
         - **kwargs: Keyword arguments representing the settings to update.
         """
         for key, value in kwargs.items():
-            setattr(self._user, key, value)
+            self._user[key] = value
             logger.debug("User setting '%s' updated to value '%s'", key, value)
         self.save()
 
@@ -244,7 +263,7 @@ class Settings:
         - **kwargs: Keyword arguments representing the settings to update.
         """
         for key, value in kwargs.items():
-            setattr(self._game, key, value)
+            self._game[key] = value
             logger.debug("Game setting '%s' updated to value '%s'", key, value)
         self.save()
 

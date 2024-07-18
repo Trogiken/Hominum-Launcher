@@ -14,7 +14,7 @@ import shutil
 from pathlib import Path
 from subprocess import Popen
 from typing import Generator, List
-from source import exceptions, utils, path
+from source import path, utils, exceptions
 from source.mc import remote
 from portablemc.auth import MicrosoftAuthSession
 from portablemc.standard import Context, Version, SimpleWatcher, Environment, StandardRunner, \
@@ -27,8 +27,6 @@ from portablemc.forge import ForgeVersion, ForgeResolveEvent, ForgePostProcessin
     ForgePostProcessedEvent
 
 logger = logging.getLogger(__name__)
-
-SETTINGS = utils.Settings()
 
 
 class InstallWatcher(SimpleWatcher):
@@ -258,6 +256,8 @@ class MCManager:
     def __init__(self, context: Context):
         logger.debug("Initializing MCManager")
 
+        self.settings = utils.Settings()
+
         self.context = context
         self.remote_tree = remote.get_repo_tree()
         self.remote_config = remote.get_config(self.remote_tree)
@@ -271,7 +271,6 @@ class MCManager:
         self.game_selected: str = self.remote_config.get("startup", {}).get("game", "")
 
         logger.debug("Context: %s", self.context)
-        logger.debug("Remote Config: %s", self.remote_config)
         logger.debug("Server IP: %s", self.server_ip)
         logger.debug("Game Selected: %s", self.game_selected)
 
@@ -424,7 +423,8 @@ class MCManager:
 
         version.auth_session = auth_session
         env = version.install(watcher=watcher)
-        args = SETTINGS.get_game("ram_jvm_args") + SETTINGS.get_game("additional_jvm_args")
+        args = self.settings.get_game("ram_jvm_args") + \
+            self.settings.get_game("additional_jvm_args")
         env.jvm_args.extend(args)
         return env
 

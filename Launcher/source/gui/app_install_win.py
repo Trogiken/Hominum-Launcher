@@ -11,12 +11,9 @@ from source.gui.popup_win import PopupWindow
 from source import path, exceptions
 from source import utils
 from source.mc.authentication import AuthenticationHandler
-from source.mc import MCManager
-from source.mc.minecraft import InstallWatcher
+from source.mc.minecraft import MCManager, InstallWatcher
 
 logger = logging.getLogger(__name__)
-
-SETTINGS = utils.Settings()
 
 
 class InstallWindow(customtkinter.CTkToplevel):
@@ -24,6 +21,8 @@ class InstallWindow(customtkinter.CTkToplevel):
     def __init__(self):
         super().__init__()
         logger.debug("Creating install window")
+
+        self.settings = utils.Settings()
 
         self.title("Install")
         self.attributes("-topmost", True)  # Always on top
@@ -35,10 +34,10 @@ class InstallWindow(customtkinter.CTkToplevel):
 
         self.mc = MCManager(context=path.CONTEXT)
         self.auth_handler = AuthenticationHandler(
-            email=SETTINGS.get_user("email"), context=path.CONTEXT
+            email=self.settings.get_user("email"), context=path.CONTEXT
         )
         try:
-            self.version = self.mc.provision_version(autojoin=SETTINGS.get_game("autojoin"))
+            self.version = self.mc.provision_version(autojoin=self.settings.get_game("autojoin"))
         except Exception as version_error:
             logger.error("Error getting version: %s", version_error)
             PopupWindow(
@@ -62,13 +61,13 @@ class InstallWindow(customtkinter.CTkToplevel):
 
         # Title label
         self.title_label = customtkinter.CTkLabel(
-            self, text="Please Wait", font=SETTINGS.get_gui("font_large")
+            self, text="Please Wait", font=self.settings.get_gui("font_large")
         )
         self.title_label.grid(row=0, column=0, padx=20, pady=(20, 0))
 
         # Item Download Label
         self.download_item_label = customtkinter.CTkLabel(
-            self, text="Getting things ready", font=SETTINGS.get_gui("font_normal")
+            self, text="Getting things ready", font=self.settings.get_gui("font_normal")
         )
         self.download_item_label.grid(row=1, column=0, padx=20, pady=10)
 
@@ -92,14 +91,13 @@ class InstallWindow(customtkinter.CTkToplevel):
         - None
         """
         logger.info("Starting Installation")
+        version_environment = None
         # Install the game
         install_watcher = InstallWatcher(self)
-        if SETTINGS.get_game("environment"):  # Reset environment if one exists
-            SETTINGS.set_game(environment=utils.GameSettings().environment)
         for _ in range(3):  # Retry 3 times
             try:
                 logger.info("Provisioning Environment")
-                self.environment = self.mc.provision_environment(
+                version_environment = self.mc.provision_environment(
                     version=self.version,
                     auth_session=self.session,
                     watcher=install_watcher,
@@ -124,9 +122,12 @@ class InstallWindow(customtkinter.CTkToplevel):
                 logger.error("Error syncing files: %s", sync_error)
                 self.errors_occurred = True
 
+        if not version_environment:
+            logger.warning("Environment is not set")
+
         # Only set the user if no errors occurred
-        if not self.errors_occurred:
-            SETTINGS.set_game(environment=self.environment)
+        if not self.errors_occurred and version_environment:
+            self.environment = version_environment
             logger.info("Installation finished successfully")
         else:
             logger.warning("Installation finished with errors")
