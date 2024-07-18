@@ -7,11 +7,12 @@ Logging is configured and the main application loop is started.
 import logging
 import logging.config
 import logging.handlers
+from datetime import datetime
 import os
 import sys
-from datetime import datetime
 import psutil
 from source import path
+from source.gui.app_win import App
 
 IS_DEVELOPMENT = True  # This should be set to False before release
 
@@ -122,7 +123,6 @@ if __name__ == "__main__":
 
     try:
         logger.info("Starting application")
-        from source.gui.app_win import App
 
         app = App()
         app.mainloop()
