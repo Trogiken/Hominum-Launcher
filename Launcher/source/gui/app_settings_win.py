@@ -27,74 +27,110 @@ class GUISettingsFrame(customtkinter.CTkFrame):
 
         self.settings = utils.Settings()
 
+        self.popup_window = None
         self.grid_columnconfigure(0, weight=1)
-        self.grid_rowconfigure(2, weight=1)
 
         # Frame Title
         self.title_label = customtkinter.CTkLabel(
-            self, text="GUI", font=self.settings.get_gui("font_title")
+            self, text="Resets", font=self.settings.get_gui("font_title")
         )
-        self.title_label.grid(row=0, column=0, padx=20, pady=(20, 0), sticky="n")
+        self.title_label.grid(row=0, column=0, padx=20, pady=(20, 10), sticky="n")
 
         # Reset GUI Settings Button
         self.reset_gui_settings_button = customtkinter.CTkButton(
             self,
-            text="Reset Settings",
+            text="Reset GUI",
             font=self.settings.get_gui("font_normal"),
             command=self.reset_gui_settings
         )
-        self.reset_gui_settings_button.grid(row=1, column=0, padx=20, pady=(0, 20), sticky="s")
+        self.reset_gui_settings_button.grid(row=1, column=0, padx=20, pady=5, sticky="wse")
+
+        # Reset User Settings Button
+        self.reset_user_settings_button = customtkinter.CTkButton(
+            self,
+            text="Reset User",
+            font=self.settings.get_gui("font_normal"),
+            command=self.reset_user_settings
+        )
+        self.reset_user_settings_button.grid(row=2, column=0, padx=20, pady=5, sticky="wse")
+
+        # Reset Game Settings Button
+        self.reset_game_settings_button = customtkinter.CTkButton(
+            self,
+            text="Reset Game",
+            font=self.settings.get_gui("font_normal"),
+            command=self.reset_game_settings
+        )
+        self.reset_game_settings_button.grid(row=3, column=0, padx=20, pady=5, sticky="wse")
+
+        # Reset All Settings Button
+        self.reset_all_settings_button = customtkinter.CTkButton(
+            self,
+            text="Reset All",
+            font=self.settings.get_gui("font_normal"),
+            command=self.reset_all_settings
+        )
+        self.reset_all_settings_button.grid(row=4, column=0, padx=20, pady=(5, 20), sticky="wse")
 
         logger.debug("GUI settings frame created")
 
     def reset_gui_settings(self):
         """Reset the GUI settings to the default values."""
-        self.settings.reset_gui()
-        PopupWindow(
-            master=self.master,
-            title="Settings Reset",
-            message="The GUI settings have been reset to default."
-        )
-
-
-class UserSettingsFrame(customtkinter.CTkFrame):
-    """A frame for the User settings."""
-    def __init__(self, master):
-        super().__init__(master)
-        logger.debug("Creating user settings frame")
-
-        self.settings = utils.Settings()
-
-        self.grid_columnconfigure(0, weight=1)
-        self.grid_rowconfigure(2, weight=1)
-
-        # Frame Title
-        self.title_label = customtkinter.CTkLabel(
-            self, text="User", font=self.settings.get_gui("font_title")
-        )
-        self.title_label.grid(row=0, column=0, padx=20, pady=(20, 0), sticky="n")
-
-        # Reset User Settings Button
-        self.reset_user_settings_button = customtkinter.CTkButton(
-            self,
-            text="Reset Settings",
-            font=self.settings.get_gui("font_normal"),
-            command=self.reset_user_settings
-        )
-        self.reset_user_settings_button.grid(row=1, column=0, padx=20, pady=(0, 20), sticky="s")
-
-        logger.debug("User settings frame created")
+        if self.popup_window is not None and self.popup_window.winfo_exists():
+            self.popup_window.lift()
+        else:
+            self.settings.reset_gui()
+            self.popup_window = PopupWindow(
+                master=self.master,
+                title="GUI Reset",
+                message="The GUI settings have been reset to default."
+            )
+            self.wait_window(self.popup_window)
+            self.popup_window = None
 
     def reset_user_settings(self):
         """Reset the User settings to the default values."""
-        auth_handler = AuthenticationHandler(self.settings.get_user("email"), path.CONTEXT)
-        auth_handler.remove_session()
-        self.settings.reset_user()
-        PopupWindow(
-            master=self.master,
-            title="Settings Reset",
-            message="The User settings have been reset to default."
-        )
+        if self.popup_window is not None and self.popup_window.winfo_exists():
+            self.popup_window.lift()
+        else:
+            auth_handler = AuthenticationHandler(self.settings.get_user("email"), path.CONTEXT)
+            auth_handler.remove_session()
+            self.settings.reset_user()
+            self.popup_window = PopupWindow(
+                master=self.master,
+                title="User Reset",
+                message="The User settings have been reset to default."
+            )
+            self.wait_window(self.popup_window)
+            self.popup_window = None
+
+    def reset_game_settings(self):
+        """Reset the Game settings to the default values."""
+        if self.popup_window is not None and self.popup_window.winfo_exists():
+            self.popup_window.lift()
+        else:
+            self.settings.reset_game()
+            self.popup_window = PopupWindow(
+                master=self.master,
+                title="Game Reset",
+                message="The Game settings have been reset to default."
+            )
+            self.wait_window(self.popup_window)
+            self.popup_window = None
+
+    def reset_all_settings(self):
+        """Reset all settings to the default values."""
+        if self.popup_window is not None and self.popup_window.winfo_exists():
+            self.popup_window.lift()
+        else:
+            self.settings.reset()
+            self.popup_window = PopupWindow(
+                master=self.master,
+                title="Settings Reset",
+                message="All settings have been reset to default."
+            )
+            self.wait_window(self.popup_window)
+            self.popup_window = None
 
 
 class JVMArgsWindow(customtkinter.CTkToplevel):
@@ -198,14 +234,14 @@ class GameSettingsFrame(customtkinter.CTkFrame):
         self.settings = utils.Settings()
 
         self.grid_columnconfigure(0, weight=1)
-        self.grid_rowconfigure(0, weight=1)
+
         self.jvm_args_window = None
 
         # Frame Title
         self.title_label = customtkinter.CTkLabel(
             self, text="Game", font=self.settings.get_gui("font_title")
         )
-        self.title_label.grid(row=0, column=0, padx=20, pady=(20, 5), sticky="n")
+        self.title_label.grid(row=0, column=0, padx=20, pady=(20, 10), sticky="n")
 
         # Open MC Data Folder
         self.open_data_folder_button = customtkinter.CTkButton(
@@ -214,31 +250,22 @@ class GameSettingsFrame(customtkinter.CTkFrame):
             font=self.settings.get_gui("font_normal"),
             command=self.open_data_folder,
         )
-        self.open_data_folder_button.grid(row=1, column=0, padx=20, pady=5)
+        self.open_data_folder_button.grid(row=1, column=0, padx=20, pady=5, sticky="wse")
 
         # JVM Arguments Entry
         self.jvm_args_button = customtkinter.CTkButton(
             self,
-            text="JVM Arguments",
+            text="Memory & Arguments",
             font=self.settings.get_gui("font_normal"),
             command=self.open_jvm_args_window
         )
-        self.jvm_args_button.grid(row=2, column=0, padx=20, pady=5)
-
-        # Reset Game Settings Button
-        self.reset_game_settings_button = customtkinter.CTkButton(
-            self,
-            text="Reset Settings",
-            font=self.settings.get_gui("font_normal"),
-            command=self.reset_game_settings
-        )
-        self.reset_game_settings_button.grid(row=3, column=0, padx=20, pady=(5, 20), sticky="s")
+        self.jvm_args_button.grid(row=2, column=0, padx=20, pady=(5, 20), sticky="wse")
 
         logger.debug("Game settings frame created")
 
     def open_data_folder(self):
         """Open the data folder"""
-        utils.open_directory(path.WORK_DIR)
+        utils.open_path(path.WORK_DIR)
 
     def open_jvm_args_window(self):
         """Open the JVM Arguments dialog."""
@@ -250,15 +277,6 @@ class GameSettingsFrame(customtkinter.CTkFrame):
             self.wait_window(self.jvm_args_window)
             self.jvm_args_window = None
 
-    def reset_game_settings(self):
-        """Reset the Game settings to the default values."""
-        self.settings.reset_game()
-        PopupWindow(
-            master=self.master,
-            title="Settings Reset",
-            message="The Game settings have been reset to default."
-        )
-
 
 class SettingsWindow(customtkinter.CTkToplevel):
     """A window for the settings of the application."""
@@ -269,44 +287,30 @@ class SettingsWindow(customtkinter.CTkToplevel):
         self.settings = utils.Settings()
 
         self.title("Settings")
-        self.geometry("600x300")
+        self.geometry("500x350")
+        self.resizable(False, False)
         self.grid_columnconfigure(0, weight=1)
         self.grid_columnconfigure(1, weight=1)
-        self.grid_columnconfigure(2, weight=1)
         self.grid_rowconfigure(0, weight=1)
         self.grid_rowconfigure(1, weight=1)
 
         # GUI Settings Frame
         self.gui_settings_frame = GUISettingsFrame(self)
-        self.gui_settings_frame.grid(row=0, column=0, padx=(20, 0), pady=20)
-
-        # User Settings Frame
-        self.user_settings_frame = UserSettingsFrame(self)
-        self.user_settings_frame.grid(row=0, column=1, padx=20, pady=20)
+        self.gui_settings_frame.grid(row=0, column=0, padx=20, pady=20, sticky="we")
 
         # Game Settings Frame
         self.game_settings_frame = GameSettingsFrame(self)
-        self.game_settings_frame.grid(row=0, column=2, padx=(0, 20), pady=20)
+        self.game_settings_frame.grid(row=0, column=1, padx=20, pady=20, sticky="we")
 
-        # Reset all button
-        self.reset_all_button = customtkinter.CTkButton(
+        # Open Launcher Settings File
+        self.open_settings_file_button = customtkinter.CTkButton(
             self,
-            text="Reset All Settings",
-            font=self.settings.get_gui("font_large"),
-            command=self.reset_all_settings
+            text="Open Launcher Settings",
+            font=self.settings.get_gui("font_normal"),
+            command=lambda: utils.open_path(self.settings.path)
         )
-        self.reset_all_button.grid(
-            row=1, column=0, columnspan=3, padx=20, pady=(0, 20), sticky="wes"
+        self.open_settings_file_button.grid(
+            row=1, column=0, columnspan=2, padx=20, pady=0, sticky="wne"
         )
 
         logger.debug("Settings window created")
-
-    def reset_all_settings(self):
-        """Reset all settings to the default values."""
-        self.settings.reset()
-        PopupWindow(
-            master=self.master,
-            title="Settings Reset",
-            message="All settings have been reset to default."
-        )
-        self.destroy()
