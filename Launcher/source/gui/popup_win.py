@@ -4,11 +4,9 @@ This module contains the PopupWindow class, which represents a popup window.
 
 import logging
 import customtkinter
-from source.utils import Settings
+from source import utils
 
 logger = logging.getLogger(__name__)
-
-SETTINGS = Settings()
 
 
 class PopupWindow(customtkinter.CTkToplevel):
@@ -16,6 +14,8 @@ class PopupWindow(customtkinter.CTkToplevel):
     def __init__(self, master, title, message, **kwargs):
         super().__init__(master, **kwargs)
         logger.debug("Creating popup window")
+
+        self.settings = utils.Settings()
 
         logger.debug("Popup window title: %s", title)
         logger.debug("Popup window message: %s", message)
@@ -35,15 +35,15 @@ class PopupWindow(customtkinter.CTkToplevel):
         self.message_frame.grid(row=0, column=0, padx=20, pady=20, sticky="new")
 
         self.label = customtkinter.CTkLabel(
-            self.message_frame, text=message, font=SETTINGS.get_gui("font_large"), wraplength=400
+            self.message_frame,
+            text=message,
+            font=self.settings.get_gui("font_large"), wraplength=400
         )
         self.label.grid(row=0, column=0, padx=20, pady=20)
 
         self.button = customtkinter.CTkButton(
-            self, text="OK", command=self.destroy, font=SETTINGS.get_gui("font_normal")
+            self, text="OK", command=self.destroy, font=self.settings.get_gui("font_normal")
         )
         self.button.grid(row=1, column=0, padx=20, pady=(0, 20), sticky="s")
 
         logger.debug("Popup window created")
-
-        self.wait_window()  # Wait for the window to be destroyed

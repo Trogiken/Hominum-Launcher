@@ -53,6 +53,8 @@ class AuthenticationHandler:
     def __init__(self, email: str, context: Context):
         logger.debug("Initializing AuthenticationHandler")
 
+        self.settings = utils.Settings()
+
         self.email = email
         self.context = context
         self.auth_database = AuthDatabase(path.STORE_DIR / AUTH_DATABASE_FILE_NAME)
@@ -262,8 +264,7 @@ class AuthenticationHandler:
         self.auth_database.load()
         self.auth_database.remove(self.email, MicrosoftAuthSession)
         self.auth_database.save()
-        settings = utils.Settings()
-        settings.set_user(email="")
+        self.settings.set_user(email="")
         logger.info("Session removed for '%s'", self.email)
 
     def authenticate(self) -> MicrosoftAuthSession:
