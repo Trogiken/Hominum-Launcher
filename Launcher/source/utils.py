@@ -36,8 +36,6 @@ logger = logging.getLogger(__name__)
 SETTINGS_FILENAME = "settings.json"
 SETTINGS_PATH = pathlib.Path(os.path.join(path.STORE_DIR, SETTINGS_FILENAME))
 
-# FIXME: Handle environment differently, reference private project
-
 gui_settings = {
         "appearance": "system",
         "main_window_geometry": [1200, 500],
@@ -93,6 +91,7 @@ class Settings:
         self._gui = None
         self._user = None
         self._game = None
+        self.load()
 
     def validate_settings(self) -> bool:
         """

@@ -92,14 +92,13 @@ class InstallWindow(customtkinter.CTkToplevel):
         - None
         """
         logger.info("Starting Installation")
+        version_environment = None
         # Install the game
         install_watcher = InstallWatcher(self)
-        if SETTINGS.get_game("environment"):  # Reset environment if one exists
-            SETTINGS.set_game(environment=utils.GameSettings().environment)
         for _ in range(3):  # Retry 3 times
             try:
                 logger.info("Provisioning Environment")
-                self.environment = self.mc.provision_environment(
+                version_environment = self.mc.provision_environment(
                     version=self.version,
                     auth_session=self.session,
                     watcher=install_watcher,
@@ -124,9 +123,12 @@ class InstallWindow(customtkinter.CTkToplevel):
                 logger.error("Error syncing files: %s", sync_error)
                 self.errors_occurred = True
 
+        if not version_environment:
+            logger.warning("Environment is not set")
+
         # Only set the user if no errors occurred
-        if not self.errors_occurred:
-            SETTINGS.set_game(environment=self.environment)
+        if not self.errors_occurred and version_environment:
+            self.environment = version_environment
             logger.info("Installation finished successfully")
         else:
             logger.warning("Installation finished with errors")

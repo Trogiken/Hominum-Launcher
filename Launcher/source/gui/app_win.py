@@ -242,8 +242,14 @@ class RightFrame(customtkinter.CTkFrame):
         # Install win
         install_window = InstallWindow()
         self.wait_window(install_window)
+
+        env = install_window.environment
+        if env is None:
+            self.play_button.configure(state="normal")
+            return
+
         # Run win
-        run_window = RunWindow()
+        run_window = RunWindow(environment=env)
         self.wait_window(run_window)
 
         self.play_button.configure(state="normal")

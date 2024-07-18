@@ -23,7 +23,7 @@ SETTINGS = utils.Settings()
 
 class RunWindow(customtkinter.CTkToplevel):
     """A class that is used to run the game."""
-    def __init__(self):
+    def __init__(self, environment: Environment):
         super().__init__()
         logger.debug("Creating game window")
 
@@ -33,6 +33,17 @@ class RunWindow(customtkinter.CTkToplevel):
         if os.name != "posix":
             self.main_window: pygw.Win32Window = pygw.getWindowsWithTitle(path.PROGRAM_NAME)[0]
 
+        if not environment:
+            PopupWindow(
+                self,
+                title="No Environment",
+                message="Environment could not be found in settings. "\
+                "Make sure the installation completed successfully."
+            )
+            super().destroy()
+            return
+
+        self.environment = environment
         self.kill_process = False  # Used by EnvironmentRunner
 
         self.protocol("WM_DELETE_WINDOW", self.destroy)  # Prevent the closing of this window
@@ -69,22 +80,11 @@ class RunWindow(customtkinter.CTkToplevel):
     def run(self):
         """Provision the environment and run the game."""
         logger.info("Running game")
-        env: Environment = SETTINGS.get_game("environment")
-        if env is None:
-            PopupWindow(
-                self,
-                title="No Environment",
-                message="Environment could not be found in settings. "\
-                "Make sure the installation completed successfully."
-            )
-            self.on_run_complete()
-            return
-
         if os.name != "posix" and self.main_window:
             if not self.main_window.isMinimized:
                 self.after(1000, self.main_window.minimize())
                 logger.debug("Main window minimized")
-        env.run(EnvironmentRunner(self))
+        self.environment.run(EnvironmentRunner(self))
 
     def update_gui(self):
         """Update the GUI."""
@@ -94,7 +94,6 @@ class RunWindow(customtkinter.CTkToplevel):
     def on_run_complete(self):
         """Close this window."""
         logger.info("Game stopped")
-        SETTINGS.set_game(environment=utils.GameSettings().environment)  # Reset the environment
         if os.name != "posix" and self.main_window:
             if self.main_window.isMinimized:
                 self.main_window.maximize()
