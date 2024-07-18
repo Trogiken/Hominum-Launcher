@@ -47,5 +47,3 @@ class PopupWindow(customtkinter.CTkToplevel):
         self.button.grid(row=1, column=0, padx=20, pady=(0, 20), sticky="s")
 
         logger.debug("Popup window created")
-
-        self.wait_window()  # Wait for the window to be destroyed

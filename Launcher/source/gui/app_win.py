@@ -41,6 +41,7 @@ class LeftFrame(customtkinter.CTkFrame):
         logger.debug("Creating left frame")
 
         self.settings = utils.Settings()
+        self.master = master
 
         self.settings_window = None
         self.grid_columnconfigure(0, weight=1)
@@ -112,6 +113,9 @@ class LeftFrame(customtkinter.CTkFrame):
             self.settings_window.transient(self)
             self.wait_window(self.settings_window)
             self.settings_window = None  # Reset the attribute when the window is closed
+
+            # Reinitialize the frames to apply the changes
+            self.master.initialize_frames()
 
 
 class RightFrame(customtkinter.CTkFrame):
@@ -361,6 +365,10 @@ class App(customtkinter.CTk):
         self.settings = utils.Settings()
         self.mc = MCManager(context=path.CONTEXT)
 
+        self.left_frame = None
+        self.right_frame = None
+        self.center_frame = None
+
         self.title(path.PROGRAM_NAME)
         geom_length, geom_height = self.settings.get_gui("main_window_geometry")
         min_length, min_height = self.settings.get_gui("main_window_min_size")
@@ -371,33 +379,34 @@ class App(customtkinter.CTk):
         self.grid_columnconfigure(1, weight=1)
         self.grid_columnconfigure(2, weight=0)
 
-        customtkinter.set_appearance_mode(self.settings.get_gui("appearance"))
-
         if SPLASH_FOUND:
-            pyi_splash.update_text("Loading Left Frame")
+            pyi_splash.update_text("Loading Frames")
             logger.debug("Updated splash text")
             sleep(.25)
-        self.settings_frame = LeftFrame(self)
-        self.settings_frame.grid(row=0, column=0, padx=(10, 0), pady=10, sticky="nsw")
 
-        if SPLASH_FOUND:
-            pyi_splash.update_text("Loading Right Frame")
-            logger.debug("Updated splash text")
-            sleep(.25)
-        self.right_frame = RightFrame(self, mcmanager=self.mc)
-        self.right_frame.grid(row=0, column=2, padx=(0, 10), pady=10, sticky="nse")
-
-        if SPLASH_FOUND:
-            pyi_splash.update_text("Loading Center Frame")
-            logger.debug("Updated splash text")
-            sleep(.25)
-        self.center_frame = CenterFrame(self, mcmanager=self.mc)
-        self.center_frame.grid(row=0, column=1, padx=10, pady=10, sticky="nsew")
+        self.initialize_frames()
 
         logger.debug("Main window created")
 
         if SPLASH_FOUND:
             pyi_splash.close()
             logger.debug("Closed splash screen")
+        # pylint: disable=W0012
         # pylint: enable=E0606
-        # pylint: enable=W0012
+
+    def initialize_frames(self):
+        """Initialize the frames."""
+        customtkinter.set_appearance_mode(self.settings.get_gui("appearance"))
+        if self.left_frame is not None:
+            self.left_frame.destroy()
+        if self.right_frame is not None:
+            self.right_frame.destroy()
+        if self.center_frame is not None:
+            self.center_frame.destroy()
+
+        self.left_frame = LeftFrame(self)
+        self.right_frame = RightFrame(self, mcmanager=self.mc)
+        self.center_frame = CenterFrame(self, mcmanager=self.mc)
+        self.left_frame.grid(row=0, column=0, padx=(10, 0), pady=10, sticky="nsw")
+        self.right_frame.grid(row=0, column=2, padx=(0, 10), pady=10, sticky="nse")
+        self.center_frame.grid(row=0, column=1, padx=10, pady=10, sticky="nsew")

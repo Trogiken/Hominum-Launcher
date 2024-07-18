@@ -34,12 +34,13 @@ class RunWindow(customtkinter.CTkToplevel):
             self.main_window: pygw.Win32Window = pygw.getWindowsWithTitle(path.PROGRAM_NAME)[0]
 
         if not environment:
-            PopupWindow(
+            env_popup_window = PopupWindow(
                 self,
                 title="No Environment",
                 message="Environment could not be found. "\
                 "Make sure the installation completed successfully."
             )
+            env_popup_window.wait_window()
             super().destroy()
             return
 

@@ -93,6 +93,16 @@ class Settings:
         self._game = None
         self.load()
 
+    @property
+    def path(self) -> pathlib.Path:
+        """
+        Get the path to the settings file.
+
+        Returns:
+        - pathlib.Path: The path to the settings file.
+        """
+        return SETTINGS_PATH
+
     def validate_settings(self) -> bool:
         """
         Validate the settings.
@@ -314,7 +324,7 @@ def get_html_resp() -> str:
     return html_resp
 
 
-def open_directory(directory_path: str | pathlib.Path):
+def open_path(directory_path: str | pathlib.Path):
     """
     Open a folder on the users computer.
 
@@ -331,7 +341,7 @@ def open_directory(directory_path: str | pathlib.Path):
     else:  # Linux and other Unix-like systems
         with subprocess.Popen(["xdg-open", directory_path]) as proc:
             proc.communicate()
-    logger.debug("Opened directory: '%s'", directory_path)
+    logger.debug("Opened path: '%s'", directory_path)
 
 
 def format_number(n: float) -> str:
