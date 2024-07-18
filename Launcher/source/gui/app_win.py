@@ -363,7 +363,7 @@ class App(customtkinter.CTk):
         self.settings = utils.Settings()
         self.mc = MCManager(context=path.CONTEXT)
 
-        self.settings_frame = None
+        self.left_frame = None
         self.right_frame = None
         self.center_frame = None
 
@@ -393,16 +393,16 @@ class App(customtkinter.CTk):
     def initialize_frames(self):
         """Initialize the frames."""
         customtkinter.set_appearance_mode(self.settings.get_gui("appearance"))
-        if self.settings_frame is not None:
-            self.settings_frame.destroy()
+        if self.left_frame is not None:
+            self.left_frame.destroy()
         if self.right_frame is not None:
             self.right_frame.destroy()
         if self.center_frame is not None:
             self.center_frame.destroy()
 
-        self.settings_frame = LeftFrame(self)
+        self.left_frame = LeftFrame(self)
         self.right_frame = RightFrame(self, mcmanager=self.mc)
         self.center_frame = CenterFrame(self, mcmanager=self.mc)
-        self.settings_frame.grid(row=0, column=0, padx=(10, 0), pady=10, sticky="nsw")
+        self.left_frame.grid(row=0, column=0, padx=(10, 0), pady=10, sticky="nsw")
         self.right_frame.grid(row=0, column=2, padx=(0, 10), pady=10, sticky="nse")
         self.center_frame.grid(row=0, column=1, padx=10, pady=10, sticky="nsew")
