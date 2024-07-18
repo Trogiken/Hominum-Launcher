@@ -102,18 +102,18 @@ class Settings:
         - bool: True if the settings are valid, False otherwise.
         """
         valid = True
-        for key, value in self._gui.items():
-            if key not in gui_settings or not isinstance(value, type(gui_settings[key])):
+        for key, value in gui_settings.items():
+            if key not in self._gui or not isinstance(self._gui[key], type(value)):
                 valid = False
-                break
-        for key, value in self._user.items():
-            if key not in user_settings or not isinstance(value, type(user_settings[key])):
+                logger.warning("GUI setting '%s' is missing or invalid", key)
+        for key, value in user_settings.items():
+            if key not in self._user or not isinstance(self._user[key], type(value)):
                 valid = False
-                break
-        for key, value in self._game.items():
-            if key not in game_settings or not isinstance(value, type(game_settings[key])):
+                logger.warning("User setting '%s' is missing or invalid", key)
+        for key, value in game_settings.items():
+            if key not in self._game or not isinstance(self._game[key], type(value)):
                 valid = False
-                break
+                logger.warning("Game setting '%s' is missing or invalid", key)
         return valid
 
     def load(self):
