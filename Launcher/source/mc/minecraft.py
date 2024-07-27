@@ -492,7 +492,7 @@ class MCManager:
         if delete_others:
             for local_file in root_path.rglob("*"):  # Recursively iterate over all files
                 # If the file name is not in any of the remote paths, delete it
-                # FIXME: This should obey the exclude list and not delete files that are not in the remote path
+                # FIXME: This should obey the exclude list and not delete files if in list
                 if local_file.is_file() and all(
                     local_file.name not in remote_dir_item for remote_dir_item in dir_paths
                     ):
