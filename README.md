@@ -19,6 +19,14 @@ This yaml file lives on a private repository where it serves as the control for 
 
 * game `vanilla, fabric, quilt, forge` - The corresponding key in the _games_ section. This determines the game type used
 
+#### Startup Example
+
+```yaml
+startup:
+  server_ip: "1.1.1.1"
+  game: "forge"
+```
+
 ### games :heavy_minus_sign:
 
 * vanilla - Vanilla Game Type
@@ -36,58 +44,73 @@ This yaml file lives on a private repository where it serves as the control for 
   * mc_version `"", ~, "x.x.x"` - The version of minecraft. If this is null, forge version will be force to be recommended
   * forge_version `"", ~, "x.x.x", recommended, latest` - The version of forge. Recommended is default
 
-### paths :heavy_plus_sign:
+#### Games Example
 
 ```yaml
-paths:
+games:
+  vanilla:
+    mc_version: "1.20.1"
+  fabric:
+    mc_version: "1.20.6"
+    loader_version: "0.16.0"
+  quilt:
+    mc_version: "1.20.6"
+    loader_version: ~
+  forge:
+    mc_version: "1.20.1"
+    forge_version: "47.3.0"
+```
+
+### paths :heavy_plus_sign:
+
+* path/to/remote/directory - The relative url path to the directory to sync
+  * is_dir `True, False` - Is the path a directory
+  * exclude `[path/to/remote/dir, path/to/remote/file]` - Relative url paths to exclude from syncing
+  * delete_others `True, False` - Delete any other file in the local directory that's not on the remote (Obeys the exclude paths)
+  * root `ExampleLocalDirName` - The directory path that will be stored locally. This is stored in the game data folder
+  * overwrite `True, False` - If a local path matches a remote path, should the local file be overwritten
+* path/to/remote/file - The relative url path to the file to sync
+  * is_dir `True, False` - Is the path a directory
+  * root `ExampleFileName` - The file path that will be stored locally. This is stored in the game data folder
+  * overwrite `True, False` - If a local path matches a remote path, should the local file be overwritten
+
+#### Paths Example
+
+```yaml
   sync/config:
     is_dir: True
-    exclude: []
+    exclude: ["config/modconfig/dir"]
     delete_others: True
     root: "config"
-    overwrite: False
-  sync/mods:
-    is_dir: True
-    exclude: []
-    delete_others: True
-    root: "mods"
-    overwrite: False
-  sync/resourcepacks:
-    is_dir: True
-    exclude: []
-    delete_others: False
-    root: "resourcepacks"
-    overwrite: False
-  sync/shaderpacks:
-    is_dir: True
-    exclude: []
-    delete_others: False
-    root: "shaderpacks"
     overwrite: False
   sync/options.txt:
     is_dir: False
     root: "options.txt"
     overwrite: False
-  sync/servers.dat:
-    is_dir: False
-    root: "servers.dat"
-    overwrite: True
 ```
 
 ### altnames :heavy_plus_sign:
 
+Spoofs the players username to a alternate name in the launcher
+
+#### Altnames Example
+
 ```yaml
 altnames:
-  "Lilyotv4642": "Not Lesbian"
-  "wasntMe_guy": "Biddie Nom"
+  "UsernameOfPlayer": "NewUsernameOfPlayer"
 ```
 
 ### bulletin :heavy_plus_sign:
 
+Creates the layout and information to display in the bulletin
+
+#### Bulletin Example
+
 ```yaml
 bulletin:
   column_0:
-    "Server Info": ["Ip Address: hominum.mcserver.us", "Version: 1.20.1", "Forge: 47.3.0"]
+    "Example Section": ["Line 1", "Line 2", "..."]
   column_1:
-    "Content Update": ["Slight Difficuly Tweak - See new mod info in updated wiki PDF on discord"]
+    "Example Section 1": ["Line 1", "Line 2"]
+    "Example Section 2": ["Line 1", "Line 2"]
 ```
