@@ -63,13 +63,13 @@ games:
 
 ### paths :heavy_plus_sign:
 
-* path/to/remote/directory - The relative url path to the directory to sync
+* `path/to/remote/directory` - The relative url path to the directory to sync
   * is_dir `True, False` - Is the path a directory
   * exclude `[path/to/remote/dir, path/to/remote/file]` - Relative url paths to exclude from syncing
   * delete_others `True, False` - Delete any other file in the local directory that's not on the remote (Obeys the exclude paths)
   * root `ExampleLocalDirName` - The directory path that will be stored locally. This is stored in the game data folder
   * overwrite `True, False` - If a local path matches a remote path, should the local file be overwritten
-* path/to/remote/file - The relative url path to the file to sync
+* `path/to/remote/file` - The relative url path to the file to sync
   * is_dir `True, False` - Is the path a directory
   * root `ExampleFileName` - The file path that will be stored locally. This is stored in the game data folder
   * overwrite `True, False` - If a local path matches a remote path, should the local file be overwritten
@@ -77,6 +77,7 @@ games:
 #### Paths Example
 
 ```yaml
+paths:
   sync/config:
     is_dir: True
     exclude: ["config/modconfig/dir"]
