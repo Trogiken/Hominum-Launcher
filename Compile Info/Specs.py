@@ -2,7 +2,7 @@ import pyinstaller_versionfile
 
 pyinstaller_versionfile.create_versionfile(
     output_file="versionfile.txt",
-    version="1.3.3.1",
+    version="1.3.3.2",
     company_name="Noah Blaszak",
     file_description="Hominum Minecraft Launcher",
     internal_name="Hominum Client",
