@@ -23,8 +23,8 @@ from portablemc.standard import Context, Version, SimpleWatcher, Environment, St
     JvmLoadingEvent, JvmLoadedEvent, JarFoundEvent, \
     AssetsResolveEvent, LibrariesResolvingEvent, LibrariesResolvedEvent, LoggerFoundEvent
 from portablemc.fabric import FabricVersion, FabricResolveEvent
-from portablemc.forge import ForgeVersion, ForgeResolveEvent, ForgePostProcessingEvent, \
-    ForgePostProcessedEvent
+from portablemc.forge import ForgeVersion, _NeoForgeVersion, \
+    ForgeResolveEvent, ForgePostProcessingEvent, ForgePostProcessedEvent
 
 logger = logging.getLogger(__name__)
 
@@ -299,7 +299,7 @@ class MCManager:
         - mc_version (str): Version of Minecraft.
         - loader_version (str): Version of the loader.
 
-        Returns
+        Returns:
         - FabricVersion: Fabric version.
         """
         logger.debug("mc_version: %s", mc_version)
@@ -320,7 +320,7 @@ class MCManager:
         - mc_version (str): Version of Minecraft.
         - loader_version (str): Version of the loader.
 
-        Returns
+        Returns:
         - FabricVersion: Quilt version.
         """
         logger.debug("mc_version: %s", mc_version)
@@ -339,7 +339,7 @@ class MCManager:
         - mc_version (str): Version of Minecraft.
         - forge_version (str): Version of forge.
 
-        Returns
+        Returns:
         - ForgeVersion: Forge version.
         """
         logger.debug("mc_version: %s", mc_version)
@@ -352,6 +352,20 @@ class MCManager:
             forge = "release"
             logger.warning("Forge MC version set to None, ignoring forge version")
         return ForgeVersion(forge_version=forge, context=self.context)
+
+    def create_neoforge_version(self, mc_version: str=None) -> _NeoForgeVersion:
+        """
+        Create neoforge root.
+        Specific neoforge version not available yet.
+
+        Parameters:
+        - mc_version (str): Version of Minecraft.
+
+        Returns:
+        - _NeoForgeVersion: Neoforge version.
+        """
+        logger.debug("mc_version: %s", mc_version)
+        return _NeoForgeVersion(neoforge_version=mc_version)
 
     def provision_version(self, autojoin: bool) -> Version | FabricVersion | ForgeVersion:
         """
@@ -385,6 +399,10 @@ class MCManager:
         elif self.game_selected == "forge":
             version = self.create_forge_version(
                 mc_version=game_config["mc_version"], forge_version=game_config["forge_version"]
+            )
+        elif self.game_selected == "neoforge":
+            version = self.create_neoforge_version(
+                mc_version=game_config["mc_version"]
             )
         else:
             raise ValueError(f"Unknown valid game selected: {self.game_selected}")
