@@ -44,6 +44,9 @@ startup:
   * mc_version `"", ~, "x.x.x"` - The version of minecraft. If this is null, forge version will be force to be recommended
   * forge_version `"", ~, "x.x.x", recommended, latest` - The version of forge. Recommended is default
 
+* neoforge - Neoforge Game Type
+  * mc_version `"", ~, "x.x.x"` - The version of minecraft
+
 #### Games Example
 
 ```yaml
@@ -59,6 +62,8 @@ games:
   forge:
     mc_version: "1.20.1"
     forge_version: "47.3.0"
+  neoforge:
+    mc_version: "1.20.1"
 ```
 
 ### paths :heavy_plus_sign:
