@@ -15,15 +15,19 @@ This yaml file lives on a private repository where it serves as the control for 
 
 ### startup :heavy_minus_sign:
 
-* server_ip `server.com, x.x.x.x` - The Ip address of the server. Used for auto join functionality
+* server_ip `server.com, x.x.x.x, "", ~` - The Ip address of the server. Used for auto join functionality.
+If falsy value used, the auto join feature will be disabled
 
-* game `vanilla, fabric, quilt, forge` - The corresponding key in the _games_ section. This determines the game type used
+* server_port `22567, ~` - The port address of the server. Used for auto join functionality. Default is 25565
+
+* game `vanilla, fabric, quilt, forge, neoforge` - The corresponding key in the _games_ section. This determines the game type used
 
 #### Startup Example
 
 ```yaml
 startup:
   server_ip: "1.1.1.1"
+  server_port: 25565
   game: "forge"
 ```
 
