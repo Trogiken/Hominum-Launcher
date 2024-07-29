@@ -10,7 +10,6 @@ Classes:
 import logging
 import time
 import os
-import shutil
 from pathlib import Path
 from subprocess import Popen
 from typing import Generator, List
@@ -511,14 +510,24 @@ class MCManager:
         delete_others: bool = self.remote_config["paths"][remote_path]["delete_others"]
         logger.debug("Exclude List: %s, Delete Others: %s", exclude_list, delete_others)
 
+        # Filter out excluded paths from dir_paths
+        if exclude_list:
+            dir_paths = [
+                dir_path for dir_path in dir_paths
+                if not any(exclude_item in dir_path for exclude_item in exclude_list)
+            ]
+
         # Delete other files
         if delete_others:
             for local_file in root_path.rglob("*"):  # Recursively iterate over all files
-                # If the file name is not in any of the remote paths, delete it
-                # FIXME: This should obey the exclude list and not delete files if in list
-                if local_file.is_file() and all(
-                    local_file.name not in remote_dir_item for remote_dir_item in dir_paths
-                    ):
+                if (
+                    local_file.is_file()
+                    and (
+                        not exclude_list or
+                        not any(exclude_item in local_file.name for exclude_item in exclude_list)
+                    )
+                    and all(local_file.name not in remote_dir_item for remote_dir_item in dir_paths)
+                ):
                     local_file.unlink()
                     logger.debug("Deleted unknown file: %s", local_file.name)
 
@@ -530,18 +539,6 @@ class MCManager:
             local_save_path: Path = root_path / item_name
             logger.debug("Local Save Path: %s", local_save_path)
             app.update_item(item_name)
-
-            # Skip if path is in exclude list
-            if exclude_list:
-                if any(exclude_item in remote_dir_item for exclude_item in exclude_list):
-                    if local_save_path.exists():  # FIXME: This should skip without deleting
-                        if local_save_path.is_dir():
-                            shutil.rmtree(local_save_path)
-                        else:
-                            local_save_path.unlink()
-                        logger.debug("Deleted excluded file: %s", local_save_path)
-                    logger.debug("Skipping '%s' because it is in the exclude list", remote_dir_item)
-                    continue
 
             # If there is no file extension, it is a directory
             if not local_save_path.suffix:
