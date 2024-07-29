@@ -365,7 +365,7 @@ class MCManager:
         - _NeoForgeVersion: Neoforge version.
         """
         logger.debug("mc_version: %s", mc_version)
-        return _NeoForgeVersion(neoforge_version=mc_version)
+        return _NeoForgeVersion(neoforge_version=mc_version, context=self.context)
 
     def provision_version(self, autojoin: bool) -> Version | FabricVersion | ForgeVersion:
         """
