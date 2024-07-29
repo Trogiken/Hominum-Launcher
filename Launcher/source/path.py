@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 
 PROGRAM_NAME = "Hominum"
 PROGRAM_NAME_LONG = "Hominum Launcher"
-VERSION = "1.4.7.7"
+VERSION = "1.4.7.8"
 
 if getattr(sys, 'frozen', False):
     APPLICATION_DIR = pathlib.Path(sys.executable).parent
