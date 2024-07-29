@@ -410,7 +410,7 @@ class MCManager:
             raise ValueError(f"Unknown valid game selected: {self.game_selected}")
 
         if autojoin:
-            if self.server_ip is None:
+            if not self.server_ip:
                 logger.warning("Server IP not set, ignoring autojoin")
             else:
                 version.set_quick_play_multiplayer(self.server_ip, self.server_port or 25565)
