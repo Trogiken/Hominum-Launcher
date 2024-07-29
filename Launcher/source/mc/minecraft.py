@@ -520,10 +520,11 @@ class MCManager:
         # Delete other files
         if delete_others:
             for local_file in root_path.rglob("*"):  # Recursively iterate over all files
+                # Del file if it is a file, not in exclude_list, and not in dir_paths
                 if (
                     local_file.is_file()
                     and (
-                        not exclude_list or
+                        not exclude_list or  # Returns True if list not provided
                         not any(exclude_item in local_file.name for exclude_item in exclude_list)
                     )
                     and all(local_file.name not in remote_dir_item for remote_dir_item in dir_paths)
