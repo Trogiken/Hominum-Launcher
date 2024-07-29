@@ -258,6 +258,7 @@ class RightFrame(customtkinter.CTkFrame):
 
         # Run win
         run_window = RunWindow(environment=env)
+        run_window.transient(self)
         self.wait_window(run_window)
 
         self.play_button.configure(state="normal")
