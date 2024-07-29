@@ -32,9 +32,10 @@ Replace `<feature-name>`, `<bugfix-name>`, `patch/<patch-name>`, `<hotfix-name>`
 
 Please follow these steps for creating a pull request:
 
-1. Create a branch from `staging` with proper name formatting.
-2. If code you added changes previous functionality, update documentation.
-3. Keep commits appropriate and on topic of what you're pushing.
-4. Make sure your code passes linting and CodeQL
-5. Make sure your PR is merging into the correct branch.
-6. After the PR is merged, delete the branch to keep the repository clean.
+1. Update local packages
+2. Create a branch from `staging` with proper name formatting.
+3. If code you added changes previous functionality, update documentation.
+4. Keep commits appropriate and on topic of what you're pushing.
+5. Make sure your code passes linting and CodeQL
+6. Make sure your PR is merging into the correct branch.
+7. After the PR is merged, delete the branch to keep the repository clean.
