@@ -137,7 +137,9 @@ class RightFrame(customtkinter.CTkFrame):
             )
             username = self.auth_handler.get_username()
             if username:
-                altnames: dict = mcmanager.remote_config.get("altnames", {})
+                altnames: dict | None = mcmanager.remote_config.get("altnames", {})
+                if not altnames:
+                    altnames = {}
                 if username in altnames:
                     username = altnames[username]
                 self.user_menu_var = customtkinter.StringVar(value=username)
