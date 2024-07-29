@@ -268,10 +268,12 @@ class MCManager:
             raise exceptions.RemoteError("Remote tree not found")
 
         self.server_ip: str = self.remote_config.get("startup", {}).get("server_ip", "")
+        self.server_port: int = self.remote_config.get("startup", {}).get("server_port", "")
         self.game_selected: str = self.remote_config.get("startup", {}).get("game", "")
 
         logger.debug("Context: %s", self.context)
         logger.debug("Server IP: %s", self.server_ip)
+        logger.debug("Server Port: %s", self.server_port)
         logger.debug("Game Selected: %s", self.game_selected)
 
         logger.debug("MCManager initialized")
@@ -408,7 +410,10 @@ class MCManager:
             raise ValueError(f"Unknown valid game selected: {self.game_selected}")
 
         if autojoin:
-            version.set_quick_play_multiplayer(self.server_ip)
+            if self.server_ip is None:
+                logger.warning("Server IP not set, ignoring autojoin")
+            else:
+                version.set_quick_play_multiplayer(self.server_ip, self.server_port or 25565)
         logger.debug("Version: %s", version)
 
         return version
