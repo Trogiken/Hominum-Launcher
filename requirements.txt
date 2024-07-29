@@ -5,7 +5,6 @@ customtkinter
 pillow
 portablemc
 psutil
-pygetwindow
 pylint
 pyinstaller_versionfile
 requests
