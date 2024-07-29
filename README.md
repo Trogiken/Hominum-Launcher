@@ -101,7 +101,7 @@ paths:
 
 ### altnames :heavy_plus_sign:
 
-Spoofs the players username to a alternate name in the launcher
+Spoofs the players username to a alternate name in the launcher. To disable this feature set the key as follows: `altnames: ~`
 
 #### Altnames Example
 
