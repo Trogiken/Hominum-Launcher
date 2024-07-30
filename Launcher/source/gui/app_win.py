@@ -14,7 +14,6 @@ import logging
 import os
 import importlib.util
 import customtkinter
-from customtkinter.windows.widgets.core_widget_classes import DropdownMenu
 from source import path, utils
 from source.mc.minecraft import MCManager
 from source.mc.authentication import AuthenticationHandler
@@ -247,19 +246,7 @@ class RightFrame(customtkinter.CTkFrame):
     def run_game(self):
         """Start Minecraft"""
         self.play_button.configure(state="disabled")
-
-        # FIXME: nothing is being disabled
-        # FIXME: images on buttons are weird
-
-        # Disable all interactive widgets in the master window
-        for frame in self.master.winfo_children():
-            for widget in frame.winfo_children():
-                for child in widget.winfo_children():
-                    logger.debug("child: %s", child)
-                    logger.debug("type: %s", type(child))
-                    if not isinstance(child, (DropdownMenu, customtkinter.CTkScrollbar)):
-                        child.configure(state="disabled")
-                        sleep(1)
+        self.master.left_frame.settings_button.configure(state="disabled")
 
         # Install win
         install_window = InstallWindow()
@@ -269,9 +256,7 @@ class RightFrame(customtkinter.CTkFrame):
         env = install_window.environment
         if env is None:
             self.play_button.configure(state="normal")
-            self.master.attributes("-alpha", 1)
-            for widget in self.master.winfo_children():
-                widget.configure(state="normal")
+            self.master.left_frame.settings_button.configure(state="disabled")
             return
 
         # Run win
@@ -279,17 +264,8 @@ class RightFrame(customtkinter.CTkFrame):
         run_window.transient(self)
         self.wait_window(run_window)
 
-        # Enable all interactive widgets in the master window
-        for frame in self.master.winfo_children():
-            for widget in frame.winfo_children():
-                for child in widget.winfo_children():
-                    logger.debug("child: %s", child)
-                    logger.debug("type: %s", type(child))
-                    if not isinstance(child, (DropdownMenu, customtkinter.CTkScrollbar)):
-                        child.configure(state="normal")
-                    self.master.update()
-                    self.master.update_idletasks()
         self.play_button.configure(state="normal")
+        self.master.left_frame.settings_button.configure(state="normal")
 
 
 class ScrollableFrame(customtkinter.CTkScrollableFrame):
