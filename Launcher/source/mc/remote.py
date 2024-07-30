@@ -16,6 +16,7 @@ Constants:
 - CONFIG_NAME (str): The name of the config file on the server.
 """
 
+from io import BufferedReader
 import logging
 import base64
 import json
@@ -31,6 +32,81 @@ logger = logging.getLogger(__name__)
 GITHUB_CONTENTS_BASE = \
     r"https://api.github.com/repos/Trogiken/Hominum-Updates/git/trees/master?recursive=1"
 CONFIG_PATH = "config.yaml"
+
+
+def decode_base64(file_path: str, chunk_size=8192) -> None:
+    """
+    Decode base64 encoded content from a file and write it back to the original file.
+
+    Parameters:
+    - file_path (str): The path to the file to decode.
+    - chunk_size (int): The size of the chunks to read from the file. Defaults to 8192.
+
+    Exceptions:
+    - FileNotFoundError: If the file does not exist.
+    - Base64DecodeError: If an error occurs during decoding.
+    """
+    def _read_lines(file_obj: BufferedReader, size: int) -> list[bytes]:
+        lines = []
+        bytes_read = 0
+
+        while bytes_read < size:
+            line = file_obj.readline()
+            if not line:
+                # End of file reached
+                break
+
+            bytes_read += len(line)
+
+            lines.append(line)
+
+        return lines
+
+    if not os.path.exists(file_path):
+        raise FileNotFoundError(f"File to decode not found '{file_path}'")
+
+    temp_decode_file = None
+    try:
+        # Create a temporary file to store decoded content
+        logger.debug("Decoding base64 content from '%s'", file_path)
+        with open(file_path, "rb") as file:
+            temp_decode_file = tempfile.NamedTemporaryFile(delete=False)
+            with temp_decode_file:
+                while True:
+                    # Read the next chunk from the raw file
+                    chunk = _read_lines(file, chunk_size)
+                    if not chunk:
+                        break
+
+                    # Process each line in the chunk
+                    for line in chunk:
+                        if line:
+                            try:
+                                base64_bytes = json.loads(line.decode('utf-8'))["content"]
+                            except UnicodeDecodeError:  # Handle binary data
+                                base64_bytes = json.loads(line)["content"]
+
+                            # Decode the base64 content
+                            message_bytes = base64.b64decode(base64_bytes)
+                            temp_decode_file.write(message_bytes)
+
+        # Read the decoded content from the temp file and write it back to the original file
+        logger.debug("Writing decoded content to '%s'", file_path)
+        with open(temp_decode_file.name, "rb") as temp_file, open(file_path, "wb") as file:
+            while True:
+                chunk = temp_file.read(chunk_size)
+                if not chunk:
+                    break
+                file.write(chunk)
+
+        # Remove the temporary file
+        os.unlink(temp_decode_file.name)
+        logger.debug("Removed temp decode file '%s'", temp_decode_file.name)
+    except Exception as error:
+        if temp_decode_file and os.path.exists(temp_decode_file.name):
+            os.unlink(temp_decode_file.name)
+            logger.debug("Removed temp decode file '%s'", temp_decode_file.name)
+        raise exceptions.Base64DecodeError(f"Failed to decode '{file_path}': {error}")
 
 
 def get_request(
@@ -74,7 +150,8 @@ def get_request(
             return None
     return None
 
-
+# FIXME: Decode or Download process is slow
+# FIXME: Reaccuring error of temp_file_path used before assignment
 def download(url: str = None, save_path: str = None, chunk_size=8192) -> str | None:
     """
     Downloads a stream of bytes from the given URL and saves it to the specified path.
@@ -108,51 +185,9 @@ def download(url: str = None, save_path: str = None, chunk_size=8192) -> str | N
         logger.debug("Downloaded '%s' to '%s'", url, temp_file_path)
         return temp_file_path
 
-    def _decode_base64(file_path, chunk_size=8192):
-        """Decode base64 encoded content from the raw file in chunks."""
-        temp_decode_file = None
-        try:
-            # Create a temporary file to store decoded content
-            with open(file_path, "rb") as file:
-                temp_decode_file = tempfile.NamedTemporaryFile(delete=False)
-                with temp_decode_file:
-                    while True:
-                        # Read the next chunk from the raw file
-                        chunk = file.read(chunk_size)
-                        if not chunk:
-                            break
-
-                        # Process each line in the chunk
-                        for line in chunk.splitlines():
-                            if line:
-                                try:
-                                    base64_bytes = json.loads(line.decode('utf-8'))["content"]
-                                except UnicodeDecodeError:  # Handle binary data
-                                    base64_bytes = json.loads(line)["content"]
-
-                                # Decode the base64 content
-                                message_bytes = base64.b64decode(base64_bytes)
-                                temp_decode_file.write(message_bytes)
-
-            # Read the decoded content from the temp file and write it back to the original file
-            with open(temp_decode_file.name, "rb") as temp_file, open(file_path, "wb") as file:
-                while True:
-                    chunk = temp_file.read(chunk_size)
-                    if not chunk:
-                        break
-                    file.write(chunk)
-
-            # Remove the temporary file
-            os.remove(temp_decode_file.name)
-        except Exception as error:
-            if temp_decode_file and os.path.exists(temp_decode_file.name):
-                os.unlink(temp_decode_file.name)
-                logger.debug("Removed temp file in exception '%s'", temp_decode_file.name)
-            raise exceptions.Base64DecodeError(f"Failed to decode '{file_path}': {error}")
-
     try:
         temp_file_path = _download_chunks()
-        _decode_base64(temp_file_path)
+        decode_base64(temp_file_path)
 
         if not temp_file_path:
             raise FileNotFoundError(f"Downloaded temp file not found '{temp_file_path}'")
@@ -161,6 +196,7 @@ def download(url: str = None, save_path: str = None, chunk_size=8192) -> str | N
             with open(temp_file_path, "r", encoding="utf-8") as file:
                 content = file.read()
             os.unlink(temp_file_path)
+            logger.debug("Removed temp download file '%s'", temp_file_path)
             return content
         os.rename(temp_file_path, save_path)  # Move temp file to save path
         logger.debug("Moved '%s' to '%s'", temp_file_path, save_path)
@@ -168,6 +204,7 @@ def download(url: str = None, save_path: str = None, chunk_size=8192) -> str | N
     except Exception as error:
         if os.path.exists(temp_file_path):
             os.unlink(temp_file_path)
+            logger.debug("Removed temp download file '%s'", temp_file_path)
         raise exceptions.DownloadError(f"Failed to download '{url}': {error}")
 
 
