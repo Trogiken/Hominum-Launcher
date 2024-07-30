@@ -58,7 +58,7 @@ def get_request(
     if headers is None:
         headers = {'Authorization': f'token {creds.get_api_key()}'}
     else:
-        headers['Authorization'] = f'token {creds.get_api_key()}'    
+        headers['Authorization'] = f'token {creds.get_api_key()}'
 
     session = requests.Session()
     for retry in range(retries):
@@ -103,10 +103,9 @@ def download(url: str = None, save_path: str = None, chunk_size=8192) -> str | N
             for chunk in resp.iter_content(chunk_size=chunk_size):
                 if chunk:
                     raw_temp_file.write(chunk)
-
             raw_temp_path = raw_temp_file.name
 
-        logger.debug("Downloaded '%s' to '%s'", url, save_path)
+        logger.debug("Downloaded '%s' to '%s'", url, raw_temp_path)
         return raw_temp_path
 
     def _decode_base64(raw_file_path):
@@ -137,6 +136,7 @@ def download(url: str = None, save_path: str = None, chunk_size=8192) -> str | N
             os.unlink(file_path)
             return content
         os.rename(file_path, save_path)  # Move temp file to save path
+        logger.debug("Moved '%s' to '%s'", file_path, save_path)
         return save_path
     except Exception as error:
         os.unlink(file_path)  # Remove the file if an error occurs
