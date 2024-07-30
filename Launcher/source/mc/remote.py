@@ -123,9 +123,8 @@ def download(url: str = None, save_path: str = None, chunk_size=8192) -> str | N
                             break
 
                         # Process each line in the chunk
-                        lines = chunk.splitlines()
-                        for line in lines:
-                            if line.strip():
+                        for line in chunk.splitlines():
+                            if line:
                                 try:
                                     base64_bytes = json.loads(line.decode('utf-8'))["content"]
                                 except UnicodeDecodeError:  # Handle binary data
@@ -148,7 +147,7 @@ def download(url: str = None, save_path: str = None, chunk_size=8192) -> str | N
         except Exception as error:
             if temp_decode_file and os.path.exists(temp_decode_file.name):
                 os.unlink(temp_decode_file.name)
-                os.debug("Removed temp file in exception '%s'", temp_decode_file.name)
+                logger.debug("Removed temp file in exception '%s'", temp_decode_file.name)
             raise exceptions.Base64DecodeError(f"Failed to decode '{file_path}': {error}")
 
     try:
