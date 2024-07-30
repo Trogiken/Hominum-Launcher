@@ -99,47 +99,76 @@ def download(url: str = None, save_path: str = None, chunk_size=8192) -> str | N
             raise exceptions.DownloadError(f"Failed to get '{url}'")
 
         # write raw content to file
-        with tempfile.NamedTemporaryFile(delete=False) as raw_temp_file:
+        with tempfile.NamedTemporaryFile(delete=False) as temp_file:
             for chunk in resp.iter_content(chunk_size=chunk_size):
                 if chunk:
-                    raw_temp_file.write(chunk)
-            raw_temp_path = raw_temp_file.name
-
-        logger.debug("Downloaded '%s' to '%s'", url, raw_temp_path)
-        return raw_temp_path
-
-    def _decode_base64(raw_file_path):
-        """Decode base64 encoded content from the raw file."""
-        with open(raw_file_path, "rb") as raw_file, \
-        tempfile.NamedTemporaryFile(delete=False) as temp_file:
-            for chunk in raw_file.read().splitlines():
-                if chunk:
-                    try:
-                        base64_bytes = json.loads(chunk.decode('utf-8'))["content"]
-                    except UnicodeDecodeError:  # Binary data
-                        base64_bytes = json.loads(chunk)["content"]
-                    message_bytes = base64.b64decode(base64_bytes)
-                    temp_file.write(message_bytes)
+                    temp_file.write(chunk)
             temp_file_path = temp_file.name
+
+        logger.debug("Downloaded '%s' to '%s'", url, temp_file_path)
         return temp_file_path
 
-    try:
-        raw_temp_path = _download_chunks()
-        file_path = _decode_base64(raw_temp_path)
+    def _decode_base64(file_path, chunk_size=8192):
+        """Decode base64 encoded content from the raw file in chunks."""
+        temp_decode_file = None
+        try:
+            # Create a temporary file to store decoded content
+            with open(file_path, "rb") as file:
+                temp_decode_file = tempfile.NamedTemporaryFile(delete=False)
+                with temp_decode_file:
+                    while True:
+                        # Read the next chunk from the raw file
+                        chunk = file.read(chunk_size)
+                        if not chunk:
+                            break
 
-        if not file_path:
-            raise exceptions.DownloadError(f"Failed to decode '{url}'")
+                        # Process each line in the chunk
+                        lines = chunk.splitlines()
+                        for line in lines:
+                            if line.strip():
+                                try:
+                                    base64_bytes = json.loads(line.decode('utf-8'))["content"]
+                                except UnicodeDecodeError:  # Handle binary data
+                                    base64_bytes = json.loads(line)["content"]
+
+                                # Decode the base64 content
+                                message_bytes = base64.b64decode(base64_bytes)
+                                temp_decode_file.write(message_bytes)
+
+            # Read the decoded content from the temp file and write it back to the original file
+            with open(temp_decode_file.name, "rb") as temp_file, open(file_path, "wb") as file:
+                while True:
+                    chunk = temp_file.read(chunk_size)
+                    if not chunk:
+                        break
+                    file.write(chunk)
+
+            # Remove the temporary file
+            os.remove(temp_decode_file.name)
+        except Exception as error:
+            if temp_decode_file and os.path.exists(temp_decode_file.name):
+                os.unlink(temp_decode_file.name)
+                os.debug("Removed temp file in exception '%s'", temp_decode_file.name)
+            raise exceptions.Base64DecodeError(f"Failed to decode '{file_path}': {error}")
+
+    try:
+        temp_file_path = _download_chunks()
+        _decode_base64(temp_file_path)
+
+        if not temp_file_path:
+            raise FileNotFoundError(f"Downloaded temp file not found '{temp_file_path}'")
 
         if not save_path:  # Return content
-            with open(file_path, "r", encoding="utf-8") as file:
+            with open(temp_file_path, "r", encoding="utf-8") as file:
                 content = file.read()
-            os.unlink(file_path)
+            os.unlink(temp_file_path)
             return content
-        os.rename(file_path, save_path)  # Move temp file to save path
-        logger.debug("Moved '%s' to '%s'", file_path, save_path)
+        os.rename(temp_file_path, save_path)  # Move temp file to save path
+        logger.debug("Moved '%s' to '%s'", temp_file_path, save_path)
         return save_path
     except Exception as error:
-        os.unlink(file_path)  # Remove the file if an error occurs
+        if os.path.exists(temp_file_path):
+            os.unlink(temp_file_path)
         raise exceptions.DownloadError(f"Failed to download '{url}': {error}")
 
 

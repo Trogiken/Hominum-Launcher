@@ -11,6 +11,10 @@ class DownloadError(Exception):
     """Raised when a download fails."""
 
 
+class Base64DecodeError(Exception):
+    """Raised when a file fails to be decoded from base64"""
+
+
 class VersionInstallTimeout(Exception):
     """Raised when a version failed to install"""
 
