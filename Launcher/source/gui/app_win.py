@@ -124,6 +124,7 @@ class RightFrame(customtkinter.CTkFrame):
         super().__init__(master)
         logger.debug("Creating right frame")
 
+        self.master = master
         self.settings = utils.Settings()
 
         self.login_window = None
@@ -242,25 +243,29 @@ class RightFrame(customtkinter.CTkFrame):
                 self.login_window = None
                 logger.debug("Login complete")
 
-
     def run_game(self):
         """Start Minecraft"""
         self.play_button.configure(state="disabled")
+        self.master.left_frame.settings_button.configure(state="disabled")
 
         # Install win
         install_window = InstallWindow()
+        install_window.transient(self)
         self.wait_window(install_window)
 
         env = install_window.environment
         if env is None:
             self.play_button.configure(state="normal")
+            self.master.left_frame.settings_button.configure(state="disabled")
             return
 
         # Run win
         run_window = RunWindow(environment=env)
+        run_window.transient(self)
         self.wait_window(run_window)
 
         self.play_button.configure(state="normal")
+        self.master.left_frame.settings_button.configure(state="normal")
 
 
 class ScrollableFrame(customtkinter.CTkScrollableFrame):
