@@ -26,7 +26,7 @@ import time
 import os
 import requests
 import yaml
-from source import creds, exceptions
+from source import path, creds, exceptions
 
 logger = logging.getLogger(__name__)
 
@@ -69,7 +69,7 @@ def decode_base64(file_path: str, chunk_size=8192) -> None:
         # Create a temporary file to store decoded content
         logger.debug("Decoding base64 content from '%s'", file_path)
         with open(file_path, "rb") as file:
-            temp_decode_file = tempfile.NamedTemporaryFile(delete=False)
+            temp_decode_file = tempfile.NamedTemporaryFile(dir=path.DOWNLOAD_DIR, delete=False)
             with temp_decode_file:
                 while True:
                     # Read the next chunk from the raw file
@@ -176,7 +176,7 @@ def download(url: str = None, save_path: str = None, chunk_size=8192) -> str | N
 
         # write raw content to file
         logger.debug("Downloading '%s'", url)
-        with tempfile.NamedTemporaryFile(delete=False) as temp_file:
+        with tempfile.NamedTemporaryFile(dir=path.DOWNLOAD_DIR, delete=False) as temp_file:
             for chunk in resp.iter_content(chunk_size=chunk_size):
                 if chunk:
                     temp_file.write(chunk)
@@ -228,12 +228,12 @@ def get_repo_tree() -> dict:
     return tree
 
 
-def get_file_url(tree: dict, path: str) -> dict:
+def get_file_url(tree: dict, dir_path: str) -> dict:
     """
     Retrieves the download URL for the specified file from the server.
 
     Parameters:
-    - path (str): The path to the file on the server.
+    - dir_path (str): The path to the file on the server.
 
     Returns:
     - dict: The download URL for the file.
@@ -242,9 +242,9 @@ def get_file_url(tree: dict, path: str) -> dict:
     if not tree:
         return None
     for file in tree:
-        if file["path"] == path:
+        if file["path"] == dir_path:
             return file["url"]
-    logger.error("'%s' not found on the server", path)
+    logger.error("'%s' not found on the server", dir_path)
 
     return None
 
