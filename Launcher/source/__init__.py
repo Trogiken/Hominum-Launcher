@@ -1,1 +1,1 @@
-"""Package for the Updater module."""
+"""Launcher source package."""
