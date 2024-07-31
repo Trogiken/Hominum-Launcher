@@ -1,1 +1,1 @@
-"""The PMC package for Hominum."""
+"""MC Package."""

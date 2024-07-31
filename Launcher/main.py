@@ -118,8 +118,10 @@ if __name__ == "__main__":
     logger.info("APPLICATION_DIR: %s", path.APPLICATION_DIR)
     logger.info("ASSETS_DIR: %s", path.ASSETS_DIR)
     logger.info("STORE_DIR: %s", path.STORE_DIR)
+    logger.info("DOWNLOAD_DIR: %s", path.DOWNLOAD_DIR)
     logger.info("MAIN_DIR: %s", path.MAIN_DIR)
     logger.info("WORK_DIR: %s", path.WORK_DIR)
+    logger.info("CONTEXT: %s", path.CONTEXT)
 
     try:
         logger.info("Starting application")

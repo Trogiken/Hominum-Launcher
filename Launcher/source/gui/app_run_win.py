@@ -1,5 +1,5 @@
 """
-A module that contains the RunWindow class.
+Contains the RunWindow class
 
 Classes:
 - RunWindow: A class that is used to run the game.

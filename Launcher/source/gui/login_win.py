@@ -1,8 +1,8 @@
 """
-This module contains the LoginWindow class
+Contains the LoginWindow class.
 
 Classes:
-- LoginWindow: Represents the login window of the application.
+- LoginWindow: Window for entering login information.
 """
 
 import logging
@@ -15,13 +15,7 @@ logger = logging.getLogger(__name__)
 
 
 class LoginWindow(customtkinter.CTkToplevel):
-    """
-    Represents the login window of the application.
-
-    Methods:
-        __init__: Initializes the LoginWindow instance.
-        login: Handles the login process.
-    """
+    """Window for entering login information."""
     def __init__(self, master, **kwargs):
         super().__init__(master, **kwargs)
         logger.debug("Creating login window")

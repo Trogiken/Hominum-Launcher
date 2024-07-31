@@ -1,5 +1,5 @@
 """
-The install window is a window that displays the installation progress across operations.
+Contains the InstallWindow class.
 
 classes:
 - InstallWindow: A class that displays the installation progress across operations.
@@ -8,8 +8,7 @@ classes:
 import logging
 import customtkinter
 from source.gui.popup_win import PopupWindow
-from source import path, exceptions
-from source import utils
+from source import utils, path, exceptions
 from source.mc.authentication import AuthenticationHandler
 from source.mc.minecraft import MCManager, InstallWatcher
 
@@ -87,12 +86,7 @@ class InstallWindow(customtkinter.CTkToplevel):
         logger.debug("Install window created")
 
     def _install(self):
-        """
-        Install the game and other necessary files.
-        
-        Returns:
-        - None
-        """
+        """Install the game and other necessary files."""
         logger.info("Starting Installation")
         version_environment = None
         # Install the game

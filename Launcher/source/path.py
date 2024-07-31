@@ -8,6 +8,7 @@ Constants:
 - APPLICATION_DIR (pathlib.Path): The directory of the application.
 - ASSETS_DIR (pathlib.Path): The directory of the assets.
 - STORE_DIR (pathlib.Path): The directory of the store.
+- DOWNLOAD_DIR (pathlib.Path): The directory of the downloads.
 - MAIN_DIR (pathlib.Path): The directory of the main data.
 - WORK_DIR (pathlib.Path): The directory of the working data.
 - CONTEXT (Context): The context of the program.
@@ -24,7 +25,7 @@ logger = logging.getLogger(__name__)
 
 PROGRAM_NAME = "Hominum"
 PROGRAM_NAME_LONG = "Hominum Launcher"
-VERSION = "1.4.9.10"
+VERSION = "1.4.9.11"
 
 if getattr(sys, 'frozen', False):
     APPLICATION_DIR = pathlib.Path(sys.executable).parent
