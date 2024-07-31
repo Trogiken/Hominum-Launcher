@@ -14,7 +14,7 @@ from source.mc.authentication import AuthenticationHandler
 logger = logging.getLogger(__name__)
 
 class AuthWindow(customtkinter.CTkToplevel):
-    """Toplevel window for authenticating the user."""
+    """Window for authenticating the user."""
     def __init__(self, master, email, **kwargs):
         super().__init__(master, **kwargs)
         logger.debug("Creating authentication window")
