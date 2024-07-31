@@ -1,5 +1,8 @@
 """
-This module contains the PopupWindow class, which represents a popup window.
+Contains the PopupWindow class
+
+Classes:
+- PopupWindow: Popup window
 """
 
 import logging
@@ -10,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 class PopupWindow(customtkinter.CTkToplevel):
-    """Popup window."""
+    """Popup window for displaying messages."""
     def __init__(self, master, title, message, **kwargs):
         super().__init__(master, **kwargs)
         logger.debug("Creating popup window")
