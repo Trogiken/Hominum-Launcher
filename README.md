@@ -34,8 +34,6 @@ This YAML file lives on a private repository where it serves as the control for 
   - Data type: `string`
   - Allowed values: `vanilla`, `fabric`, `quilt`, `forge`, `neoforge`
 
-### Startup Example
-
 ```yaml
 startup:
   server_ip: "1.1.1.1"
@@ -74,8 +72,6 @@ startup:
   - **mc_version**: The version of Minecraft.
     - Data type: string
     - Allowed values: `"", ~, "x.x.x"`
-
-### Games Example
 
 ```yaml
 games:
@@ -122,8 +118,6 @@ games:
   - overwrite: If a local path matches a remote path, should the local file be overwritten?
     - Data type: boolean
     - Allowed values: `True, False`
-
-### Paths Example
 
 ```yaml
 paths:
