@@ -4,11 +4,11 @@ This module provides utility functions and classes for the application.
 Functions:
 - get_image: Get the image from the assets directory.
 - get_html_resp: Get the HTML response from the assets directory.
-- open_directory: Open a folder on the users computer.
-- format_number: Format a float into correct measurement
+- open_path: Open a folder or file on the users computer.
+- format_number: Format a float into correct measurement.
 
 Classes:
-- Settings: Stores the settings for the program.
+- Settings: A class that represents the settings for the application.
 - WrappingLabel: A custom label that wraps text.
 
 Constants:
@@ -71,7 +71,11 @@ class Settings:
     """
     A class that represents the settings for the application.
 
+    Properties:
+    - path: The path to the settings file.
+
     Methods:
+    - validate_settings: Validate the settings.
     - load: Reads the settings from a file.
     - save: Writes the settings to a file.
     - reset: Reset the settings to the default values.
@@ -326,7 +330,7 @@ def get_html_resp() -> str:
 
 def open_path(directory_path: str | pathlib.Path):
     """
-    Open a folder on the users computer.
+    Open a folder or file.
 
     Parameters:
     - directory_path (str | pathlib.Path): The directory to open.
@@ -344,17 +348,20 @@ def open_path(directory_path: str | pathlib.Path):
     logger.debug("Opened path: '%s'", directory_path)
 
 
-def format_number(n: float) -> str:
+def format_number(number: float) -> str:
     """
     Format a float into correct measurement
+
+    Parameters:
+    - number (float): The number to format.
 
     Returns:
     - str: The formatted number
     """
-    if n < 1000:
-        return f"{int(n)} "
-    if n < 1000000:
-        return f"{(int(n / 100) / 10):.1f} k"
-    if n < 1000000000:
-        return f"{(int(n / 100000) / 10):.1f} M"
-    return f"{(int(n / 100000000) / 10):.1f} G"
+    if number < 1000:
+        return f"{int(number)} "
+    if number < 1000000:
+        return f"{(int(number / 100) / 10):.1f} k"
+    if number < 1000000000:
+        return f"{(int(number / 100000) / 10):.1f} M"
+    return f"{(int(number / 100000000) / 10):.1f} G"
