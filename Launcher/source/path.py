@@ -8,6 +8,7 @@ Constants:
 - APPLICATION_DIR (pathlib.Path): The directory of the application.
 - ASSETS_DIR (pathlib.Path): The directory of the assets.
 - STORE_DIR (pathlib.Path): The directory of the store.
+- DOWNLOAD_DIR (pathlib.Path): The directory of the downloads.
 - MAIN_DIR (pathlib.Path): The directory of the main data.
 - WORK_DIR (pathlib.Path): The directory of the working data.
 - CONTEXT (Context): The context of the program.
