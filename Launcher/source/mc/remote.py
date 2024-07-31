@@ -5,7 +5,9 @@ to download files and retrieve information.
 Functions:
 - decode_base64(file_path: str | Path, chunk_size=8192) -> None
     Decode base64 encoded content from a file.
-- get_request(url: str, timeout=5, retries=3, backoff_factor=0.3, headers=None, **kwargs) -> requests.models.Response
+- get_request(
+        url: str, timeout=5, retries=3, backoff_factor=0.3, headers=None, **kwargs
+    ) -> requests.models.Response
     Send a GET request to the specified URL.
 - download(url: str = None, save_path: str | Path = None, chunk_size=8192) -> str | None
     Download a file from the server.
