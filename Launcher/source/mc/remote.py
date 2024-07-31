@@ -1,22 +1,30 @@
 """
-This module provides functions to download files from a specified URL and
-save them to a specified directory.
+This module provides functions to interact with the server
+to download files and retrieve information.
 
 Functions:
-- get_request: Sends a GET request to the specified URL and returns the response object.
-- download: Downloads a stream of bytes from the given URL and saves it to the specified path.
-- download_files: Downloads files from the given URLs to the specified mods_directory.
-- get_file_download: Retrieves the download URL for the specified file from the server.
-- get_config: Retrieves the config file from the server.
-- get_filenames: Retrieves a list of filenames from the server.
-- get_file_downloads: Retrieves a list of download URLs from the server.
+- decode_base64(file_path: str | Path, chunk_size=8192) -> None
+    Decode base64 encoded content from a file.
+- get_request(url: str, timeout=5, retries=3, backoff_factor=0.3, headers=None, **kwargs) -> requests.models.Response
+    Send a GET request to the specified URL.
+- download(url: str = None, save_path: str | Path = None, chunk_size=8192) -> str | None
+    Download a file from the server.
+- get_repo_tree() -> dict
+    Retrieve the repository tree from the server.
+- get_file_url(tree: dict, dir_path: str) -> dict
+    Retrieve the download URL for the specified file.
+- get_dir_paths(tree: dict, dir_path: str) -> list
+    Retrieve a list of all paths in the specified directory.
+- get_config(tree) -> dict
+    Retrieve the config file from the server.
 
 Constants:
 - GITHUB_CONTENTS_BASE (str): The base URL for the GitHub contents API.
-- CONFIG_NAME (str): The name of the config file on the server.
+- CONFIG_PATH (str): The path of the config file on the server.
 """
 
 from io import BufferedReader
+from pathlib import Path
 from typing import List
 import logging
 import base64
@@ -35,12 +43,12 @@ GITHUB_CONTENTS_BASE = \
 CONFIG_PATH = "config.yaml"
 
 
-def decode_base64(file_path: str, chunk_size=8192) -> None:
+def decode_base64(file_path: str | Path, chunk_size=8192) -> None:
     """
     Decode base64 encoded content from a file and write it back to the original file.
 
     Parameters:
-    - file_path (str): The path to the file to decode.
+    - file_path (str | Path): The path to the file to decode.
     - chunk_size (int): The size of the chunks to read from the file. Defaults to 8192.
 
     Exceptions:
@@ -97,15 +105,12 @@ def decode_base64(file_path: str, chunk_size=8192) -> None:
                 if not chunk:
                     break
                 file.write(chunk)
-
-        # Remove the temporary file
-        os.unlink(temp_decode_file.name)
-        logger.debug("Removed temp decode file '%s'", temp_decode_file.name)
     except Exception as error:
+        raise exceptions.Base64DecodeError(f"Failed to decode '{file_path}': {error}")
+    finally:
         if temp_decode_file and os.path.exists(temp_decode_file.name):
             os.unlink(temp_decode_file.name)
             logger.debug("Removed temp decode file '%s'", temp_decode_file.name)
-        raise exceptions.Base64DecodeError(f"Failed to decode '{file_path}': {error}")
 
 
 def get_request(
@@ -150,13 +155,13 @@ def get_request(
     return None
 
 
-def download(url: str = None, save_path: str = None, chunk_size=8192) -> str | None:
+def download(url: str = None, save_path: str | Path = None, chunk_size=8192) -> str | None:
     """
     Downloads a stream of bytes from the given URL and saves it to the specified path.
 
     Parameters:
-    - url (str): The URL to download the file from. (This has to be a blob URL.)
-    - save_path (str): The path to save the downloaded file.
+    - url (str): The URL to download the file from. (File must be base64 encoded)
+    - save_path (str | Path): The path to save the downloaded file.
         If not specified, the content will be returned as a string.
     - chunk_size (int): The size of the chunks to download. Defaults to 8192.
 
@@ -214,6 +219,7 @@ def get_repo_tree() -> dict:
 
     Returns:
     - dict: The repository tree.
+    - None: If the response is empty
     """
     resp = get_request(GITHUB_CONTENTS_BASE)
     if not resp:
@@ -233,6 +239,7 @@ def get_file_url(tree: dict, dir_path: str) -> dict:
     Retrieves the download URL for the specified file from the server.
 
     Parameters:
+    - tree (dict): The repository tree
     - dir_path (str): The path to the file on the server.
 
     Returns:
@@ -253,6 +260,10 @@ def get_dir_paths(tree: dict, dir_path: str) -> list:
     """
     Retrieves a list of all paths in the specified directory.
 
+    Parameters:
+    - tree (dict): The repository tree.
+    - dir_path (str): The path to the directory on the server.
+
     Returns:
     - list: A list of directory paths.
     - None: If the response is empty.
@@ -271,6 +282,9 @@ def get_dir_paths(tree: dict, dir_path: str) -> list:
 def get_config(tree) -> dict:
     """
     Retrieves the config file from the server.
+
+    Parameters:
+    - tree (dict): The repository tree.
 
     Returns:
     - dict: The contents of the config file.
