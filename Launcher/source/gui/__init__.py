@@ -1,1 +1,1 @@
-"""The GUI package for Hominum."""
+"""GUI package."""
