@@ -5,15 +5,6 @@
 
 Manage client game configurations remotely, securely, and autonomously.
 
-## Table of Contents
-
-1. [Remote Configuration](#remote-configuration)
-2. [Startup](#startup)
-3. [Games](#games)
-4. [Paths](#paths)
-5. [Altnames](#altnames)
-6. [Bulletin](#bulletin)
-
 ## Remote Configuration
 
 This YAML file lives on a private repository where it serves as the control for clients.
@@ -22,7 +13,7 @@ This YAML file lives on a private repository where it serves as the control for 
 
 :heavy_minus_sign: The key's values **cannot** be extended.
 
-## Startup
+## Startup :heavy_minus_sign:
 
 - **server_ip**: The IP address of the server. Used for auto-join functionality. If a falsy value is used, the auto-join feature will be disabled.
   - Data type: `string`
@@ -41,7 +32,7 @@ startup:
   game: "forge"
 ```
 
-## Games
+## Games :heavy_minus_sign:
 
 - **vanilla** - Vanilla Game Type
   - **mc_version**: The version of Minecraft. Latest is default.
@@ -90,7 +81,7 @@ games:
     mc_version: "1.20.1"
 ```
 
-## Paths
+## Paths :heavy_plus_sign:
 
 - **path/to/remote/directory** - The relative URL path to the directory to sync
   - **is_dir**: Is the path a directory?
@@ -133,7 +124,7 @@ paths:
     overwrite: False
 ```
 
-## Altnames
+## Altnames :heavy_plus_sign:
 
 Spoofs the player's username to an alternate name in the launcher.
 To disable this feature, set the key as follows: `altnames: ~`
@@ -143,7 +134,7 @@ altnames:
   "UsernameOfPlayer": "NewUsernameOfPlayer"
 ```
 
-## Bulletin
+## Bulletin :heavy_plus_sign:
 
 Creates the layout and information to display in the bulletin.
 To disable this feature, set the key as follows: `bulletin: ~`
