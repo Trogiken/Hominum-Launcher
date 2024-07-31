@@ -1,28 +1,29 @@
-# Hominum-Updater
+# Hominum-Launcher
 
 ![Pylint](https://github.com/Trogiken/Hominum-Updater/actions/workflows/pylint.yml/badge.svg)
 [![CodeQL](https://github.com/Trogiken/Hominum-Updater/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/Trogiken/Hominum-Updater/actions/workflows/github-code-scanning/codeql)
 
-Manage client game configurations remotely, securely, and autonomously
+Manage client game configurations remotely, securely, and autonomously.
 
 ## Remote Configuration
 
-This yaml file lives on a private repository where it serves as the control for clients
+This YAML file lives on a private repository where it serves as the control for clients.
 
-:heavy_plus_sign: The key's values **can** extended
+:heavy_plus_sign: The key's values **can** be extended.
 
-:heavy_minus_sign: The key's values **cannot** be extended
+:heavy_minus_sign: The key's values **cannot** be extended.
 
-### startup :heavy_minus_sign:
+## Startup :heavy_minus_sign:
 
-* server_ip `server.com, x.x.x.x, "", ~` - The Ip address of the server. Used for auto join functionality.
-If falsy value used, the auto join feature will be disabled
-
-* server_port `22567, ~` - The port address of the server. Used for auto join functionality. Default is 25565
-
-* game `vanilla, fabric, quilt, forge, neoforge` - The corresponding key in the _games_ section. This determines the game type used
-
-#### Startup Example
+- **server_ip**: The IP address of the server. Used for auto-join functionality. If a falsy value is used, the auto-join feature will be disabled.
+  - Data type: `string`
+  - Allowed values: `server.com`, `x.x.x.x`, `""`, `~`
+- **server_port**: The port address of the server. Used for auto-join functionality. Default is 25565.
+  - Data type: `integer`
+  - Allowed values: `22567`, `~`
+- **game**: The corresponding key in the _games_ section. This determines the game type used.
+  - Data type: `string`
+  - Allowed values: `vanilla`, `fabric`, `quilt`, `forge`, `neoforge`
 
 ```yaml
 startup:
@@ -31,27 +32,37 @@ startup:
   game: "forge"
 ```
 
-### games :heavy_minus_sign:
+## Games :heavy_minus_sign:
 
-* vanilla - Vanilla Game Type
-  * mc_version `"", ~, "x.x.x"` - The version of minecraft. Latest is default
-
-* fabric - Fabric Game Type
-  * mc_version `"", ~, "x.x.x"` - The version of minecraft. Latest is default
-  * loader_version `"", ~, "x.x.x"` - The version of the fabric loader. Latest is default
-
-* quilt - Quilt Game Type
-  * mc_version `"", ~, "x.x.x"` - The version of minecraft. Latest is default
-  * loader_version `"", ~, "x.x.x"` - The version of the fabric loader (Uses same loader as fabric). Latest is default
-
-* forge - Forge Game Type
-  * mc_version `"", ~, "x.x.x"` - The version of minecraft. If this is null, forge version will be force to be recommended
-  * forge_version `"", ~, "x.x.x", recommended, latest` - The version of forge. Recommended is default
-
-* neoforge - Neoforge Game Type
-  * mc_version `"", ~, "x.x.x"` - The version of minecraft
-
-#### Games Example
+- **vanilla** - Vanilla Game Type
+  - **mc_version**: The version of Minecraft. Latest is default.
+    - Data type: string
+    - Allowed values: `"", ~, "x.x.x"`
+- **fabric** -  Fabric Game Type
+  - **mc_version**: The version of Minecraft. Latest is default.
+    - Data type: string
+    - Allowed values: `"", ~, "x.x.x"`
+  - **loader_version**: The version of the Fabric loader. Latest is default.
+    - Data type: string
+    - Allowed values: `"", ~, "x.x.x"`
+- **quilt** - Quilt Game Type
+  - **mc_version**: The version of Minecraft. Latest is default.
+    - Data type: string
+    - Allowed values: `"", ~, "x.x.x"`
+  - **loader_version**: The version of the Fabric loader (uses the same loader as Fabric). Latest is default.
+    - Data type: string
+    - Allowed values: `"", ~, "x.x.x"`
+- **forge** - Forge Game Type
+  - **mc_version**: The version of Minecraft. If this is null, the Forge version will be forced to be recommended.
+    - Data type: string
+    - Allowed values: `"", ~, "x.x.x"`
+  - **forge_version**: The version of Forge. Recommended is default.
+    - Data type: string
+    - Allowed values: `"", ~, "x.x.x", recommended, latest`
+- **neoforge** - Neoforge Game Type
+  - **mc_version**: The version of Minecraft.
+    - Data type: string
+    - Allowed values: `"", ~, "x.x.x"`
 
 ```yaml
 games:
@@ -70,20 +81,34 @@ games:
     mc_version: "1.20.1"
 ```
 
-### paths :heavy_plus_sign:
+## Paths :heavy_plus_sign:
 
-* `path/to/remote/directory` - The relative url path to the directory to sync
-  * is_dir `True, False` - Is the path a directory
-  * exclude `[path/to/remote/dir, path/to/remote/file]` - Relative url paths to exclude from syncing
-  * delete_others `True, False` - Delete any other file in the local directory that's not on the remote (Obeys the exclude paths)
-  * root `ExampleLocalDirName` - The directory path that will be stored locally. This is stored in the game data folder
-  * overwrite `True, False` - If a local path matches a remote path, should the local file be overwritten
-* `path/to/remote/file` - The relative url path to the file to sync
-  * is_dir `True, False` - Is the path a directory
-  * root `ExampleFileName` - The file path that will be stored locally. This is stored in the game data folder
-  * overwrite `True, False` - If a local path matches a remote path, should the local file be overwritten
-
-#### Paths Example
+- **path/to/remote/directory** - The relative URL path to the directory to sync
+  - **is_dir**: Is the path a directory?
+    - Data type: boolean
+    - Allowed values: `True, False`
+  - **exclude**: Relative URL paths to exclude from syncing.
+    - Data type: array of strings
+    - Allowed values: `[path/to/remote/dir, path/to/remote/file]`
+  - **delete_others**: Delete any other file in the local directory that's not on the remote (obeys the exclude paths).
+    - Data type: boolean
+    - Allowed values: `True, False`
+  - **root**: The directory path that will be stored locally. This is stored in the game data folder.
+    - Data type: string
+    - Allowed values: `relative/datafolder/path/to/folder/location`
+  - **overwrite**: If a local path matches a remote path, should the local file be overwritten?
+    - Data type: boolean
+    - Allowed values: `True, False`
+- **path/to/remote/file**- The relative URL path to the file to sync
+  - is_dir: Is the path a directory?
+    - Data type: boolean
+    - Allowed values: `True, False`
+  - root: The file path that will be stored locally. This is stored in the game data folder.
+    - Data type: string
+    - Allowed values: `relative/datafolder/path/to/file/location`
+  - overwrite: If a local path matches a remote path, should the local file be overwritten?
+    - Data type: boolean
+    - Allowed values: `True, False`
 
 ```yaml
 paths:
@@ -91,30 +116,28 @@ paths:
     is_dir: True
     exclude: ["config/modconfig/dir"]
     delete_others: True
-    root: "config"
+    root: "config"  # This is placed in the root of the game data folder
     overwrite: False
   sync/options.txt:
     is_dir: False
-    root: "options.txt"
+    root: "options.txt"  # This is placed in the root of the game data folder
     overwrite: False
 ```
 
-### altnames :heavy_plus_sign:
+## Altnames :heavy_plus_sign:
 
-Spoofs the players username to a alternate name in the launcher. To disable this feature set the key as follows: `altnames: ~`
-
-#### Altnames Example
+Spoofs the player's username to an alternate name in the launcher.
+To disable this feature, set the key as follows: `altnames: ~`
 
 ```yaml
 altnames:
   "UsernameOfPlayer": "NewUsernameOfPlayer"
 ```
 
-### bulletin :heavy_plus_sign:
+## Bulletin :heavy_plus_sign:
 
-Creates the layout and information to display in the bulletin
-
-#### Bulletin Example
+Creates the layout and information to display in the bulletin.
+To disable this feature, set the key as follows: `bulletin: ~`
 
 ```yaml
 bulletin:
