@@ -32,17 +32,12 @@ else:
     APPLICATION_DIR = pathlib.Path(__file__).parents[1]
 
 ASSETS_DIR = pathlib.Path(os.path.join(APPLICATION_DIR, "assets"))
-
-if os.name == "posix":
-    STORE_DIR = os.path.join(os.getenv("HOME"), ".hominum")
-else:
-    STORE_DIR = os.path.join(APPLICATION_DIR, "Store")
-
-STORE_DIR = pathlib.Path(STORE_DIR)
+STORE_DIR = pathlib.Path(os.path.join(APPLICATION_DIR, "Store"))
 MAIN_DIR = pathlib.Path(os.path.join(STORE_DIR, "minecraft"))
 WORK_DIR = pathlib.Path(os.path.join(STORE_DIR, "mcdata"))
 CONTEXT = Context(MAIN_DIR, WORK_DIR)
 GLOBAL_KILL = pathlib.Path(os.path.join(STORE_DIR, "GLOBAL_KILL"))
+
 if GLOBAL_KILL.exists():
     GLOBAL_KILL.unlink()
 
