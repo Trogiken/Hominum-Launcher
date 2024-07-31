@@ -33,6 +33,7 @@ else:
 
 ASSETS_DIR = pathlib.Path(os.path.join(APPLICATION_DIR, "assets"))
 STORE_DIR = pathlib.Path(os.path.join(APPLICATION_DIR, "Store"))
+DOWNLOAD_DIR = pathlib.Path(os.path.join(STORE_DIR, "download"))
 MAIN_DIR = pathlib.Path(os.path.join(STORE_DIR, "minecraft"))
 WORK_DIR = pathlib.Path(os.path.join(STORE_DIR, "mcdata"))
 CONTEXT = Context(MAIN_DIR, WORK_DIR)
@@ -42,6 +43,7 @@ if GLOBAL_KILL.exists():
     GLOBAL_KILL.unlink()
 
 os.makedirs(STORE_DIR, exist_ok=True)
+os.makedirs(DOWNLOAD_DIR, exist_ok=True)
 os.makedirs(MAIN_DIR, exist_ok=True)
 os.makedirs(WORK_DIR, exist_ok=True)
 
