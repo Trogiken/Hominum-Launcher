@@ -57,9 +57,7 @@ def decode_base64(file_path: str, chunk_size=8192) -> None:
                 break
 
             bytes_read += len(line)
-
             lines.append(line)
-
         return lines
 
     if not os.path.exists(file_path):
@@ -150,8 +148,7 @@ def get_request(
             return None
     return None
 
-# FIXME: Decode or Download process is slow
-# FIXME: Reaccuring error of temp_file_path used before assignment
+
 def download(url: str = None, save_path: str = None, chunk_size=8192) -> str | None:
     """
     Downloads a stream of bytes from the given URL and saves it to the specified path.
@@ -171,41 +168,43 @@ def download(url: str = None, save_path: str = None, chunk_size=8192) -> str | N
 
     def _download_chunks():
         """Download the file in chunks and save the raw content to a temp file."""
+        file_path = ""
         resp = get_request(url, stream=True)
         if not resp:
             raise exceptions.DownloadError(f"Failed to get '{url}'")
 
         # write raw content to file
+        logger.debug("Downloading '%s'", url)
         with tempfile.NamedTemporaryFile(delete=False) as temp_file:
             for chunk in resp.iter_content(chunk_size=chunk_size):
                 if chunk:
                     temp_file.write(chunk)
-            temp_file_path = temp_file.name
+            file_path = temp_file.name
+        if not file_path:
+            raise FileNotFoundError(f"Downloaded file not found '{file_path}'")
 
-        logger.debug("Downloaded '%s' to '%s'", url, temp_file_path)
-        return temp_file_path
+        decode_base64(file_path)
+        logger.debug("Downloaded '%s' to '%s'", url, file_path)
+        return file_path
 
     try:
-        temp_file_path = _download_chunks()
-        decode_base64(temp_file_path)
-
-        if not temp_file_path:
-            raise FileNotFoundError(f"Downloaded temp file not found '{temp_file_path}'")
+        file_path = _download_chunks()
 
         if not save_path:  # Return content
-            with open(temp_file_path, "r", encoding="utf-8") as file:
+            with open(file_path, "r", encoding="utf-8") as file:
                 content = file.read()
-            os.unlink(temp_file_path)
-            logger.debug("Removed temp download file '%s'", temp_file_path)
+                logger.debug("Read content from '%s'", file_path)
             return content
-        os.rename(temp_file_path, save_path)  # Move temp file to save path
-        logger.debug("Moved '%s' to '%s'", temp_file_path, save_path)
+
+        os.rename(file_path, save_path)  # Move temp file to save path
+        logger.debug("Moved '%s' to '%s'", file_path, save_path)
         return save_path
     except Exception as error:
-        if os.path.exists(temp_file_path):
-            os.unlink(temp_file_path)
-            logger.debug("Removed temp download file '%s'", temp_file_path)
         raise exceptions.DownloadError(f"Failed to download '{url}': {error}")
+    finally:
+        if os.path.exists(file_path):
+            os.unlink(file_path)
+            logger.debug("Removed downloaded file '%s'", file_path)
 
 
 def get_repo_tree() -> dict:
