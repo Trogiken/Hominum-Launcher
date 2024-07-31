@@ -17,6 +17,7 @@ Constants:
 """
 
 from io import BufferedReader
+from typing import List
 import logging
 import base64
 import json
@@ -46,7 +47,7 @@ def decode_base64(file_path: str, chunk_size=8192) -> None:
     - FileNotFoundError: If the file does not exist.
     - Base64DecodeError: If an error occurs during decoding.
     """
-    def _read_lines(file_obj: BufferedReader, size: int) -> list[bytes]:
+    def _read_lines(file_obj: BufferedReader, size: int) -> List[bytes]:
         lines = []
         bytes_read = 0
 
