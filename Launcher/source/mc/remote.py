@@ -16,10 +16,13 @@ Constants:
 - CONFIG_NAME (str): The name of the config file on the server.
 """
 
+from io import BufferedReader
+from typing import List
 import logging
 import base64
 import json
 import tempfile
+import time
 import os
 import requests
 import yaml
@@ -32,13 +35,90 @@ GITHUB_CONTENTS_BASE = \
 CONFIG_PATH = "config.yaml"
 
 
-def get_request(url: str, timeout=5, headers=None, **kwargs) -> requests.models.Response:
+def decode_base64(file_path: str, chunk_size=8192) -> None:
+    """
+    Decode base64 encoded content from a file and write it back to the original file.
+
+    Parameters:
+    - file_path (str): The path to the file to decode.
+    - chunk_size (int): The size of the chunks to read from the file. Defaults to 8192.
+
+    Exceptions:
+    - FileNotFoundError: If the file does not exist.
+    - Base64DecodeError: If an error occurs during decoding.
+    """
+    def _read_lines(file_obj: BufferedReader, size: int) -> List[bytes]:
+        lines = []
+        bytes_read = 0
+
+        while bytes_read < size:
+            line = file_obj.readline()
+            if not line:
+                # End of file reached
+                break
+
+            bytes_read += len(line)
+            lines.append(line)
+        return lines
+
+    if not os.path.exists(file_path):
+        raise FileNotFoundError(f"File to decode not found '{file_path}'")
+
+    temp_decode_file = None
+    try:
+        # Create a temporary file to store decoded content
+        logger.debug("Decoding base64 content from '%s'", file_path)
+        with open(file_path, "rb") as file:
+            temp_decode_file = tempfile.NamedTemporaryFile(delete=False)
+            with temp_decode_file:
+                while True:
+                    # Read the next chunk from the raw file
+                    chunk = _read_lines(file, chunk_size)
+                    if not chunk:
+                        break
+
+                    # Process each line in the chunk
+                    for line in chunk:
+                        if line:
+                            try:
+                                base64_bytes = json.loads(line.decode('utf-8'))["content"]
+                            except UnicodeDecodeError:  # Handle binary data
+                                base64_bytes = json.loads(line)["content"]
+
+                            # Decode the base64 content
+                            message_bytes = base64.b64decode(base64_bytes)
+                            temp_decode_file.write(message_bytes)
+
+        # Read the decoded content from the temp file and write it back to the original file
+        logger.debug("Writing decoded content to '%s'", file_path)
+        with open(temp_decode_file.name, "rb") as temp_file, open(file_path, "wb") as file:
+            while True:
+                chunk = temp_file.read(chunk_size)
+                if not chunk:
+                    break
+                file.write(chunk)
+
+        # Remove the temporary file
+        os.unlink(temp_decode_file.name)
+        logger.debug("Removed temp decode file '%s'", temp_decode_file.name)
+    except Exception as error:
+        if temp_decode_file and os.path.exists(temp_decode_file.name):
+            os.unlink(temp_decode_file.name)
+            logger.debug("Removed temp decode file '%s'", temp_decode_file.name)
+        raise exceptions.Base64DecodeError(f"Failed to decode '{file_path}': {error}")
+
+
+def get_request(
+        url: str, timeout=5, retries=3, backoff_factor=0.3, headers=None, **kwargs
+    ) -> requests.models.Response:
     """
     Sends a GET request to the specified URL and returns the response object.
 
     Parameters:
     - url (str): The URL to send the GET request to.
     - timeout (int): The number of seconds to wait for the server to send data before giving up.
+    - retries (int): The number of times to retry the request if it fails.
+    - backoff_factor (float): The factor to increase the wait time between retries.
     - headers (dict): The headers to include in the request.
     - **kwargs: Additional keyword arguments to pass to the requests.get function.
 
@@ -47,6 +127,7 @@ def get_request(url: str, timeout=5, headers=None, **kwargs) -> requests.models.
 
     Exceptions:
     - requests.exceptions.Timeout: If the request times out.
+    - requests.exceptions.ConnectionError: If a connection error occurs.
     - requests.exceptions.HTTPError: If an HTTP error occurs.
     """
     if headers is None:
@@ -54,13 +135,19 @@ def get_request(url: str, timeout=5, headers=None, **kwargs) -> requests.models.
     else:
         headers['Authorization'] = f'token {creds.get_api_key()}'
 
-    try:
-        resp = requests.get(url, timeout=timeout, headers=headers, **kwargs)
-        resp.raise_for_status()
-    except Exception as error:
-        logger.error("Failed to get '%s': %s", url, error)
-        return None
-    return resp
+    session = requests.Session()
+    for retry in range(retries):
+        try:
+            resp = session.get(url, timeout=timeout, headers=headers, **kwargs)
+            resp.raise_for_status()
+            return resp
+        except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as error:
+            logger.warning("Retry %d for URL %s due to %s", retry + 1, url, error)
+            time.sleep(backoff_factor * (2 ** retry))
+        except requests.exceptions.HTTPError as error:
+            logger.error("HTTPError for URL %s: %s", url, error)
+            return None
+    return None
 
 
 def download(url: str = None, save_path: str = None, chunk_size=8192) -> str | None:
@@ -81,50 +168,44 @@ def download(url: str = None, save_path: str = None, chunk_size=8192) -> str | N
         return None
 
     def _download_chunks():
+        """Download the file in chunks and save the raw content to a temp file."""
+        file_path = ""
         resp = get_request(url, stream=True)
         if not resp:
             raise exceptions.DownloadError(f"Failed to get '{url}'")
 
         # write raw content to file
-        with tempfile.NamedTemporaryFile(delete=False) as raw_temp_file:
+        logger.debug("Downloading '%s'", url)
+        with tempfile.NamedTemporaryFile(delete=False) as temp_file:
             for chunk in resp.iter_content(chunk_size=chunk_size):
                 if chunk:
-                    raw_temp_file.write(chunk)
+                    temp_file.write(chunk)
+            file_path = temp_file.name
+        if not file_path:
+            raise FileNotFoundError(f"Downloaded file not found '{file_path}'")
 
-            raw_temp_path = raw_temp_file.name
-
-        logger.debug("Downloaded '%s' to '%s'", url, save_path)
-        return raw_temp_path
-
-    def _decode_base64(raw_file_path):
-        # read file in chunks and decode base64
-        with open(raw_file_path, "rb") as raw_file, \
-        tempfile.NamedTemporaryFile(delete=False) as temp_file:
-            for chunk in raw_file.read().splitlines():
-                if chunk:
-                    try:
-                        base64_bytes = json.loads(chunk.decode('utf-8'))["content"]
-                    except UnicodeDecodeError:  # Binary data
-                        base64_bytes = json.loads(chunk)["content"]
-                    message_bytes = base64.b64decode(base64_bytes)
-                    temp_file.write(message_bytes)
-            temp_file_path = temp_file.name
-        return temp_file_path
+        decode_base64(file_path)
+        logger.debug("Downloaded '%s' to '%s'", url, file_path)
+        return file_path
 
     try:
-        raw_temp_path = _download_chunks()
-        file_path = _decode_base64(raw_temp_path)
+        file_path = _download_chunks()
 
         if not save_path:  # Return content
             with open(file_path, "r", encoding="utf-8") as file:
                 content = file.read()
-            os.unlink(file_path)
+                logger.debug("Read content from '%s'", file_path)
             return content
+
         os.rename(file_path, save_path)  # Move temp file to save path
+        logger.debug("Moved '%s' to '%s'", file_path, save_path)
         return save_path
     except Exception as error:
-        os.unlink(file_path)  # Remove the file if an error occurs
         raise exceptions.DownloadError(f"Failed to download '{url}': {error}")
+    finally:
+        if os.path.exists(file_path):
+            os.unlink(file_path)
+            logger.debug("Removed downloaded file '%s'", file_path)
 
 
 def get_repo_tree() -> dict:

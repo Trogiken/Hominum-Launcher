@@ -134,11 +134,12 @@ class InstallWindow(customtkinter.CTkToplevel):
             logger.info("Installation finished successfully")
         else:
             logger.warning("Installation finished with errors")
-            PopupWindow(
+            install_error_popup = PopupWindow(
                 self,
                 title="Install Error",
                 message="An error occurred during the installation process",
             )
+            install_error_popup.wait_window()
         self.destroy()
 
     def update_gui(self):
