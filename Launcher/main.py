@@ -13,6 +13,7 @@ import sys
 import psutil
 from source import path
 from source.gui.app_win import App
+from source.gui.popup_win import StandalonePopupWindow
 
 IS_DEVELOPMENT = False  # This should be set to False before release
 
@@ -107,10 +108,6 @@ if __name__ == "__main__":
     application_errors = configure_logging()
     logger = logging.getLogger(__name__)
 
-    if not IS_DEVELOPMENT and is_process_running():
-        logger.critical("Another instance of the updater is already running. Exiting...")
-        exit_application(1)
-
     # log constants
     logger.info("PROGRAM_NAME: %s", path.PROGRAM_NAME)
     logger.info("PROGRAM_NAME_LONG: %s", path.PROGRAM_NAME_LONG)
@@ -126,8 +123,16 @@ if __name__ == "__main__":
     try:
         logger.info("Starting application")
 
-        app = App()
-        app.mainloop()
+        if not IS_DEVELOPMENT and is_process_running():
+            logger.critical("Another instance of the launcher is already running")
+            instance_popup = StandalonePopupWindow(
+                title="Another instance is running",
+                message="Another instance of the launcher is already running.",
+            )
+            instance_popup.mainloop()
+        else:
+            app = App()
+            app.mainloop()
 
         if application_errors.error_occurred:
             logger.warning("Application finished with errors")
