@@ -10,6 +10,7 @@ Functions:
 Classes:
 - Settings: A class that represents the settings for the application.
 - WrappingLabel: A custom label that wraps text.
+- ExceptionThread: A thread that captures exceptions.
 
 Constants:
 - SETTINGS_FILENAME: The name of the settings file.
@@ -24,6 +25,7 @@ Variables:
 import logging
 import os
 import subprocess
+import threading
 import platform
 import json
 import pathlib
@@ -287,6 +289,25 @@ class  WrappingLabel(customtkinter.CTkLabel):
     def __init__(self, master=None, **kwargs):
         super().__init__(master, **kwargs)
         self.bind("<Configure>", lambda _: self.configure(wraplength=self.winfo_width()))
+
+
+class ExceptionThread(threading.Thread):
+    """
+    A thread that captures exceptions.
+
+    Attributes:
+    - exception: The exception that occurred in the thread.
+    """
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.exception = None
+
+    def run(self):
+        try:
+            if self._target:
+                self._target(*self._args, **self._kwargs)
+        except Exception as e:
+            self.exception = e
 
 
 def get_image(image_name: str) -> Image.Image:
