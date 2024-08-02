@@ -79,13 +79,13 @@ class InstallWindow(customtkinter.CTkToplevel):
         self.progress_bar.start()
 
         if self.version and self.session:
-            self.after(100, self._install)
+            self.after(100, self.install)
         else:
             self.after(100, self.destroy)
 
         logger.debug("Install window created")
 
-    def _install(self):
+    def install(self):
         """Install the game and other necessary files."""
         logger.info("Starting Installation")
         version_environment = None
