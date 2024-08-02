@@ -588,7 +588,7 @@ class MCManager:
                 remote_path, is_dir, root, local_path_root, overwrite
             )
 
-            if not is_dir:  # If remote path is a file
+            if not is_dir:
                 self._sync_file(remote_path, local_path_root, overwrite, app=app)
                 continue
 

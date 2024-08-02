@@ -79,13 +79,13 @@ class InstallWindow(customtkinter.CTkToplevel):
         self.progress_bar.start()
 
         if self.version and self.session:
-            self.after(100, self._install)
+            self.after(100, self.install)
         else:
             self.after(100, self.destroy)
 
         logger.debug("Install window created")
 
-    def _install(self):
+    def install(self):
         """Install the game and other necessary files."""
         logger.info("Starting Installation")
         version_environment = None
@@ -114,7 +114,12 @@ class InstallWindow(customtkinter.CTkToplevel):
             logger.warning("Environment was not provisioned properly, stopping installation")
         else:
             try:
-                self.mc.sync(self)
+                sync_thread = utils.PropagatingThread(target=self.mc.sync, args=(self,))
+                sync_thread.start()
+
+                while sync_thread.is_alive():
+                    self.update_gui()
+                sync_thread.join()
             except Exception as sync_error:
                 logger.error("Error syncing files: %s", sync_error)
                 self.errors_occurred = True
