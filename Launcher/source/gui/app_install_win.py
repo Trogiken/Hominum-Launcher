@@ -113,15 +113,15 @@ class InstallWindow(customtkinter.CTkToplevel):
         if self.errors_occurred:
             logger.warning("Environment was not provisioned properly, stopping installation")
         else:
-            sync_thread = utils.ExceptionThread(self.mc.sync, self)
-            sync_thread.start()
+            try:
+                sync_thread = utils.PropagatingThread(target=self.mc.sync, args=(self,))
+                sync_thread.start()
 
-            while sync_thread.is_alive():
-                self.update_gui()
-            sync_thread.join()
-
-            if sync_thread.exception:
-                logger.error("Error syncing files: %s", sync_thread.exception)
+                while sync_thread.is_alive():
+                    self.update_gui()
+                sync_thread.join()
+            except Exception as sync_error:
+                logger.error("Error syncing files: %s", sync_error)
                 self.errors_occurred = True
 
         if not version_environment:
