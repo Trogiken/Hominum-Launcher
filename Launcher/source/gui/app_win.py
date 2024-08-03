@@ -1,12 +1,12 @@
 """
-This module contains the main window of the application.
+Contains the main application GUI components.
 
 classes:
-- LeftFrame: Contains the settings icon and functions.
-- RightFrame: Contains the user dropdown and functions.
-- ScrollableFrame: Contains the bulletin.
-- CenterFrame: Contains the bulletin.
 - App: The main window of the application.
+- LeftFrame: Frame for launcher info, theme dropdown, and settings button.
+- RightFrame: Frame for the user dropdown, auto-join switch, and play button.
+- ScrollableFrame: Frame for the bulletin.
+- CenterFrame: Frame for the bulletin and title.
 """
 
 from time import sleep
@@ -35,7 +35,7 @@ logger = logging.getLogger(__name__)
 
 
 class LeftFrame(customtkinter.CTkFrame):
-    """This frame contains a settings icon and functions."""
+    """Frame for launcher info, theme dropdown, and settings button"""
     def __init__(self, master):
         super().__init__(master)
         logger.debug("Creating left frame")
@@ -119,11 +119,12 @@ class LeftFrame(customtkinter.CTkFrame):
 
 
 class RightFrame(customtkinter.CTkFrame):
-    """This frame contains the user dropdown and functions."""
+    """Frame for the user dropdown, auto-join switch, and play button."""
     def __init__(self, master, mcmanager: MCManager):
         super().__init__(master)
         logger.debug("Creating right frame")
 
+        self.master = master
         self.settings = utils.Settings()
 
         self.login_window = None
@@ -137,7 +138,9 @@ class RightFrame(customtkinter.CTkFrame):
             )
             username = self.auth_handler.get_username()
             if username:
-                altnames: dict = mcmanager.remote_config.get("altnames", {})
+                altnames: dict | None = mcmanager.remote_config.get("altnames", {})
+                if not altnames:
+                    altnames = {}
                 if username in altnames:
                     username = altnames[username]
                 self.user_menu_var = customtkinter.StringVar(value=username)
@@ -188,12 +191,7 @@ class RightFrame(customtkinter.CTkFrame):
         logger.debug("Right frame created")
 
     def auto_join_callback(self):
-        """
-        Callback function for the auto-join switch.
-
-        Returns:
-        - None
-        """
+        """Callback function for the auto-join switch."""
         action = self.autojoin_switch_var.get()
         if action is True:
             self.autojoin_switch_var.set(True)
@@ -208,9 +206,6 @@ class RightFrame(customtkinter.CTkFrame):
 
         Parameters:
         - action (str): The action to perform.
-
-        Returns:
-        - None
         """
         action = action.casefold()
         logger.debug("User menu callback action: %s", action)
@@ -240,29 +235,33 @@ class RightFrame(customtkinter.CTkFrame):
                 self.login_window = None
                 logger.debug("Login complete")
 
-
     def run_game(self):
-        """Start Minecraft"""
+        """Start installation and run minecraft."""
         self.play_button.configure(state="disabled")
+        self.master.left_frame.settings_button.configure(state="disabled")
 
         # Install win
         install_window = InstallWindow()
+        install_window.transient(self)
         self.wait_window(install_window)
 
         env = install_window.environment
         if env is None:
             self.play_button.configure(state="normal")
+            self.master.left_frame.settings_button.configure(state="disabled")
             return
 
         # Run win
         run_window = RunWindow(environment=env)
+        run_window.transient(self)
         self.wait_window(run_window)
 
         self.play_button.configure(state="normal")
+        self.master.left_frame.settings_button.configure(state="normal")
 
 
 class ScrollableFrame(customtkinter.CTkScrollableFrame):
-    """A frame that contains the bulletin."""
+    """Frame for the bulletin."""
     def __init__(self, master, mcmanager: MCManager):
         super().__init__(master)
         logger.debug("Creating scrollable frame")
@@ -321,7 +320,7 @@ class ScrollableFrame(customtkinter.CTkScrollableFrame):
 
 
 class CenterFrame(customtkinter.CTkFrame):
-    """This frame contains the bulletin."""
+    """Frame for the bulletin and title."""
     def __init__(self, master, mcmanager: MCManager=None):
         super().__init__(master)
         logger.debug("Creating center frame")

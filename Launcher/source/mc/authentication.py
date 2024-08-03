@@ -2,7 +2,7 @@
 A module used to authenticate a user with Microsoft's services.
 
 Classes:
-- AuthenticationHandler: A class used to authenticate a user with Microsoft's services.
+- AuthenticationHandler: Class used to manage authentication with Microsoft's services.
 
 Constants:
 - AUTH_DATABASE_FILE_NAME (str): The name of the authentication database file.
@@ -40,15 +40,15 @@ NONCE = uuid4().hex  # Random string for security
 
 class AuthenticationHandler:
     """
-    A class used to authenticate a user with Microsoft's services.
-    
+    Class used to manage authentication with Microsoft's services.
+
     Methods:
     - gen_auth_url: Generate the authentication URL.
     - gen_logout_url: Generate the logout URL.
     - get_username: Get the player username.
     - get_session: Get the authentication session.
     - remove_session: Remove the authentication session.
-    - authenticate: Authenticate the user with Microsoft's services.
+    - authenticate: Authenticate the user with Microsoft's services
     """
     def __init__(self, email: str, context: Context):
         logger.debug("Initializing AuthenticationHandler")
@@ -68,14 +68,14 @@ class AuthenticationHandler:
     def _run_auth_server(self) -> str:
         """
         Run the authentication server.
-        
+
         Returns:
         - str: The code.
         """
         class AuthServer(HTTPServer):
             """
             The authentication server.
-            
+
             Methods:
             - __init__: Initializes the AuthServer instance.
             """
@@ -87,7 +87,7 @@ class AuthenticationHandler:
         class RequestHandler(BaseHTTPRequestHandler):
             """
             The request handler for the authentication server.
-            
+
             Methods:
             - do_GET: Handles the GET request.
             """
@@ -97,9 +97,9 @@ class AuthenticationHandler:
             def do_GET(self):  # pylint: disable=invalid-name
                 """
                 Handles the GET request.
-                
+
                 Sends a response with the access-control-allow-origin header.
-                
+
                 Returns:
                 - None
                 """
@@ -155,7 +155,7 @@ class AuthenticationHandler:
         class WebHandler(BaseHTTPRequestHandler):
             """
             The web handler for the web server.
-            
+
             Methods:
             - do_GET: Handles the GET request.
             """
@@ -206,9 +206,9 @@ class AuthenticationHandler:
     def gen_logout_url(self) -> str:
         """
         Generate the logout URL.
-        
+
         Note: This is not currently possible due to Entra not supporting http for logout redirects.
-        
+
         Returns:
         - str: The logout URL.
         """

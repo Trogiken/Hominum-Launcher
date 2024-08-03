@@ -2,15 +2,14 @@
 This module contains the main class for handling Minecraft.
 
 Classes:
-- MCManager: A class that handles Minecraft.
-- InstallWatcher: A class that observes and logs the installation process of a version install.
-- EnvironmentRunner: A class that updates the GUI.
+- MCManager: Handles Minecraft related tasks.
+- EnvironmentRunner: A runner that updates the GUI.
+- InstallWatcher: Observes and logs the installation process of a version install.
 """
 
 import logging
 import time
 import os
-import shutil
 from pathlib import Path
 from subprocess import Popen
 from typing import Generator, List
@@ -23,8 +22,8 @@ from portablemc.standard import Context, Version, SimpleWatcher, Environment, St
     JvmLoadingEvent, JvmLoadedEvent, JarFoundEvent, \
     AssetsResolveEvent, LibrariesResolvingEvent, LibrariesResolvedEvent, LoggerFoundEvent
 from portablemc.fabric import FabricVersion, FabricResolveEvent
-from portablemc.forge import ForgeVersion, ForgeResolveEvent, ForgePostProcessingEvent, \
-    ForgePostProcessedEvent
+from portablemc.forge import ForgeVersion, _NeoForgeVersion, \
+    ForgeResolveEvent, ForgePostProcessingEvent, ForgePostProcessedEvent
 
 logger = logging.getLogger(__name__)
 
@@ -32,10 +31,10 @@ logger = logging.getLogger(__name__)
 class InstallWatcher(SimpleWatcher):
     """
     Observes and logs the installation process of a version install.
-    This also prevents the installation process from idling.
+    This also prevents the installation process from idling by updating the GUI.
     
     Attributes:
-    app: A class, particurely the install frame that has methods to update the gui info.
+    app: Class to update the GUI.
     """
     def __init__(self, app) -> None:  # pylint: disable=too-many-statements
         self.app = app
@@ -223,35 +222,38 @@ class EnvironmentRunner(StandardRunner):
         self.app = app
 
     def process_wait(self, process: Popen) -> None:
-        try:
-            while process.poll() is None:
-                self.app.update_gui()
-                if self.app.kill_process:
-                    raise exceptions.GlobalKill()
-                time.sleep(0.1)
-        except exceptions.GlobalKill:
-            process.kill()
-            raise
-        finally:
-            process.wait()
-            self.app.on_run_complete()
+        while process.poll() is None:
+            if self.app.kill_process:
+                process.kill()
+                break
+            self.app.update_gui()
+            time.sleep(0.1)
+
+        process.wait()
+        self.app.on_run_complete()
 
 
 class MCManager:
     """
-    MCManager is a class that handles Minecraft
+    MCManager is a class that handles Minecraft related tasks.
 
     Attributes:
-    - context (Context): The context for PortableMC.
-    - remote_config (dict): The remote configuration.
-    - server_ip (str): The server IP.
-    - game_selected (str): The selected game/mc-version (Vanilla, Fabric, etc)
+    - context: The context for PortableMC.
+    - remote_tree: The remote tree for PortableMC.
+    - remote_config: The remote config for PortableMC.
+    - server_ip: The server IP.
+    - server_port: The server port.
+    - game_selected: The game selected.
 
     Methods:
-    - provision_version: Provisions a version.
-    - provision_environment: Provisions an environment.
-    - sync_dir: Syncs mods with the server.
-    - sync_file: Syncs the specified file with the server
+    - create_vanilla_version: Create vanilla root.
+    - create_fabric_version: Create fabric root.
+    - create_quilt_version: Create quilt root.
+    - create_forge_version: Create forge root.
+    - create_neoforge_version: Create neoforge root.
+    - provision_version: Provisions a version based on server.
+    - provision_environment: Provisions an environment for the version to run.
+    - sync: Syncs the local data folder with the server.
     """
     def __init__(self, context: Context):
         logger.debug("Initializing MCManager")
@@ -268,10 +270,12 @@ class MCManager:
             raise exceptions.RemoteError("Remote tree not found")
 
         self.server_ip: str = self.remote_config.get("startup", {}).get("server_ip", "")
+        self.server_port: int = self.remote_config.get("startup", {}).get("server_port", "")
         self.game_selected: str = self.remote_config.get("startup", {}).get("game", "")
 
         logger.debug("Context: %s", self.context)
         logger.debug("Server IP: %s", self.server_ip)
+        logger.debug("Server Port: %s", self.server_port)
         logger.debug("Game Selected: %s", self.game_selected)
 
         logger.debug("MCManager initialized")
@@ -299,7 +303,7 @@ class MCManager:
         - mc_version (str): Version of Minecraft.
         - loader_version (str): Version of the loader.
 
-        Returns
+        Returns:
         - FabricVersion: Fabric version.
         """
         logger.debug("mc_version: %s", mc_version)
@@ -320,7 +324,7 @@ class MCManager:
         - mc_version (str): Version of Minecraft.
         - loader_version (str): Version of the loader.
 
-        Returns
+        Returns:
         - FabricVersion: Quilt version.
         """
         logger.debug("mc_version: %s", mc_version)
@@ -339,7 +343,7 @@ class MCManager:
         - mc_version (str): Version of Minecraft.
         - forge_version (str): Version of forge.
 
-        Returns
+        Returns:
         - ForgeVersion: Forge version.
         """
         logger.debug("mc_version: %s", mc_version)
@@ -353,12 +357,27 @@ class MCManager:
             logger.warning("Forge MC version set to None, ignoring forge version")
         return ForgeVersion(forge_version=forge, context=self.context)
 
-    def provision_version(self, autojoin: bool) -> Version | FabricVersion | ForgeVersion:
+    def create_neoforge_version(self, mc_version: str=None) -> _NeoForgeVersion:
+        """
+        Create neoforge root.
+        Specific neoforge version not available yet.
+
+        Parameters:
+        - mc_version (str): Version of Minecraft.
+
+        Returns:
+        - _NeoForgeVersion: Neoforge version.
+        """
+        logger.debug("mc_version: %s", mc_version)
+        return _NeoForgeVersion(neoforge_version=mc_version, context=self.context)
+
+    def provision_version(
+            self, autojoin: bool
+        ) -> Version | FabricVersion | ForgeVersion | _NeoForgeVersion:
         """
         Provisions a version based on server
 
         Parameters:
-        - auth_session (MicrosoftAuthSession): Auth session to add to version
         - autojoin (bool): Place user in server on startup
 
         Returns:
@@ -386,18 +405,25 @@ class MCManager:
             version = self.create_forge_version(
                 mc_version=game_config["mc_version"], forge_version=game_config["forge_version"]
             )
+        elif self.game_selected == "neoforge":
+            version = self.create_neoforge_version(
+                mc_version=game_config["mc_version"]
+            )
         else:
             raise ValueError(f"Unknown valid game selected: {self.game_selected}")
 
         if autojoin:
-            version.set_quick_play_multiplayer(self.server_ip)
+            if not self.server_ip:
+                logger.warning("Server IP not set, ignoring autojoin")
+            else:
+                version.set_quick_play_multiplayer(self.server_ip, self.server_port or 25565)
         logger.debug("Version: %s", version)
 
         return version
 
     def provision_environment(
             self,
-            version: Version | FabricVersion | ForgeVersion,
+            version: Version | FabricVersion | ForgeVersion | _NeoForgeVersion,
             auth_session: MicrosoftAuthSession,
             watcher: InstallWatcher=None
         )-> Environment:
@@ -405,7 +431,7 @@ class MCManager:
         Provisions an environment for the version to run.
 
         Parameters:
-        - version (Version | FabricVersion | ForgeVersion): The version.
+        - version (Version | FabricVersion | ForgeVersion | _NeoForgeVersion): The version.
         - auth_session (MicrosoftAuthSession): The auth session to add to the version.
         - watcher (InstallWatcher): The watcher for PortableMC. Defaults to None.
 
@@ -428,7 +454,9 @@ class MCManager:
         env.jvm_args.extend(args)
         return env
 
-    def _sync_file(self, remote_path: str, root_path: Path, overwrite: bool, app=None) -> bool:
+    def _sync_file(
+            self, remote_path: str, root_path: Path, overwrite: bool, app=None
+        ) -> bool:
         """
         Syncs the specified file with the server.
 
@@ -468,7 +496,9 @@ class MCManager:
         logger.debug("Skipping '%s' because it already exists", remote_path)
         return False
 
-    def _sync_dir(self, remote_path: str, root_path: Path, overwrite: bool, app) -> None:
+    def _sync_dir(
+            self, remote_path: str, root_path: Path, overwrite: bool, app
+        ) -> None:
         """
         Syncs the specified directory with the server.
 
@@ -488,13 +518,25 @@ class MCManager:
         delete_others: bool = self.remote_config["paths"][remote_path]["delete_others"]
         logger.debug("Exclude List: %s, Delete Others: %s", exclude_list, delete_others)
 
+        # Filter out excluded paths from dir_paths
+        if exclude_list:
+            dir_paths = [
+                dir_path for dir_path in dir_paths
+                if not any(exclude_item in dir_path for exclude_item in exclude_list)
+            ]
+
         # Delete other files
         if delete_others:
             for local_file in root_path.rglob("*"):  # Recursively iterate over all files
-                # If the file name is not in any of the remote paths, delete it
-                if local_file.is_file() and all(
-                    local_file.name not in remote_dir_item for remote_dir_item in dir_paths
-                    ):
+                # Del file if it is a file, not in exclude_list, and not in dir_paths
+                if (
+                    local_file.is_file()
+                    and (
+                        not exclude_list or  # Returns True if list not provided
+                        not any(exclude_item in local_file.name for exclude_item in exclude_list)
+                    )
+                    and all(local_file.name not in remote_dir_item for remote_dir_item in dir_paths)
+                ):
                     local_file.unlink()
                     logger.debug("Deleted unknown file: %s", local_file.name)
 
@@ -506,18 +548,6 @@ class MCManager:
             local_save_path: Path = root_path / item_name
             logger.debug("Local Save Path: %s", local_save_path)
             app.update_item(item_name)
-
-            # Skip if path is in exclude list
-            if exclude_list:
-                if any(exclude_item in remote_dir_item for exclude_item in exclude_list):
-                    if local_save_path.exists():
-                        if local_save_path.is_dir():
-                            shutil.rmtree(local_save_path)
-                        else:
-                            local_save_path.unlink()
-                        logger.debug("Deleted excluded file: %s", local_save_path)
-                    logger.debug("Skipping '%s' because it is in the exclude list", remote_dir_item)
-                    continue
 
             # If there is no file extension, it is a directory
             if not local_save_path.suffix:
@@ -558,7 +588,7 @@ class MCManager:
                 remote_path, is_dir, root, local_path_root, overwrite
             )
 
-            if not is_dir:  # If remote path is a file
+            if not is_dir:
                 self._sync_file(remote_path, local_path_root, overwrite, app=app)
                 continue
 

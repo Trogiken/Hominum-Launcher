@@ -1,13 +1,11 @@
 """
-This module contains the SettingsWindow class,
-which represents the settings window of the application.
+Contains the SettingsWindow class.
 
 Classes:
-- GUISettingsFrame: A frame for the GUI settings.
-- UserSettingsFrame: A frame for the User settings.
+- ResetSettingsFrame: A frame for resetting the settings.
 - JVMArgsWindow: A window for the JVM Arguments.
-- GameSettingsFrame: A frame for the Game settings.
-- SettingsWindow: A window for the settings of the application.
+- GameSettingsFrame: A frame for the game settings.
+- SettingsWindow: A window to display the settings of the launcher.
 """
 
 import logging
@@ -19,8 +17,8 @@ from source.mc.authentication import AuthenticationHandler
 logger = logging.getLogger(__name__)
 
 
-class GUISettingsFrame(customtkinter.CTkFrame):
-    """A frame for the GUI settings."""
+class ResetSettingsFrame(customtkinter.CTkFrame):
+    """Frame for the reset settings."""
     def __init__(self, master):
         super().__init__(master)
         logger.debug("Creating GUI settings frame")
@@ -134,7 +132,7 @@ class GUISettingsFrame(customtkinter.CTkFrame):
 
 
 class JVMArgsWindow(customtkinter.CTkToplevel):
-    """A window for the JVM Arguments."""
+    """Window for the JVM Arguments."""
     def __init__(self, master, **kwargs):
         super().__init__(master, **kwargs)
         logger.debug("Creating JVM Arguments window")
@@ -226,7 +224,7 @@ class JVMArgsWindow(customtkinter.CTkToplevel):
 
 
 class GameSettingsFrame(customtkinter.CTkFrame):
-    """A frame for the Game settings."""
+    """Frame for the Game settings."""
     def __init__(self, master):
         super().__init__(master)
         logger.debug("Creating game settings frame")
@@ -279,7 +277,7 @@ class GameSettingsFrame(customtkinter.CTkFrame):
 
 
 class SettingsWindow(customtkinter.CTkToplevel):
-    """A window for the settings of the application."""
+    """A window to display the settings of the launcher."""
     def __init__(self, master, **kwargs):
         super().__init__(master, **kwargs)
         logger.debug("Creating settings window")
@@ -295,7 +293,7 @@ class SettingsWindow(customtkinter.CTkToplevel):
         self.grid_rowconfigure(1, weight=1)
 
         # GUI Settings Frame
-        self.gui_settings_frame = GUISettingsFrame(self)
+        self.gui_settings_frame = ResetSettingsFrame(self)
         self.gui_settings_frame.grid(row=0, column=0, padx=20, pady=20, sticky="we")
 
         # Game Settings Frame

@@ -1,5 +1,5 @@
 """
-The install window is a window that displays the installation progress across operations.
+Contains the InstallWindow class.
 
 classes:
 - InstallWindow: A class that displays the installation progress across operations.
@@ -8,8 +8,7 @@ classes:
 import logging
 import customtkinter
 from source.gui.popup_win import PopupWindow
-from source import path, exceptions
-from source import utils
+from source import utils, path, exceptions
 from source.mc.authentication import AuthenticationHandler
 from source.mc.minecraft import MCManager, InstallWatcher
 
@@ -25,6 +24,7 @@ class InstallWindow(customtkinter.CTkToplevel):
         self.settings = utils.Settings()
 
         self.title("Install")
+        self.resizable(False, False)
         self.attributes("-topmost", True)  # Always on top
         self.geometry("500x150")
         self.grid_columnconfigure(0, weight=1)
@@ -80,19 +80,14 @@ class InstallWindow(customtkinter.CTkToplevel):
         self.progress_bar.start()
 
         if self.version and self.session:
-            self.after(100, self._install)
+            self.after(100, self.install)
         else:
             self.after(100, self.destroy)
 
         logger.debug("Install window created")
 
-    def _install(self):
-        """
-        Install the game and other necessary files.
-        
-        Returns:
-        - None
-        """
+    def install(self):
+        """Install the game and other necessary files."""
         logger.info("Starting Installation")
         version_environment = None
         # Install the game
@@ -120,7 +115,12 @@ class InstallWindow(customtkinter.CTkToplevel):
             logger.warning("Environment was not provisioned properly, stopping installation")
         else:
             try:
-                self.mc.sync(self)
+                sync_thread = utils.PropagatingThread(target=self.mc.sync, args=(self,))
+                sync_thread.start()
+
+                while sync_thread.is_alive():
+                    self.update_gui()
+                sync_thread.join()
             except Exception as sync_error:
                 logger.error("Error syncing files: %s", sync_error)
                 self.errors_occurred = True
@@ -134,11 +134,12 @@ class InstallWindow(customtkinter.CTkToplevel):
             logger.info("Installation finished successfully")
         else:
             logger.warning("Installation finished with errors")
-            PopupWindow(
+            install_error_popup = PopupWindow(
                 self,
                 title="Install Error",
                 message="An error occurred during the installation process",
             )
+            install_error_popup.wait_window()
         self.destroy()
 
     def update_gui(self):

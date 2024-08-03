@@ -18,41 +18,24 @@ Replace `<feature-name>`, `<bugfix-name>`, `patch/<patch-name>`, `<hotfix-name>`
 
 ## Protected Branches
 
-- `master` - Used as the production branch **When merging into master DO NOT use squash and merge**
-- `staging` - Used as the pre-production branch  **When merging into staging DO USE squash and merge**
+- `master` - Used as the production branch **Use quash and merge**
+- `staging` - Used as the pre-production branch  **Use squash and merge**
 
 ### Here are some rules to follow about protected branches
 
 1. All tests **must** pass before merging into protected branches.
 2. Before merging, a review from someone other than the one pushing must pass.
 3. **Only hotfixes** are allowed to be directly merged into `master`.
+4. All commits to staging, no matter the size, **must** increment the build version.
 
 ## Pull Requests
 
 Please follow these steps for creating a pull request:
 
-1. Create a branch from `staging` with proper name formatting **(Unless you're making a hotfix)**.
-2. If code you added changes previous functionality, update documentation.
-3. Keep commits appropriate and on topic of what you're pushing.
-4. Make sure your code lints.
-5. Make sure your code passes CodeQL.
+1. Update local packages
+2. Create a branch from `staging` with proper name formatting.
+3. If code you added changes previous functionality, update documentation.
+4. Keep commits appropriate and on topic of what you're pushing.
+5. Make sure your code passes linting and CodeQL
 6. Make sure your PR is merging into the correct branch.
 7. After the PR is merged, delete the branch to keep the repository clean.
-
-## Compiling a Release
-
-Here are the steps to compiling a release:
-
-1. Increment build version
-2. Make sure that you've checked out the `master` branch.
-3. Make sure that all PRs are merged, tests are passing, and versions are updated.
-4. Access and download the security program.
-5. Within the security program, enter the API_KEY.
-6. Run the module, selecting the `./Launcher` directory in the repo.
-7. Move the created `creds` file into `./Compile Info/include`.
-8. In `./Updater/source/creds.py`, enter the local password and salt.
-9. Run pyinstaller on the spec file in Compile Info.
-10. Store the resulting build directory somewhere other than the repo directory.
-11. Delete all current changes in the local checked out `master` branch **(Nothing should be committed here)**.
-12. Run `install creator`, using the resulting build directory as the source files.
-13. Create a release on GitHub and upload the resulting installer.

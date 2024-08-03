@@ -1,20 +1,16 @@
 """
-A module that contains the RunWindow class.
+Contains the RunWindow class
 
 Classes:
 - RunWindow: A class that is used to run the game.
 """
 
-import os
 import logging
 import customtkinter
 from portablemc.standard import Environment
 from source.mc.minecraft import EnvironmentRunner
 from source.gui.popup_win import PopupWindow
-from source import utils, path
-
-if os.name != "posix":
-    import pygetwindow as pygw
+from source import utils
 
 logger = logging.getLogger(__name__)
 
@@ -26,12 +22,6 @@ class RunWindow(customtkinter.CTkToplevel):
         logger.debug("Creating game window")
 
         self.settings = utils.Settings()
-
-        self.title("Run")
-        # Used to minimize the main window after the game starts
-        self.main_window = None
-        if os.name != "posix":
-            self.main_window: pygw.Win32Window = pygw.getWindowsWithTitle(path.PROGRAM_NAME)[0]
 
         if not environment:
             env_popup_window = PopupWindow(
@@ -47,6 +37,7 @@ class RunWindow(customtkinter.CTkToplevel):
         self.environment = environment
         self.kill_process = False  # Used by EnvironmentRunner
 
+        self.title("Run")
         self.protocol("WM_DELETE_WINDOW", self.destroy)  # Prevent the closing of this window
         self.attributes("-topmost", True)  # Always on top
         self.geometry("500x150")
@@ -81,10 +72,6 @@ class RunWindow(customtkinter.CTkToplevel):
     def run(self):
         """Provision the environment and run the game."""
         logger.info("Running game")
-        if os.name != "posix" and self.main_window:
-            if not self.main_window.isMinimized:
-                self.after(1000, self.main_window.minimize())
-                logger.debug("Main window minimized")
         self.environment.run(EnvironmentRunner(self))
 
     def update_gui(self):
@@ -95,12 +82,5 @@ class RunWindow(customtkinter.CTkToplevel):
     def on_run_complete(self):
         """Close this window."""
         logger.info("Game stopped")
-        if os.name != "posix" and self.main_window:
-            if self.main_window.isMinimized:
-                self.main_window.maximize()
-                logger.debug("Main window maximized")
-                min_length, min_height = self.settings.get_gui("main_window_min_size")
-                self.main_window.resizeTo(min_length, min_height)
-                logger.debug("Main window resized to '%s'x'%s'", min_length, min_height)
         super().destroy()
         logger.debug("Run game window destroyed")
