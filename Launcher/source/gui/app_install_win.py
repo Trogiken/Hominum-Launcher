@@ -24,6 +24,7 @@ class InstallWindow(customtkinter.CTkToplevel):
         self.settings = utils.Settings()
 
         self.title("Install")
+        self.resizable(False, False)
         self.attributes("-topmost", True)  # Always on top
         self.geometry("500x150")
         self.grid_columnconfigure(0, weight=1)
